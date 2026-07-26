@@ -136,11 +136,29 @@ CREATE TABLE `log`
     `rubbish`          bit(1)       DEFAULT NULL,
     `privacy`          bit(1)       DEFAULT NULL,
     `editor_type`      varchar(256) DEFAULT NULL,
-    `arrange_plugin`  varchar(64)  DEFAULT null COMMENT '文章统筹重排插件名称',
+    `arrange_plugin`   varchar(64)  DEFAULT null COMMENT '文章统筹重排插件名称',
+    `extensions`       longtext,
     PRIMARY KEY (`logId`),
     KEY                `typeId` (`typeId`),
     KEY                `userId` (`userId`),
     UNIQUE KEY `alias` (`alias`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+#
+# Structure for table "log_extension_index"
+#
+
+DROP TABLE IF EXISTS `log_extension_index`;
+CREATE TABLE `log_extension_index`
+(
+    `id`              bigint(20)   NOT NULL AUTO_INCREMENT,
+    `log_id`          int(11)      NOT NULL,
+    `namespace`       varchar(64)  NOT NULL,
+    `extension_path`  varchar(191) NOT NULL,
+    `extension_value` varchar(512) DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY               `log_extension_article` (`log_id`, `namespace`),
+    KEY               `log_extension_filter` (`namespace`, `extension_path`, `extension_value`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
