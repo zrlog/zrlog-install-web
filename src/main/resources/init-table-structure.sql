@@ -151,15 +151,18 @@ CREATE TABLE `log`
 DROP TABLE IF EXISTS `log_extension_index`;
 CREATE TABLE `log_extension_index`
 (
-    `id`              bigint(20)   NOT NULL AUTO_INCREMENT,
+    `id`              int(11) NOT NULL AUTO_INCREMENT,
     `log_id`          int(11)      NOT NULL,
     `namespace`       varchar(64)  NOT NULL,
     `extension_path`  varchar(191) NOT NULL,
     `extension_value` varchar(512) DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    KEY               `log_extension_article` (`log_id`, `namespace`),
-    KEY               `log_extension_filter` (`namespace`, `extension_path`, `extension_value`)
+    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE INDEX `log_extension_article`
+    ON `log_extension_index` (`log_id`, `namespace`);
+CREATE INDEX `log_extension_filter`
+    ON `log_extension_index` (`namespace`, `extension_path`, `extension_value`);
 
 
 #
