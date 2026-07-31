@@ -25,7 +25,7 @@ jobs:
           settings-path: ${{ github.workspace }}
 
       - name: Cache frontend dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             src/main/frontend/node_modules
