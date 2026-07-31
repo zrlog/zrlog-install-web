@@ -94,7 +94,7 @@ class FakeInstallConfig implements InstallConfig {
 
     @Override
     public String getZrLogSqlVersion() {
-        return "23";
+        return "25";
     }
 
     @Override

@@ -76,6 +76,13 @@ public class InstallServiceTest {
             assertEquals(1L, ((Number) dao.queryFirstObj("select count(1) from `log`")).longValue());
             assertEquals(2L, ((Number) dao.queryFirstObj("select count(1) from `lognav`")).longValue());
             assertEquals(4L, ((Number) dao.queryFirstObj("select count(1) from `plugin`")).longValue());
+            assertEquals(0L, ((Number) dao.queryFirstObj(
+                    "select `sticky` from `log` where `logId`=1")).longValue());
+            assertEquals(0L, ((Number) dao.queryFirstObj("select count(`extensions`) from `log`")).longValue());
+            assertEquals(0L, ((Number) dao.queryFirstObj(
+                    "select count(1) from `log_extension_index`")).longValue());
+            assertEquals("25", dao.queryFirstObj(
+                    "select `value` from `website` where `name`='zrlogSqlVersion'"));
             assertEquals("H2 Blog", dao.queryFirstObj("select `value` from `website` where `name`='title'"));
             assertEquals("https://example.com", dao.queryFirstObj("select `value` from `website` where `name`='host'"));
             assertEquals("admin", dao.queryFirstObj("select `userName` from `user` where `userId`=1"));
@@ -119,7 +126,7 @@ public class InstallServiceTest {
         assertEquals("", settings.getSecondTitle());
         assertEquals("zh_CN", settings.getLanguage());
         assertEquals("/include/templates/default", settings.getTemplate());
-        assertEquals("23", settings.getZrlogSqlVersion());
+        assertEquals("25", settings.getZrlogSqlVersion());
         assertEquals("example.com", settingsMap.get("host"));
         assertTrue(settingsMap.containsKey("appId"));
     }

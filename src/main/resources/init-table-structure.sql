@@ -127,6 +127,7 @@ CREATE TABLE `log`
     `keywords`         varchar(255) DEFAULT NULL,
     `thumbnail`        varchar(255) DEFAULT NULL,
     `recommended`      bit(1)       DEFAULT b'0',
+    `sticky`           INTEGER      NOT NULL DEFAULT 0,
     `releaseTime`      datetime     DEFAULT NULL,
     `last_update_date` datetime     DEFAULT NULL,
     `title`            varchar(255) DEFAULT NULL,
