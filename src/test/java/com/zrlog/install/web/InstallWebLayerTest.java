@@ -13,6 +13,8 @@ import com.zrlog.install.business.response.InstallProbeResponse;
 import com.zrlog.install.business.response.InstallResourceResponse;
 import com.zrlog.install.business.response.InstallResultResponse;
 import com.zrlog.install.business.response.InstallRuntimeResourceResponse;
+import com.zrlog.install.business.response.InstallUpgradeResult;
+import com.zrlog.install.business.service.InstallUpgradeAction;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.exception.MissingDbHostException;
@@ -290,6 +292,44 @@ public class InstallWebLayerTest {
             InstallConstants.installConfig = previousConfig;
             restoreProperty("sws.conf.path", previousConfPath);
             delete(confPath);
+        }
+    }
+
+    @Test
+    public void shouldWriteUpgradeProgressAndCompleteEventsBeforeInstallation() throws Exception {
+        com.zrlog.install.web.config.InstallConfig previousConfig = InstallConstants.installConfig;
+        try {
+            InstallConstants.installConfig = new DefaultInstallConfig() {
+                @Override
+                public InstallUpgradeAction getUpgradeAction() {
+                    return new InstallUpgradeAction() {
+                        @Override
+                        public boolean isSupported() {
+                            return true;
+                        }
+
+                        @Override
+                        public InstallUpgradeResult upgrade(ProgressListener progressListener) throws Exception {
+                            progressListener.onProgress("upgrade-progress", Map.of(
+                                    "stage", "download", "status", "complete", "message", "Downloaded"));
+                            return new InstallUpgradeResult(true, "Updated");
+                        }
+                    };
+                }
+            };
+            TestApiInstallController controller = new TestApiInstallController();
+            CapturedResponse capturedResponse = new CapturedResponse();
+            setControllerResponse(controller, capturedResponse.response());
+
+            controller.upgradeStream();
+
+            String body = new String(capturedResponse.written.readAllBytes());
+            assertTrue(body, body.contains("event: upgrade-progress"));
+            assertTrue(body, body.contains("\"stage\":\"download\""));
+            assertTrue(body, body.contains("event: upgrade-complete"));
+            assertTrue(body, body.contains("\"finish\":true"));
+        } finally {
+            InstallConstants.installConfig = previousConfig;
         }
     }
 
@@ -649,6 +689,10 @@ public class InstallWebLayerTest {
 
         void installStream(InstallConfigVO configVO) throws Exception {
             writeInstallStream(configVO);
+        }
+
+        void upgradeStream() throws Exception {
+            writeUpgradeStream();
         }
 
         InstallResultResponse installResult() {

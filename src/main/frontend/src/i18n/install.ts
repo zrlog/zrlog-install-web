@@ -27,6 +27,12 @@ const zhCN = {
     upgrade: {
         newVersion: "有新版本",
         newVersionTip: "发现新版本 v{version}",
+        action: "立即升级",
+        upgrading: "正在升级",
+        confirmTitle: "升级到最新版本",
+        confirmContent: "ZrLog 将下载并校验官方更新包，完成后自动重启。",
+        complete: "升级已提交，正在等待重启",
+        failed: "升级失败",
     },
     feedback: {
         title: "安装遇到问题？",
@@ -199,6 +205,12 @@ const enUS: typeof zhCN = {
     upgrade: {
         newVersion: "New version",
         newVersionTip: "New version v{version} is available",
+        action: "Upgrade now",
+        upgrading: "Upgrading",
+        confirmTitle: "Upgrade to the latest version",
+        confirmContent: "ZrLog will download and verify the official package, then restart automatically.",
+        complete: "Upgrade submitted; waiting for restart",
+        failed: "Upgrade failed",
     },
     feedback: {
         title: "Installation problem?",

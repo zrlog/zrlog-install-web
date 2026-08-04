@@ -2,6 +2,7 @@ package com.zrlog.install.web.config;
 
 import com.hibegin.http.server.api.HttpErrorHandle;
 import com.zrlog.install.business.response.LastVersionInfo;
+import com.zrlog.install.business.service.InstallUpgradeAction;
 import com.zrlog.install.web.InstallAction;
 
 import java.io.File;
@@ -24,6 +25,10 @@ public interface InstallConfig {
     File getDbPropertiesFile();
 
     LastVersionInfo getLastVersionInfo();
+
+    default InstallUpgradeAction getUpgradeAction() {
+        return InstallUpgradeAction.UNSUPPORTED;
+    }
 
     String getBuildVersion();
 

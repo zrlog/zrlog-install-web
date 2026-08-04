@@ -41,7 +41,7 @@ public class InstallNativeImageResourceUtils {
         resourceNameList.add("/init-table-structure.sql");
         NativeImageUtils.doResourceLoadByResourceNames(resourceNameList);
         NativeImageUtils.gsonNativeAgentByClazz(Arrays.asList(InstalledResResponse.class,
-                LastVersionInfo.class, InstallResultResponse.class,
+                LastVersionInfo.class, InstallResultResponse.class, InstallUpgradeResult.class,
                 TestConnectResponse.class, InstallResourceResponse.class,
                 InstallRuntimeResourceResponse.class, InstallProbeResponse.class,
                 InstallAssetManifest.class,

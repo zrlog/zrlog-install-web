@@ -53,6 +53,7 @@ public class InstallResourceServiceTest {
         assertEquals("3.7.0", response.getUpgradeVersion());
         assertEquals("changes", response.getUpgradeChangeLog());
         assertEquals("https://example.com/zrlog.zip", response.getUpgradeDownloadUrl());
+        assertEquals(false, response.getOnlineUpgradable());
         assertNotNull(response.getCharset());
         assertTrue(response.getFeedbackUrl().contains("v=3.6.1-SNAPSHOT"));
     }

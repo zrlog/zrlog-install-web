@@ -27,6 +27,7 @@ export type InstallRuntimeResourceInfo = {
     upgradeVersion?: string;
     upgradeChangeLog?: string;
     upgradeDownloadUrl?: string;
+    onlineUpgradable?: boolean;
     feedbackUrl?: string;
     charset?: string;
     runtimeMode?: string;

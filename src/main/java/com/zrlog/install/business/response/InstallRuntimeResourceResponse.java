@@ -12,6 +12,7 @@ public class InstallRuntimeResourceResponse {
     private String upgradeVersion;
     private String upgradeChangeLog;
     private String upgradeDownloadUrl;
+    private Boolean onlineUpgradable;
     private String feedbackUrl;
     private String charset;
     private String runtimeMode;
@@ -96,6 +97,14 @@ public class InstallRuntimeResourceResponse {
 
     public void setUpgradeDownloadUrl(String upgradeDownloadUrl) {
         this.upgradeDownloadUrl = upgradeDownloadUrl;
+    }
+
+    public Boolean getOnlineUpgradable() {
+        return onlineUpgradable;
+    }
+
+    public void setOnlineUpgradable(Boolean onlineUpgradable) {
+        this.onlineUpgradable = onlineUpgradable;
     }
 
     public String getFeedbackUrl() {

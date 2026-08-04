@@ -10,6 +10,8 @@ import com.zrlog.install.business.service.InstallProbeService;
 import com.zrlog.install.business.response.TestConnectResponse;
 import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.business.service.InstallService;
+import com.zrlog.install.business.service.InstallUpgradeAction;
+import com.zrlog.install.business.response.InstallUpgradeResult;
 import com.zrlog.install.business.type.TestConnectDbResult;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
@@ -32,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ApiInstallController extends Controller {
 
+    private static final AtomicBoolean UPGRADE_RUNNING = new AtomicBoolean(false);
     private final InstallConfig installConfig;
 
     public ApiInstallController() {
@@ -116,6 +119,36 @@ public class ApiInstallController extends Controller {
     @ResponseBody
     public InstallProbeResponse probe() {
         return new InstallProbeResponse(new InstallProbeService().probe(installConfig));
+    }
+
+    @ResponseBody
+    public void startUpgrade() throws IOException {
+        writeUpgradeStream();
+    }
+
+    protected void writeUpgradeStream() throws IOException {
+        InstallSseEmitter.write(response, "install-upgrade", "upgrade-error", emitter -> {
+            if (installConfig.getAction().isInstalled()) {
+                emitter.send("upgrade-error", new InstallUpgradeResult(false, "ZrLog is already installed"));
+                return;
+            }
+            InstallUpgradeAction upgradeAction = installConfig.getUpgradeAction();
+            if (!upgradeAction.isSupported()) {
+                emitter.send("upgrade-error", new InstallUpgradeResult(false,
+                        "Online upgrade is not supported by this package"));
+                return;
+            }
+            if (!UPGRADE_RUNNING.compareAndSet(false, true)) {
+                emitter.send("upgrade-error", new InstallUpgradeResult(false, "An upgrade is already running"));
+                return;
+            }
+            try {
+                InstallUpgradeResult result = upgradeAction.upgrade(emitter::send);
+                emitter.send(result.isFinish() ? "upgrade-complete" : "upgrade-error", result);
+            } finally {
+                UPGRADE_RUNNING.set(false);
+            }
+        });
     }
 
     protected void writeInstallStream(InstallConfigVO configVO) throws IOException {

@@ -28,6 +28,7 @@ public class InstallResourceService {
         response.setRuntimeMode(new InstallProbeService().probe(InstallConstants.installConfig).getRuntimeMode());
         response.setDbPropertiesPath(InstallConstants.installConfig.getDbPropertiesFile().getAbsolutePath());
         response.setLockFilePath(InstallConstants.installConfig.getAction().getLockFile().getAbsolutePath());
+        response.setOnlineUpgradable(InstallConstants.installConfig.getUpgradeAction().isSupported());
         response.setFeedbackUrl(getFeedbackUrl(request));
         if (Objects.equals(response.getInstalled(), true) && InstallConstants.installConfig.isAskConfig()) {
             response.setInstallSuccessContent(InstallSuccessContentUtils.getContent(InstallConstants.installConfig.getDbPropertiesFile(), true, request.getServerConfig()));
