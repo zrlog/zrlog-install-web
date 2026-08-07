@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.hibegin</groupId>
     <artifactId>zrlog-install-web</artifactId>
-    <version>3.3.7-SNAPSHOT</version>
+    <version>3.3.8-SNAPSHOT</version>
 
     <name>ZrLog install web</name>
 
