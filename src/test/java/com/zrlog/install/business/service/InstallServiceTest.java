@@ -30,6 +30,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class InstallServiceTest {
@@ -81,7 +82,11 @@ public class InstallServiceTest {
             assertEquals(0L, ((Number) dao.queryFirstObj("select count(`extensions`) from `log`")).longValue());
             assertEquals(0L, ((Number) dao.queryFirstObj(
                     "select count(1) from `log_extension_index`")).longValue());
-            assertEquals("25", dao.queryFirstObj(
+            assertNull(dao.queryFirstObj("select `passkeyUserHandle` from `user` where `userId`=1"));
+            assertEquals(0L, ((Number) dao.queryFirstObj("select count(1) from `user_passkey`")).longValue());
+            assertEquals(0L, ((Number) dao.queryFirstObj(
+                    "select count(1) from `user_passkey_challenge`")).longValue());
+            assertEquals("26", dao.queryFirstObj(
                     "select `value` from `website` where `name`='zrlogSqlVersion'"));
             assertEquals("H2 Blog", dao.queryFirstObj("select `value` from `website` where `name`='title'"));
             assertEquals("https://example.com", dao.queryFirstObj("select `value` from `website` where `name`='host'"));
@@ -126,7 +131,7 @@ public class InstallServiceTest {
         assertEquals("", settings.getSecondTitle());
         assertEquals("zh_CN", settings.getLanguage());
         assertEquals("/include/templates/default", settings.getTemplate());
-        assertEquals("25", settings.getZrlogSqlVersion());
+        assertEquals("26", settings.getZrlogSqlVersion());
         assertEquals("example.com", settingsMap.get("host"));
         assertTrue(settingsMap.containsKey("appId"));
     }
