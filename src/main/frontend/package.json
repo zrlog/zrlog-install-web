@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "@ant-design/cssinjs": "2.1.2",
-    "antd": "6.4.3",
+    "antd": "6.5.3",
     "axios": "1.18.0",
     "marked": "16.0.0",
     "react": "18.3.1",
