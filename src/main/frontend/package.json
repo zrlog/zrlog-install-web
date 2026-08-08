@@ -12,7 +12,7 @@
     "react-dom": "18.3.1",
     "react-router": "6.30.3",
     "react-router-dom": "6.30.3",
-    "styled-components": "6.1.15"
+    "styled-components": "6.4.4"
   },
   "resolutions": {
     "@babel/plugin-transform-modules-systemjs": "7.29.4",
