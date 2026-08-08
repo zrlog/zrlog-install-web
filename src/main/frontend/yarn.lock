@@ -6901,10 +6901,10 @@ node-releases@^2.0.5:
   resolved "https://registry.npmmirror.com/node-releases/-/node-releases-2.0.5.tgz#280ed5bc3eba0d96ce44897d8aee478bfb3d9666"
   integrity sha512-U9h1NLROZTq9uE1SNffn6WuPDg8icmi3ns4rEl/oTfIle4iLjTliCzgTsbaIFMq/Xn078/lfY/BL0GWZ+psK4Q==
 
-node@18.9.0:
-  version "18.9.0"
-  resolved "https://registry.npmmirror.com/node/-/node-18.9.0.tgz#e2dfeba8e0a04c6397371d5118f3e4ff918e2cd7"
-  integrity sha512-s+JrNt8qOeV2Uci4aYs7jsFSRXgko7jThozysqeZ2bJGp3PGaBKA+kpCCP+TDrg4TRcTLyw3bcHCJx9drxTQtQ==
+node@26.5.1:
+  version "26.5.1"
+  resolved "https://registry.yarnpkg.com/node/-/node-26.5.1.tgz#3b3870471401ce9529153b2c593c0dcd755da0cd"
+  integrity sha512-jMR0E6e5HtjOdc3oj0e2MSC6Z5/yAf849Mykpkt1UAnThDg61AnztpXdsrXILd8Dz3gHDHaxqsMFNJs/lhiRyQ==
   dependencies:
     node-bin-setup "^1.0.0"
 

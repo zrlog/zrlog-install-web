@@ -61,7 +61,7 @@
     "cross-env": "7.0.3",
     "husky": "7.0.4",
     "lint-staged": "11.1.2",
-    "node": "18.9.0",
+    "node": "26.5.1",
     "node-bin-darwin-arm64": "18.9.0",
     "prettier": "2.3.2",
     "react-loadable": "5.5.0",
