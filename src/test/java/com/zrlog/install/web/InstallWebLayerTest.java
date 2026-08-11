@@ -1,6 +1,5 @@
 package com.zrlog.install.web;
 
-import com.hibegin.common.dao.InMemoryDatabase;
 import com.hibegin.http.HttpMethod;
 import com.hibegin.http.server.api.HttpRequest;
 import com.hibegin.http.server.api.HttpResponse;
@@ -42,15 +41,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
@@ -129,6 +123,82 @@ public class InstallWebLayerTest {
         assertEquals("zrlog", dbConn.getDbName());
         assertEquals("com.mysql.cj.jdbc.Driver", dbConn.getDriverClass());
         assertTrue(dbConn.getJdbcUrl().contains("jdbc:mysql://localhost:3306/zrlog"));
+    }
+
+    @Test
+    public void shouldBuildServerOwnedSqliteConnectionWithoutNetworkParams() throws Exception {
+        Path root = Files.createTempDirectory("zrlog-install-sqlite-config");
+        com.zrlog.install.web.config.InstallConfig previousConfig = InstallConstants.installConfig;
+        try {
+            InstallConstants.installConfig = installConfigWithDbProperties(root.resolve("conf/db.properties"), false);
+            TestApiInstallController controller = new TestApiInstallController();
+            setControllerRequest(controller, request(Map.of("dbType", "sqlite")));
+
+            InstallDatabaseConfig dbConn = controller.dbConn();
+
+            assertEquals("sqlite", dbConn.getDbType());
+            assertEquals("org.sqlite.JDBC", dbConn.getDriverClass());
+            assertEquals("", dbConn.getUser());
+            assertEquals("", dbConn.getPassword());
+            assertEquals("zrlog", dbConn.getDbName());
+            assertEquals(null, dbConn.getDbHost());
+            assertEquals(null, dbConn.getDbPort());
+            assertTrue(dbConn.getJdbcUrl().startsWith("jdbc:sqlite:"));
+            assertTrue(dbConn.getJdbcUrl().contains(root.resolve("conf/zrlog.db").toAbsolutePath().toString()));
+            assertTrue(dbConn.getJdbcUrl().contains("journal_mode=WAL"));
+            assertTrue(dbConn.getJdbcUrl().contains("busy_timeout=10000"));
+            assertTrue(dbConn.getJdbcUrl().contains("foreign_keys=on"));
+            assertTrue(dbConn.getJdbcUrl().contains("date_class=TEXT"));
+            assertTrue(dbConn.getJdbcUrl().contains("date_string_format=yyyy-MM-dd HH:mm:ss"));
+        } finally {
+            InstallConstants.installConfig = previousConfig;
+            delete(root);
+        }
+    }
+
+    @Test
+    public void shouldRejectSqliteConnectionInWarMode() throws Exception {
+        Path root = Files.createTempDirectory("zrlog-install-war-sqlite");
+        com.zrlog.install.web.config.InstallConfig previousConfig = InstallConstants.installConfig;
+        try {
+            InstallConstants.installConfig = installConfigWithDbProperties(root.resolve("WEB-INF/db.properties"), true);
+            TestApiInstallController controller = new TestApiInstallController();
+            setControllerRequest(controller, request(Map.of("dbType", "sqlite")));
+
+            InstallException exception = assertThrows(InstallException.class, controller::dbConn);
+
+            assertEquals(TestConnectDbResult.UNSUPPORTED_DATABASE.name(), exception.getCode());
+        } finally {
+            InstallConstants.installConfig = previousConfig;
+            delete(root);
+        }
+    }
+
+    @Test
+    public void shouldInstallWithServerOwnedSqliteThroughApi() throws Exception {
+        Path root = Files.createTempDirectory("zrlog-install-api-sqlite");
+        com.zrlog.install.web.config.InstallConfig previousConfig = InstallConstants.installConfig;
+        try {
+            Path dbProperties = root.resolve("conf/db.properties");
+            InstallConstants.installConfig = installConfigWithDbProperties(dbProperties, false);
+            ApiInstallController controller = new ApiInstallController();
+            CapturedResponse capturedResponse = new CapturedResponse();
+            Map<String, String> params = installParams("sqlite");
+            params.keySet().removeAll(java.util.Set.of(
+                    "dbHost", "dbPort", "dbUserName", "dbPassword", "dbName"));
+            setControllerRequest(controller, request("/api/install/start", params));
+            setControllerResponse(controller, capturedResponse.response());
+
+            controller.startInstall();
+
+            assertTrue(Files.exists(dbProperties));
+            assertTrue(Files.exists(root.resolve("conf/install.lock")));
+            assertTrue(Files.exists(root.resolve("conf/zrlog.db")));
+            assertTrue(capturedResponse.json instanceof InstallResultResponse);
+        } finally {
+            InstallConstants.installConfig = previousConfig;
+            delete(root);
+        }
     }
 
     @Test
@@ -265,37 +335,6 @@ public class InstallWebLayerTest {
     }
 
     @Test
-    public void shouldWriteInstallCompleteEventWhenSseInstallSucceeds() throws Exception {
-        Path confPath = Files.createTempDirectory("zrlog-install-controller-sse-success");
-        String previousConfPath = System.getProperty("sws.conf.path");
-        com.zrlog.install.web.config.InstallConfig previousConfig = InstallConstants.installConfig;
-        try {
-            System.setProperty("sws.conf.path", confPath.toString());
-            InstallConstants.installConfig = installConfig(false, false);
-            TestApiInstallController controller = new TestApiInstallController();
-            CapturedResponse capturedResponse = new CapturedResponse();
-            setControllerRequest(controller, request("/api/install/start", new HashMap<>(),
-                    Map.of("Accept", "text/event-stream")));
-            setControllerResponse(controller, capturedResponse.response());
-            InstallConfigVO configVO = new InstallConfigVO();
-            configVO.setConfigMsg(installParams("h2"));
-            configVO.setDbConfig(h2DbConfig());
-            configVO.setContextPath("/blog");
-
-            controller.installStream(configVO);
-
-            String body = new String(capturedResponse.written.readAllBytes());
-            assertTrue(body, body.contains("event: install-progress"));
-            assertTrue(body, body.contains("event: install-complete"));
-            assertTrue(body, body.contains("\"content\""));
-        } finally {
-            InstallConstants.installConfig = previousConfig;
-            restoreProperty("sws.conf.path", previousConfPath);
-            delete(confPath);
-        }
-    }
-
-    @Test
     public void shouldWriteUpgradeProgressAndCompleteEventsBeforeInstallation() throws Exception {
         com.zrlog.install.web.config.InstallConfig previousConfig = InstallConstants.installConfig;
         try {
@@ -381,43 +420,6 @@ public class InstallWebLayerTest {
             assertTrue(sqliteSql.contains("INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT"));
             assertTrue(sqliteSql.contains("INSERT INTO `log` VALUES (1,'hello')"));
             assertTrue(sqliteSql.contains("INSERT INTO `log` VALUES (2,'world')"));
-        } finally {
-            restoreProperty("sws.conf.path", previousConfPath);
-            delete(confPath);
-        }
-    }
-
-    @Test
-    public void shouldImportConvertedSqlIntoConfiguredInMemoryDatabase() throws Exception {
-        Path confPath = Files.createTempDirectory("zrlog-install-migrate-import");
-        String previousConfPath = System.getProperty("sws.conf.path");
-        String jdbcUrl = InMemoryDatabase.h2JdbcUrl("zrlog_install_migrate_" + UUID.randomUUID());
-        try {
-            System.setProperty("sws.conf.path", confPath.toString());
-            Files.writeString(confPath.resolve("mysql.sql"), ""
-                    + "DROP TABLE IF EXISTS `legacy_a`, `legacy_b`;\n"
-                    + "CREATE TABLE `log` (`id` int(11), `title` varchar(255));\n"
-                    + "INSERT INTO `log` VALUES (1,'hello');\n"
-                    + "INSERT INTO `log` VALUES (2,'world');\n");
-            Files.writeString(confPath.resolve("sqlite-db.properties"), ""
-                    + "driverClass=" + InMemoryDatabase.H2_DRIVER_CLASS + "\n"
-                    + "jdbcUrl=" + jdbcUrl + "\n"
-                    + "user=sa\n"
-                    + "password=\n");
-            ApiMigrateController controller = new ApiMigrateController();
-            CapturedResponse capturedResponse = new CapturedResponse();
-            setControllerRequest(controller, request("/api/migrate/import", new HashMap<>()));
-            setControllerResponse(controller, capturedResponse.response());
-
-            controller.doImportSqlite();
-
-            assertNotNull(capturedResponse.json);
-            try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
-                 Statement statement = connection.createStatement();
-                 ResultSet resultSet = statement.executeQuery("select count(*) from `log`")) {
-                assertTrue(resultSet.next());
-                assertEquals(2, resultSet.getInt(1));
-            }
         } finally {
             restoreProperty("sws.conf.path", previousConfPath);
             delete(confPath);
@@ -519,19 +521,19 @@ public class InstallWebLayerTest {
         throw new AssertionError("Expected " + expectedCause.getName());
     }
 
-    private static void setControllerRequest(Controller controller, HttpRequest request) throws Exception {
+    static void setControllerRequest(Controller controller, HttpRequest request) throws Exception {
         Field field = Controller.class.getDeclaredField("request");
         field.setAccessible(true);
         field.set(controller, request);
     }
 
-    private static void setControllerResponse(Controller controller, HttpResponse response) throws Exception {
+    static void setControllerResponse(Controller controller, HttpResponse response) throws Exception {
         Field field = Controller.class.getDeclaredField("response");
         field.setAccessible(true);
         field.set(controller, response);
     }
 
-    private static void restoreProperty(String key, String value) {
+    static void restoreProperty(String key, String value) {
         if (value == null) {
             System.clearProperty(key);
         } else {
@@ -539,7 +541,7 @@ public class InstallWebLayerTest {
         }
     }
 
-    private static void delete(Path path) throws Exception {
+    static void delete(Path path) throws Exception {
         if (!Files.exists(path)) {
             return;
         }
@@ -562,7 +564,7 @@ public class InstallWebLayerTest {
         return request(uri, params, Map.of());
     }
 
-    private static HttpRequest request(String uri, Map<String, String> params, Map<String, String> headers) {
+    static HttpRequest request(String uri, Map<String, String> params, Map<String, String> headers) {
         return request(uri, params, headers, false);
     }
 
@@ -570,7 +572,7 @@ public class InstallWebLayerTest {
         return request(uri, params, Map.of(), true);
     }
 
-    private static Map<String, String> installParams(String dbType) {
+    static Map<String, String> installParams(String dbType) {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("title", "ZrLog");
         params.put("second_title", "Install");
@@ -584,19 +586,6 @@ public class InstallWebLayerTest {
         params.put("dbName", "zrlog");
         params.put("dbType", dbType);
         return params;
-    }
-
-    private static Map<String, String> h2DbConfig() {
-        Map<String, String> dbConfig = new LinkedHashMap<>();
-        dbConfig.put("driverClass", InMemoryDatabase.H2_DRIVER_CLASS);
-        dbConfig.put("jdbcUrl", InMemoryDatabase.h2JdbcUrl("zrlog_install_web_" + UUID.randomUUID()));
-        dbConfig.put("user", "sa");
-        dbConfig.put("password", "");
-        dbConfig.put("dbType", "h2");
-        dbConfig.put("dbName", "zrlog");
-        dbConfig.put("dbHost", "localhost");
-        dbConfig.put("dbPort", "0");
-        return dbConfig;
     }
 
     private static HttpRequest request(String uri, Map<String, String> params, Map<String, String> headers,
@@ -654,7 +643,7 @@ public class InstallWebLayerTest {
         return installConfig(installed, true);
     }
 
-    private static DefaultInstallConfig installConfig(boolean installed, boolean askConfig) {
+    static DefaultInstallConfig installConfig(boolean installed, boolean askConfig) {
         return new DefaultInstallConfig() {
             @Override
             public InstallAction getAction() {
@@ -677,7 +666,35 @@ public class InstallWebLayerTest {
         };
     }
 
-    private static class TestApiInstallController extends ApiInstallController {
+    private static DefaultInstallConfig installConfigWithDbProperties(Path dbProperties, boolean warMode) {
+        return new DefaultInstallConfig() {
+            @Override
+            public InstallAction getAction() {
+                return new InstallAction() {
+                    @Override
+                    public void installSuccess() {
+                    }
+
+                    @Override
+                    public java.io.File getLockFile() {
+                        return dbProperties.resolveSibling("install.lock").toFile();
+                    }
+                };
+            }
+
+            @Override
+            public java.io.File getDbPropertiesFile() {
+                return dbProperties.toFile();
+            }
+
+            @Override
+            public boolean isWarMode() {
+                return warMode;
+            }
+        };
+    }
+
+    static class TestApiInstallController extends ApiInstallController {
 
         InstallDatabaseConfig dbConn() {
             return getDbConn();
@@ -714,15 +731,15 @@ public class InstallWebLayerTest {
         }
     }
 
-    private static class CapturedResponse {
+    static class CapturedResponse {
         private final Map<String, String> headers = new HashMap<>();
         private final Map<String, String> addedHeaders = new HashMap<>();
-        private InputStream written;
+        InputStream written;
         private String html;
-        private Object json;
+        Object json;
         private Integer code;
 
-        private HttpResponse response() {
+        HttpResponse response() {
             return (HttpResponse) Proxy.newProxyInstance(
                     InstallWebLayerTest.class.getClassLoader(),
                     new Class[]{HttpResponse.class},

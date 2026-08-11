@@ -16,6 +16,7 @@ public class InstallRuntimeResourceResponse {
     private String feedbackUrl;
     private String charset;
     private String runtimeMode;
+    private Boolean localSqliteAvailable;
     private String dbPropertiesPath;
     private String lockFilePath;
 
@@ -129,6 +130,14 @@ public class InstallRuntimeResourceResponse {
 
     public void setRuntimeMode(String runtimeMode) {
         this.runtimeMode = runtimeMode;
+    }
+
+    public Boolean getLocalSqliteAvailable() {
+        return localSqliteAvailable;
+    }
+
+    public void setLocalSqliteAvailable(Boolean localSqliteAvailable) {
+        this.localSqliteAvailable = localSqliteAvailable;
     }
 
     public String getDbPropertiesPath() {

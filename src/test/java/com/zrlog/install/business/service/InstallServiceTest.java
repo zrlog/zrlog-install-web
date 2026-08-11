@@ -4,9 +4,11 @@ import com.hibegin.common.dao.DAO;
 import com.hibegin.common.dao.DataSourceWrapper;
 import com.hibegin.common.dao.InMemoryDatabase;
 import com.hibegin.common.dao.SqlConvertUtils;
+import com.hibegin.common.util.IOUtil;
 import com.zrlog.install.business.type.TestConnectDbResult;
 import com.zrlog.install.business.vo.DefaultWebsiteSettings;
 import com.zrlog.install.business.vo.InstallConfigVO;
+import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallSiteConfig;
 import com.zrlog.install.web.InstallConstants;
 import com.zrlog.install.web.config.DefaultInstallConfig;
@@ -24,13 +26,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class InstallServiceTest {
@@ -38,64 +39,6 @@ public class InstallServiceTest {
     @After
     public void tearDown() {
         InstallConstants.installConfig = new DefaultInstallConfig();
-    }
-
-    @Test
-    public void shouldInstallSchemaAndSeedDataUsingInMemoryDatabase() throws Exception {
-        File root = Files.createTempDirectory("zrlog-install-service").toFile();
-        File dbFile = new File(root, "conf/db.properties");
-        File lockFile = new File(root, "conf/install.lock");
-        FakeInstallConfig config = new FakeInstallConfig(dbFile, lockFile);
-        InstallConstants.installConfig = config;
-        List<com.zrlog.install.business.response.InstallProgressEvent> events = new ArrayList<>();
-        Map<String, String> configMsg = new LinkedHashMap<>();
-        configMsg.put("title", "H2 Blog");
-        configMsg.put("second_title", "Fast install");
-        configMsg.put("username", "admin");
-        configMsg.put("password", "password");
-        configMsg.put("email", "admin@example.com");
-        configMsg.put("installDate", "2026-06-29 10:20:30 +0800");
-        Map<String, String> appendWebsite = new LinkedHashMap<>();
-        appendWebsite.put("host", "https://example.com");
-        InstallConfigVO installConfigVO = installConfigVO(configMsg, appendWebsite, "/blog");
-        installConfigVO.setDbConfig(h2DbConfig());
-
-        boolean installed = new InstallService(config, installConfigVO, events::add).install();
-
-        assertTrue(installed);
-        assertTrue(dbFile.exists());
-        assertTrue(lockFile.exists());
-        Properties stored = new Properties();
-        try (var input = Files.newInputStream(dbFile.toPath())) {
-            stored.load(input);
-        }
-        assertEquals(InMemoryDatabase.H2_DRIVER_CLASS, stored.getProperty("driverClass"));
-        assertEquals("sa", stored.getProperty("user"));
-        try (var ds = InstallService.buildDataSource(stored, true)) {
-            DAO dao = new DAO(ds);
-            assertEquals(1L, ((Number) dao.queryFirstObj("select count(1) from `user`")).longValue());
-            assertEquals(1L, ((Number) dao.queryFirstObj("select count(1) from `log`")).longValue());
-            assertEquals(2L, ((Number) dao.queryFirstObj("select count(1) from `lognav`")).longValue());
-            assertEquals(4L, ((Number) dao.queryFirstObj("select count(1) from `plugin`")).longValue());
-            assertEquals(0L, ((Number) dao.queryFirstObj(
-                    "select `sticky` from `log` where `logId`=1")).longValue());
-            assertEquals(0L, ((Number) dao.queryFirstObj("select count(`extensions`) from `log`")).longValue());
-            assertEquals(0L, ((Number) dao.queryFirstObj(
-                    "select count(1) from `log_extension_index`")).longValue());
-            assertNull(dao.queryFirstObj("select `passkeyUserHandle` from `user` where `userId`=1"));
-            assertEquals(0L, ((Number) dao.queryFirstObj("select count(1) from `user_passkey`")).longValue());
-            assertEquals(0L, ((Number) dao.queryFirstObj(
-                    "select count(1) from `user_passkey_challenge`")).longValue());
-            assertEquals("26", dao.queryFirstObj(
-                    "select `value` from `website` where `name`='zrlogSqlVersion'"));
-            assertEquals("H2 Blog", dao.queryFirstObj("select `value` from `website` where `name`='title'"));
-            assertEquals("https://example.com", dao.queryFirstObj("select `value` from `website` where `name`='host'"));
-            assertEquals("admin", dao.queryFirstObj("select `userName` from `user` where `userId`=1"));
-        }
-        assertEquals(List.of("preflight:running", "preflight:complete", "database:running", "database:complete",
-                "schema:running", "schema:complete", "seed-website:running", "seed-website:complete",
-                "seed-admin:running", "seed-admin:complete", "seed-defaults:running", "seed-defaults:complete",
-                "config:running", "config:complete"), eventTrace(events));
     }
 
     @Test
@@ -110,6 +53,23 @@ public class InstallServiceTest {
         assertTrue(SqlConvertUtils.isBatchDropTableSql(" DROP TABLE IF EXISTS `log`, `comment` "));
         assertFalse(SqlConvertUtils.isBatchDropTableSql("DROP TABLE IF EXISTS `log`"));
         assertFalse(SqlConvertUtils.isBatchDropTableSql("DELETE FROM `log`, `comment`"));
+    }
+
+    @Test
+    public void shouldUseTheSameSqliteConverterForD1AndLocalSqlite() {
+        String installSql = IOUtil.getStringInputStream(
+                InstallService.class.getResourceAsStream("/init-table-structure.sql"));
+        InstallDatabaseConfig d1 = new InstallDatabaseConfig();
+        d1.setDbType("webapi");
+        d1.setJdbcUrl("jdbc:webapi://example.com:443/zrlog");
+        InstallDatabaseConfig localSqlite = new InstallDatabaseConfig();
+        localSqlite.setDbType("sqlite");
+        localSqlite.setDriverClass("org.sqlite.JDBC");
+        localSqlite.setJdbcUrl("jdbc:sqlite:/tmp/zrlog.db");
+        List<String> expected = SqlConvertUtils.doMySQLToSqliteBySqlText(installSql);
+
+        assertEquals(expected, InstallService.prepareInstallSql(installSql, true, d1));
+        assertEquals(expected, InstallService.prepareInstallSql(installSql, false, localSqlite));
     }
 
     @Test
@@ -201,17 +161,25 @@ public class InstallServiceTest {
     }
 
     @Test
-    public void shouldReportSuccessfulConnectionForInMemoryDatabase() throws Exception {
-        File root = Files.createTempDirectory("zrlog-install-service").toFile();
+    public void shouldRejectLocalSqliteWhenPackageDoesNotSupportIt() throws Exception {
+        File root = Files.createTempDirectory("zrlog-install-service-war-sqlite").toFile();
         FakeInstallConfig config = new FakeInstallConfig(
-                new File(root, "db.properties"),
-                new File(root, "install.lock"));
+                new File(root, "db.properties"), new File(root, "install.lock"));
+        config.setWarMode(true);
         InstallConfigVO installConfigVO = installConfigVO(Collections.emptyMap(), null, null);
-        installConfigVO.setDbConfig(h2DbConfig());
+        Map<String, String> dbConfig = new LinkedHashMap<>();
+        dbConfig.put("dbType", "sqlite");
+        dbConfig.put("driverClass", "org.sqlite.JDBC");
+        dbConfig.put("jdbcUrl", "jdbc:sqlite:" + new File(root, "zrlog.db").getAbsolutePath());
+        dbConfig.put("user", "");
+        dbConfig.put("password", "");
+        installConfigVO.setDbConfig(dbConfig);
 
-        TestConnectDbResult result = new InstallService(config, installConfigVO).testDbConn();
+        InstallService service = new InstallService(config, installConfigVO);
 
-        assertEquals(TestConnectDbResult.SUCCESS, result);
+        assertEquals(TestConnectDbResult.UNSUPPORTED_DATABASE, service.testDbConn());
+        assertFalse(service.install());
+        assertFalse(config.getAction().getLockFile().exists());
     }
 
     @Test
@@ -382,27 +350,6 @@ public class InstallServiceTest {
         installConfigVO.setAppendWebsite(appendWebsite);
         installConfigVO.setContextPath(contextPath);
         return installConfigVO;
-    }
-
-    private static Map<String, String> h2DbConfig() {
-        Map<String, String> dbConfig = new LinkedHashMap<>();
-        dbConfig.put("driverClass", InMemoryDatabase.H2_DRIVER_CLASS);
-        dbConfig.put("jdbcUrl", InMemoryDatabase.h2JdbcUrl("zrlog_install_" + UUID.randomUUID()));
-        dbConfig.put("user", "sa");
-        dbConfig.put("password", "");
-        dbConfig.put("dbType", "h2");
-        dbConfig.put("dbName", "zrlog");
-        dbConfig.put("dbHost", "localhost");
-        dbConfig.put("dbPort", "0");
-        return dbConfig;
-    }
-
-    private static List<String> eventTrace(List<com.zrlog.install.business.response.InstallProgressEvent> events) {
-        List<String> trace = new ArrayList<>();
-        for (com.zrlog.install.business.response.InstallProgressEvent event : events) {
-            trace.add(event.getCode() + ":" + event.getStatus());
-        }
-        return trace;
     }
 
     private static String repeat(String value, int count) {

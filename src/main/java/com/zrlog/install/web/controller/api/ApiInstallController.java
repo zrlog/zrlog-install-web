@@ -8,6 +8,7 @@ import com.zrlog.install.business.response.InstallResultResponse;
 import com.zrlog.install.business.response.InstallProgressEvent;
 import com.zrlog.install.business.service.InstallProbeService;
 import com.zrlog.install.business.response.TestConnectResponse;
+import com.zrlog.install.business.service.LocalSqliteSupport;
 import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.business.service.InstallService;
 import com.zrlog.install.business.service.InstallUpgradeAction;
@@ -57,6 +58,13 @@ public class ApiInstallController extends Controller {
     }
 
     protected InstallDatabaseConfig getDbConn() {
+        String dbType = getRequest().getParaToStr("dbType", "mysql");
+        if ("sqlite".equalsIgnoreCase(dbType)) {
+            if (!LocalSqliteSupport.isAvailable(installConfig)) {
+                throw new InstallException(TestConnectDbResult.UNSUPPORTED_DATABASE);
+            }
+            return LocalSqliteSupport.createDatabaseConfig(installConfig);
+        }
         if (StringUtils.isEmpty(getRequest().getParaToStr("dbHost"))) {
             throw new MissingDbHostException();
         }
@@ -72,7 +80,6 @@ public class ApiInstallController extends Controller {
         InstallDatabaseConfig dbConn = new InstallDatabaseConfig();
         dbConn.setUser(getRequest().getParaToStr("dbUserName", ""));
         dbConn.setPassword(getRequest().getParaToStr("dbPassword", ""));
-        String dbType = getRequest().getParaToStr("dbType", "mysql");
         dbConn.setDbType(dbType);
         dbConn.setDbHost(getRequest().getParaToStr("dbHost"));
         dbConn.setDbPort(getRequest().getParaToStr("dbPort"));

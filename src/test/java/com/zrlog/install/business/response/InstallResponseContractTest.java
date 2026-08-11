@@ -141,6 +141,7 @@ public class InstallResponseContractTest {
         response.setFeedbackUrl("https://example.com/feedback");
         response.setCharset("UTF-8");
         response.setRuntimeMode("war");
+        response.setLocalSqliteAvailable(false);
         response.setDbPropertiesPath("/tmp/db.properties");
         response.setLockFilePath("/tmp/install.lock");
 
@@ -157,6 +158,7 @@ public class InstallResponseContractTest {
         assertEquals("https://example.com/feedback", response.getFeedbackUrl());
         assertEquals("UTF-8", response.getCharset());
         assertEquals("war", response.getRuntimeMode());
+        assertEquals(false, response.getLocalSqliteAvailable());
         assertEquals("/tmp/db.properties", response.getDbPropertiesPath());
         assertEquals("/tmp/install.lock", response.getLockFilePath());
     }

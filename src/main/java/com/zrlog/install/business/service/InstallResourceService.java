@@ -26,6 +26,7 @@ public class InstallResourceService {
         response.setCurrentVersion(InstallConstants.installConfig.getBuildVersion());
         response.setCharset(Charset.defaultCharset().displayName());
         response.setRuntimeMode(new InstallProbeService().probe(InstallConstants.installConfig).getRuntimeMode());
+        response.setLocalSqliteAvailable(LocalSqliteSupport.isAvailable(InstallConstants.installConfig));
         response.setDbPropertiesPath(InstallConstants.installConfig.getDbPropertiesFile().getAbsolutePath());
         response.setLockFilePath(InstallConstants.installConfig.getAction().getLockFile().getAbsolutePath());
         response.setOnlineUpgradable(InstallConstants.installConfig.getUpgradeAction().isSupported());

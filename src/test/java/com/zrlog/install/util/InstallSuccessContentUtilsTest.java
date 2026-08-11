@@ -38,4 +38,20 @@ public class InstallSuccessContentUtilsTest {
         assertTrue(content.contains("db.database=zrlog"));
         assertTrue(content.contains("db.type=mysql"));
     }
+
+    @Test
+    public void shouldRenderSqliteDatabasePathFromDbProperties() throws Exception {
+        File dbProperties = Files.createTempFile("zrlog-sqlite-db", ".properties").toFile();
+        Files.write(dbProperties.toPath(), (
+                "user=\n" +
+                        "password=\n" +
+                        "dbType=sqlite\n" +
+                        "jdbcUrl=jdbc:sqlite:/opt/zrlog/conf/zrlog.db?journal_mode=WAL&busy_timeout=10000\n")
+                .getBytes(StandardCharsets.UTF_8));
+
+        String content = InstallSuccessContentUtils.getContent(dbProperties, true, new ServerConfig());
+
+        assertTrue(content.contains("db.database=/opt/zrlog/conf/zrlog.db"));
+        assertTrue(content.contains("db.type=sqlite"));
+    }
 }

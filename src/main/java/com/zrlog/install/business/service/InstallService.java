@@ -51,7 +51,11 @@ public class InstallService {
 
     public InstallService(InstallConfig installConfig, InstallConfigVO installConfigVO,
                           InstallProgressListener progressListener) {
-        this.dbConn = Objects.requireNonNullElseGet(installConfigVO.getDbConfig(), InstallDatabaseConfig::new);
+        InstallDatabaseConfig requestedDbConn = Objects.requireNonNullElseGet(
+                installConfigVO.getDbConfig(), InstallDatabaseConfig::new);
+        this.dbConn = requestedDbConn.isLocalSqlite()
+                ? LocalSqliteSupport.createDatabaseConfig(installConfig)
+                : requestedDbConn;
         this.configMsg = Objects.requireNonNullElseGet(installConfigVO.getConfigMsg(), InstallSiteConfig::new);
         this.appendWebsite = installConfigVO.getAppendWebsite();
         this.installAction = installConfig.getAction();
@@ -67,6 +71,10 @@ public class InstallService {
      */
     public boolean install() {
         if (installAction.isInstalled()) {
+            return false;
+        }
+        if (dbConn.isLocalSqlite() && !LocalSqliteSupport.isAvailable(installConfig)) {
+            emitError("database", new IllegalStateException("Local SQLite is not supported by this package"));
             return false;
         }
         return startInstall(dbConn, configMsg);
@@ -98,6 +106,9 @@ public class InstallService {
      * 尝试使用填写的数据库信息连接数据库
      */
     public TestConnectDbResult testDbConn() {
+        if (dbConn.isLocalSqlite() && !LocalSqliteSupport.isAvailable(installConfig)) {
+            return TestConnectDbResult.UNSUPPORTED_DATABASE;
+        }
         Properties properties = dbConn.toProperties();
         try (DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
             ds.testConnection();
@@ -198,14 +209,7 @@ public class InstallService {
 
                 DAO dao = new DAO(ds);
                 String sql = IOUtil.getStringInputStream(InstallService.class.getResourceAsStream("/init-table-structure.sql"));
-                List<String> sqlList;
-                if (ds.isWebApi()) {
-                    sqlList = SqlConvertUtils.doMySQLToSqliteBySqlText(sql);
-                } else if (shouldNormalizeInstallSqlForH2()) {
-                    sqlList = SqlConvertUtils.doMySQLToH2BySqlText(sql);
-                } else {
-                    sqlList = SqlConvertUtils.extractExecutableSql(sql);
-                }
+                List<String> sqlList = prepareInstallSql(sql, ds.isWebApi(), dbConn);
                 currentStep = "schema";
                 emitRunning(currentStep);
                 for (String sqlSt : sqlList) {
@@ -307,7 +311,17 @@ public class InstallService {
         return Jsoup.parse(content).body().text();
     }
 
-    private boolean shouldNormalizeInstallSqlForH2() {
+    static List<String> prepareInstallSql(String sql, boolean webApi, InstallDatabaseConfig dbConn) {
+        if (webApi || dbConn.isLocalSqlite()) {
+            return SqlConvertUtils.doMySQLToSqliteBySqlText(sql);
+        }
+        if (shouldNormalizeInstallSqlForH2(dbConn)) {
+            return SqlConvertUtils.doMySQLToH2BySqlText(sql);
+        }
+        return SqlConvertUtils.extractExecutableSql(sql);
+    }
+
+    private static boolean shouldNormalizeInstallSqlForH2(InstallDatabaseConfig dbConn) {
         return "h2".equalsIgnoreCase(dbConn.getDbType())
                 || "org.h2.Driver".equals(dbConn.getDriverClass());
     }
