@@ -16,6 +16,16 @@ public class InstallDatabaseConfig {
     private String driverClass;
     private String jdbcUrl;
 
+    public boolean isLocalSqlite() {
+        return "sqlite".equalsIgnoreCase(dbType)
+                || "org.sqlite.JDBC".equals(driverClass)
+                || startsWithIgnoreCase(jdbcUrl, "jdbc:sqlite:");
+    }
+
+    private static boolean startsWithIgnoreCase(String value, String prefix) {
+        return value != null && value.regionMatches(true, 0, prefix, 0, prefix.length());
+    }
+
     public static InstallDatabaseConfig from(Map<String, String> map) {
         InstallDatabaseConfig config = new InstallDatabaseConfig();
         if (map == null) {

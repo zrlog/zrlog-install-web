@@ -31,6 +31,7 @@ export type InstallRuntimeResourceInfo = {
     feedbackUrl?: string;
     charset?: string;
     runtimeMode?: string;
+    localSqliteAvailable?: boolean;
     dbPropertiesPath?: string;
     lockFilePath?: string;
 };

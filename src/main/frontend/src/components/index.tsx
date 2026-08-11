@@ -14,7 +14,6 @@ import {
     List,
     message,
     Result,
-    Select,
     Segmented,
     Space,
     Steps,
@@ -39,7 +38,7 @@ const {useBreakpoint} = Grid;
 
 type ProbeStatus = "pass" | "warning" | "block";
 type ProgressStatus = "running" | "complete" | "error";
-type DbErrorCode = "DB_NOT_EXISTS" | "CREATE_CONNECT_ERROR" | "USERNAME_OR_PASSWORD_ERROR" | "SQL_EXCEPTION_UNKNOWN" | "MISSING_JDBC_DRIVER" | "UNKNOWN";
+type DbErrorCode = "DB_NOT_EXISTS" | "CREATE_CONNECT_ERROR" | "USERNAME_OR_PASSWORD_ERROR" | "SQL_EXCEPTION_UNKNOWN" | "MISSING_JDBC_DRIVER" | "UNSUPPORTED_DATABASE" | "UNKNOWN";
 
 type InstallProbeItem = {
     code: string;
@@ -556,6 +555,8 @@ const IndexLayout = () => {
     const nextDisabled = !state.agreementAccepted || state.probeLoading || state.probe?.status === "block";
     const currentDbType = state.dataBaseInfo.dbType as string;
     const mysqlSelected = currentDbType === "mysql";
+    const sqliteSelected = currentDbType === "sqlite";
+    const localSqliteAvailable = res.localSqliteAvailable === true;
     const compactView = !screens.sm;
     const cardTitle = (
         <div style={{
@@ -614,34 +615,37 @@ const IndexLayout = () => {
                                   onValuesChange={(k: any, v: any) => setDatabaseValue(k, v)}>
                                 <FormItem name='dbType' label={res.database.dbType}
                                           rules={[{required: true}]}>
-                                    <Select>
-                                        <Select.Option value="mysql">MySQL / MariaDB</Select.Option>
-                                        <Select.Option value="webapi">WebApi</Select.Option>
-                                    </Select>
+                                    <Segmented block options={[
+                                        {label: compactView ? "MySQL" : "MySQL / MariaDB", value: "mysql"},
+                                        ...(localSqliteAvailable ? [{label: "SQLite", value: "sqlite"}] : []),
+                                        {label: "WebApi", value: "webapi"},
+                                    ]}/>
                                 </FormItem>
-                                <FormItem name='dbHost' label={res.database.dbHost}
-                                          rules={[{required: true}]}>
-                                    <Input placeholder='127.0.0.1'/>
-                                </FormItem>
-                                <FormItem name='dbName' label={res.database.dbName}
-                                          help={mysqlSelected ? res.database.dbNameHelp : undefined}
-                                          rules={[{required: true}]}>
-                                    <Input placeholder='ZrLog'/>
-                                </FormItem>
-                                <FormItem name='dbUserName' label={res.database.dbUserName}
-                                          help={mysqlSelected ? res.database.dbUserHelp : undefined}
-                                          rules={[{required: true}]}>
-                                    <Input placeholder=''/>
-                                </FormItem>
-                                <FormItem name='dbPassword' label={res.database.dbPassword}>
-                                    <Input type='password'/>
-                                </FormItem>
-                                <FormItem name='dbPort' label={res.database.dbPort}
-                                          rules={[{required: true}]}>
-                                    <Input type='number'
-                                           placeholder={getDefaultPort(currentDbType) + ""}
-                                           style={{maxWidth: 108}}/>
-                                </FormItem>
+                                {!sqliteSelected && <>
+                                    <FormItem name='dbHost' label={res.database.dbHost}
+                                              rules={[{required: true}]}>
+                                        <Input placeholder='127.0.0.1'/>
+                                    </FormItem>
+                                    <FormItem name='dbName' label={res.database.dbName}
+                                              help={mysqlSelected ? res.database.dbNameHelp : undefined}
+                                              rules={[{required: true}]}>
+                                        <Input placeholder='ZrLog'/>
+                                    </FormItem>
+                                    <FormItem name='dbUserName' label={res.database.dbUserName}
+                                              help={mysqlSelected ? res.database.dbUserHelp : undefined}
+                                              rules={[{required: true}]}>
+                                        <Input placeholder=''/>
+                                    </FormItem>
+                                    <FormItem name='dbPassword' label={res.database.dbPassword}>
+                                        <Input type='password'/>
+                                    </FormItem>
+                                    <FormItem name='dbPort' label={res.database.dbPort}
+                                              rules={[{required: true}]}>
+                                        <Input type='number'
+                                               placeholder={getDefaultPort(currentDbType) + ""}
+                                               style={{maxWidth: 108}}/>
+                                    </FormItem>
+                                </>}
                             </Form>
                             <Alert type="info" showIcon message={res.database.initRisk}/>
                             <Checkbox checked={state.agreementAccepted}

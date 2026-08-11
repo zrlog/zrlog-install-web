@@ -22,19 +22,32 @@ public class InstallSuccessContentUtils {
         try (FileInputStream fileInputStream = new FileInputStream(dbProperties)) {
             dataSourceProperties.load(fileInputStream);
             String jdbcUrl = dataSourceProperties.getProperty("jdbcUrl");
-            URI uri = URI.create(jdbcUrl.replaceFirst("jdbc:", ""));
             InstallSuccessTemplateData data = new InstallSuccessTemplateData();
             data.setDbUserName(dataSourceProperties.getProperty("user"));
             data.setDbPassword(dataSourceProperties.getProperty("password"));
-            data.setDbHost(uri.getHost());
-            data.setDbPort(String.valueOf(uri.getPort()));
-            data.setDbName(uri.getPath().substring(1));
-            data.setDbType(uri.getScheme());
+            if (jdbcUrl.startsWith("jdbc:sqlite:")) {
+                data.setDbHost("");
+                data.setDbPort("");
+                data.setDbName(sqliteDatabasePath(jdbcUrl));
+                data.setDbType("sqlite");
+            } else {
+                URI uri = URI.create(jdbcUrl.replaceFirst("jdbc:", ""));
+                data.setDbHost(uri.getHost());
+                data.setDbPort(String.valueOf(uri.getPort()));
+                data.setDbName(uri.getPath().substring(1));
+                data.setDbType(uri.getScheme());
+            }
             data.setDbProperties(Arrays.stream(IOUtil.getStringInputStream(new FileInputStream(dbProperties)).split("\n"))
                     .filter(e -> !e.startsWith("#"))
                     .collect(Collectors.joining("<br/>")));
             return data.toTemplateMap();
         }
+    }
+
+    private static String sqliteDatabasePath(String jdbcUrl) {
+        String pathAndQuery = jdbcUrl.substring("jdbc:sqlite:".length());
+        int queryIndex = pathAndQuery.indexOf('?');
+        return queryIndex < 0 ? pathAndQuery : pathAndQuery.substring(0, queryIndex);
     }
 
     private static String getMdFilePath() {

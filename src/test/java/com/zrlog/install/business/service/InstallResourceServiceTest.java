@@ -48,6 +48,7 @@ public class InstallResourceServiceTest {
         assertEquals(true, response.getWarMode());
         assertEquals("3.6.1-SNAPSHOT", response.getCurrentVersion());
         assertEquals("war", response.getRuntimeMode());
+        assertEquals(false, response.getLocalSqliteAvailable());
         assertEquals(config.getDbPropertiesFile().getAbsolutePath(), response.getDbPropertiesPath());
         assertEquals(config.getAction().getLockFile().getAbsolutePath(), response.getLockFilePath());
         assertEquals("3.7.0", response.getUpgradeVersion());
