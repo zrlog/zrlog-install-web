@@ -618,9 +618,10 @@ const IndexLayout = () => {
                                     <Segmented block options={[
                                         {label: compactView ? "MySQL" : "MySQL / MariaDB", value: "mysql"},
                                         ...(localSqliteAvailable ? [{label: "SQLite", value: "sqlite"}] : []),
-                                        {label: "WebApi", value: "webapi"},
+                                        {label: "Web API", value: "webapi"},
                                     ]}/>
                                 </FormItem>
+                                {sqliteSelected && <Alert type="info" showIcon message={res.database.sqliteHelp}/>}
                                 {!sqliteSelected && <>
                                     <FormItem name='dbHost' label={res.database.dbHost}
                                               rules={[{required: true}]}>
