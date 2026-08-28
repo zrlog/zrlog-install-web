@@ -17,6 +17,16 @@ public final class InstallApiResponses {
         return response;
     }
 
+    public static StreamError streamError(String message) {
+        StreamError response = new StreamError();
+        response.setError(9999);
+        response.setCode("INSTALL_STREAM_FAILED");
+        response.setMessage(message);
+        response.setStatus("error");
+        response.setDetail(message);
+        return response;
+    }
+
     public static class Empty {
     }
 
@@ -68,6 +78,28 @@ public final class InstallApiResponses {
 
         public void setCode(String code) {
             this.code = code;
+        }
+    }
+
+    public static class StreamError extends Error {
+
+        private String status;
+        private String detail;
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public String getDetail() {
+            return detail;
+        }
+
+        public void setDetail(String detail) {
+            this.detail = detail;
         }
     }
 }

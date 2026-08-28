@@ -13,16 +13,21 @@ import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.DefaultWebsiteSettings;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.business.vo.InstallSiteConfig;
+import com.zrlog.install.exception.AbstractInstallException;
+import com.zrlog.install.exception.InstallException;
+import com.zrlog.install.exception.InstallOperationInProgressException;
+import com.zrlog.install.exception.InstalledException;
 import com.zrlog.install.util.InstallI18nUtil;
+import com.zrlog.install.util.InstallLogUtil;
 import com.zrlog.install.util.StringUtils;
 import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.config.InstallConfig;
 import org.jsoup.Jsoup;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.sql.SQLException;
 import java.sql.SQLRecoverableException;
 import java.sql.SQLSyntaxErrorException;
@@ -44,6 +49,8 @@ public class InstallService {
     private final InstallConfig installConfig;
     private final String contextPath;
     private final InstallProgressListener progressListener;
+    private final InstallStateStore installStateStore = new InstallStateStore();
+    private final InstallRecoveryStore installRecoveryStore = new InstallRecoveryStore();
 
     public InstallService(InstallConfig installConfig, InstallConfigVO installConfigVO) {
         this(installConfig, installConfigVO, InstallProgressListener.NONE);
@@ -71,13 +78,20 @@ public class InstallService {
      */
     public boolean install() {
         if (installAction.isInstalled()) {
-            return false;
+            throw new InstalledException();
         }
         if (dbConn.isLocalSqlite() && !LocalSqliteSupport.isAvailable(installConfig)) {
             emitError("database", new IllegalStateException("Local SQLite is not supported by this package"));
             return false;
         }
         return startInstall(dbConn, configMsg);
+    }
+
+    public boolean resume() {
+        if (installAction.isInstalled()) {
+            throw new InstalledException();
+        }
+        return resumeInstall();
     }
 
     DefaultWebsiteSettings getDefaultWebSiteSettings(InstallSiteConfig webSite) {
@@ -109,31 +123,58 @@ public class InstallService {
         if (dbConn.isLocalSqlite() && !LocalSqliteSupport.isAvailable(installConfig)) {
             return TestConnectDbResult.UNSUPPORTED_DATABASE;
         }
-        Properties properties = dbConn.toProperties();
-        try (DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
+        final LocalSqliteSupport.ConnectionProbe connectionProbe;
+        final InstallDatabaseConfig testedDatabaseConfig;
+        try {
+            if (dbConn.isLocalSqlite()) {
+                if (LocalSqliteSupport.databaseTargetExists(installConfig)) {
+                    return TestConnectDbResult.DATABASE_NOT_EMPTY;
+                }
+                connectionProbe = LocalSqliteSupport.createConnectionProbe(installConfig);
+                testedDatabaseConfig = connectionProbe.getDatabaseConfig();
+            } else {
+                connectionProbe = null;
+                testedDatabaseConfig = dbConn;
+            }
+        } catch (IOException e) {
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                    InstallLogUtil.FailurePhase.LOCAL_SQLITE_PREPARATION, e);
+            return TestConnectDbResult.CREATE_CONNECT_ERROR;
+        }
+        Properties properties = testedDatabaseConfig.toProperties();
+        try (LocalSqliteSupport.ConnectionProbe ignored = connectionProbe;
+             DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
             ds.testConnection();
+            if (InstallSchemaSafety.containsInstallTable(ds, testedDatabaseConfig)) {
+                return TestConnectDbResult.DATABASE_NOT_EMPTY;
+            }
             return TestConnectDbResult.SUCCESS;
         } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
             return TestConnectDbResult.MISSING_JDBC_DRIVER;
         } catch (SQLRecoverableException e) {
-            LOGGER.log(Level.SEVERE, "", e);
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
             return TestConnectDbResult.CREATE_CONNECT_ERROR;
         } catch (SQLSyntaxErrorException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-            if ("mysql".equals(dbConn.getDbType()) && e.getMessage() != null && e.getMessage().contains("Unknown database")) {
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
+            if ("mysql".equals(dbConn.getDbType()) && messageContainsAll(e, "Unknown database")) {
                 try {
                     if (createDatabase()) {
                         return TestConnectDbResult.SUCCESS;
                     }
                 } catch (Exception createEx) {
-                    LOGGER.log(Level.SEVERE, "auto create database error", createEx);
+                    InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                            InstallLogUtil.FailurePhase.DATABASE_CREATION, createEx);
                 }
             }
             return TestConnectDbResult.DB_NOT_EXISTS;
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "", e);
-            if (e.getMessage().contains("Access denied for user") && e.getMessage().contains("using password")) {
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
+            if (messageContainsAll(e, "Access denied for user", "using password")) {
                 return TestConnectDbResult.USERNAME_OR_PASSWORD_ERROR;
             } else {
                 if (e.getCause() instanceof IOException) {
@@ -142,9 +183,23 @@ public class InstallService {
                 return TestConnectDbResult.SQL_EXCEPTION_UNKNOWN;
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "", e);
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
         }
         return TestConnectDbResult.UNKNOWN;
+    }
+
+    static boolean messageContainsAll(SQLException exception, String... fragments) {
+        String message = exception.getMessage();
+        if (message == null) {
+            return false;
+        }
+        for (String fragment : fragments) {
+            if (!message.contains(fragment)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean createDatabase() throws Exception {
@@ -172,24 +227,16 @@ public class InstallService {
      *
      * @throws IOException
      */
-    private void installSuccess() throws IOException {
-        File dbFile = installConfig.getDbPropertiesFile();
-        if (dbFile.exists()) {
-            dbFile.delete();
+    private void installSuccess(InstallDatabaseConfig databaseConfig) throws IOException {
+        try (InstallStateStore.InstallStateTransaction installState = installStateStore.prepare(
+                installConfig.getDbPropertiesFile(), databaseConfig.toMap(), installAction.getLockFile())) {
+            installState.commitForCallback();
+            if (installConfig.isMissingConfig()) {
+                LOGGER.info("Need config, skip call action.installSuccess()");
+            }
+            installAction.installSuccess();
+            installState.complete();
         }
-        dbFile.getParentFile().mkdirs();
-        dbFile.createNewFile();
-        Properties prop = new Properties();
-        prop.putAll(dbConn.toMap());
-        prop.store(new FileOutputStream(dbFile), "This is a database configuration dbFile");
-        File lockFile = installConfig.getAction().getLockFile();
-        lockFile.getParentFile().mkdirs();
-        lockFile.createNewFile();
-        if (installConfig.isMissingConfig()) {
-            LOGGER.info("Need config, skip call action.installSuccess()");
-        }
-        //install success
-        installAction.installSuccess();
     }
 
     private boolean startInstall(InstallDatabaseConfig dbConn, InstallSiteConfig blogMsg) {
@@ -199,109 +246,193 @@ public class InstallService {
         try {
             emitRunning(currentStep);
             new InstallPreflightService().assertReady(installConfig);
-            emitComplete(currentStep);
-
-            currentStep = "database";
-            emitRunning(currentStep);
-            try (DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
-                ds.testConnection();
+            InstallOperationLock operationLock = InstallOperationLock.tryAcquire(installAction.getLockFile());
+            if (operationLock == null) {
+                throw new InstallOperationInProgressException("INSTALL");
+            }
+            try (InstallOperationLock ignored = operationLock) {
+                if (installAction.isInstalled()) {
+                    throw new InstalledException();
+                }
                 emitComplete(currentStep);
 
-                DAO dao = new DAO(ds);
-                String sql = IOUtil.getStringInputStream(InstallService.class.getResourceAsStream("/init-table-structure.sql"));
-                List<String> sqlList = prepareInstallSql(sql, ds.isWebApi(), dbConn);
-                currentStep = "schema";
+                currentStep = "database";
                 emitRunning(currentStep);
-                for (String sqlSt : sqlList) {
-                    if (SqlConvertUtils.isBatchDropTableSql(sqlSt)) {
-                        continue;
+                LocalSqliteSupport.DatabaseReservation sqliteReservation = null;
+                if (dbConn.isLocalSqlite()) {
+                    try {
+                        sqliteReservation = LocalSqliteSupport.reserveDatabaseFile(installConfig);
+                    } catch (FileAlreadyExistsException e) {
+                        throw new InstallException(TestConnectDbResult.DATABASE_NOT_EMPTY);
                     }
-                    dao.execute(sqlSt);
                 }
-                emitComplete(currentStep);
+                try (LocalSqliteSupport.DatabaseReservation reservation = sqliteReservation;
+                     DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
+                    ds.testConnection();
+                    emitComplete(currentStep);
 
-                currentStep = "seed-website";
-                emitRunning(currentStep);
-                List<Boolean> results = new ArrayList<>();
-                boolean websiteResult = initWebSite(dao);
-                results.add(websiteResult);
-                String failedStep = websiteResult ? null : currentStep;
-                if (websiteResult) {
+                    DAO dao = new DAO(ds);
+                    if (InstallSchemaSafety.containsInstallTable(ds, dbConn)) {
+                        throw new InstallException(TestConnectDbResult.DATABASE_NOT_EMPTY);
+                    }
+                    String sql = IOUtil.getStringInputStream(
+                            InstallService.class.getResourceAsStream("/init-table-structure.sql"));
+                    List<String> sqlList = prepareInstallSql(sql, ds.isWebApi(), dbConn);
+                    currentStep = "schema";
+                    emitRunning(currentStep);
+                    if (reservation != null) {
+                        reservation.preserve();
+                    }
+                    for (String sqlSt : sqlList) {
+                        if (InstallSchemaSafety.isDropStatement(sqlSt)) {
+                            continue;
+                        }
+                        dao.execute(sqlSt);
+                    }
+                    emitComplete(currentStep);
+
+                    currentStep = "seed-website";
+                    emitRunning(currentStep);
+                    List<Boolean> results = new ArrayList<>();
+                    boolean websiteResult = initWebSite(dao);
+                    results.add(websiteResult);
+                    String failedStep = websiteResult ? null : currentStep;
+                    if (websiteResult) {
+                        emitComplete(currentStep);
+                    }
+
+                    currentStep = "seed-admin";
+                    emitRunning(currentStep);
+                    boolean adminResult = initUser(blogMsg, dao);
+                    results.add(adminResult);
+                    if (!adminResult && failedStep == null) {
+                        failedStep = currentStep;
+                    }
+                    if (adminResult) {
+                        emitComplete(currentStep);
+                    }
+
+                    currentStep = "seed-defaults";
+                    emitRunning(currentStep);
+                    List<Boolean> defaultResults = new ArrayList<>();
+                    defaultResults.add(insertNav(dao));
+                    defaultResults.add(initPlugin(dao));
+                    defaultResults.add(insertType(dao));
+                    defaultResults.add(insertTag(dao));
+                    defaultResults.add(insertFirstArticle(dao));
+                    results.addAll(defaultResults);
+                    boolean defaultsResult = defaultResults.stream().allMatch(e -> Objects.equals(e, true));
+                    if (!defaultsResult && failedStep == null) {
+                        failedStep = currentStep;
+                    }
+                    if (defaultsResult) {
+                        emitComplete(currentStep);
+                    }
+
+                    if (!results.stream().allMatch(e -> Objects.equals(e, true))) {
+                        currentStep = Objects.requireNonNullElse(failedStep, "install");
+                        emitError(currentStep, new IllegalStateException("Install step failed: " + currentStep));
+                        return false;
+                    }
+
+                    currentStep = "config";
+                    emitRunning(currentStep);
+                    installRecoveryStore.save(installAction.getLockFile(), dbConn);
+                    installSuccess(dbConn);
+                    clearRecoveryState();
                     emitComplete(currentStep);
                 }
-
-                currentStep = "seed-admin";
-                emitRunning(currentStep);
-                boolean adminResult = initUser(blogMsg, dao);
-                results.add(adminResult);
-                if (!adminResult && failedStep == null) {
-                    failedStep = currentStep;
-                }
-                if (adminResult) {
-                    emitComplete(currentStep);
-                }
-
-                currentStep = "seed-defaults";
-                emitRunning(currentStep);
-                List<Boolean> defaultResults = new ArrayList<>();
-                defaultResults.add(insertNav(dao));
-                defaultResults.add(initPlugin(dao));
-                defaultResults.add(insertType(dao));
-                defaultResults.add(insertTag(dao));
-                defaultResults.add(insertFirstArticle(dao));
-                results.addAll(defaultResults);
-                boolean defaultsResult = defaultResults.stream().allMatch(e -> Objects.equals(e, true));
-                if (!defaultsResult && failedStep == null) {
-                    failedStep = currentStep;
-                }
-                if (defaultsResult) {
-                    emitComplete(currentStep);
-                }
-
-                if (!results.stream().allMatch(e -> Objects.equals(e, true))) {
-                    currentStep = Objects.requireNonNullElse(failedStep, "install");
-                    emitError(currentStep, new IllegalStateException("Install step failed: " + currentStep));
-                    return false;
-                }
-
-                currentStep = "config";
-                emitRunning(currentStep);
-                installSuccess();
-                emitComplete(currentStep);
             }
             return true;
+        } catch (AbstractInstallException e) {
+            LOGGER.log(Level.WARNING, "Installation rejected by schema safety checks");
+            throw e;
         } catch (Exception e) {
             emitError(currentStep, e);
-            LOGGER.log(Level.SEVERE, "install error ", e);
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.INSTALL, e);
         }
         return false;
     }
 
-    private void emitRunning(String code) throws Exception {
-        progressListener.onProgress(InstallProgressEvent.running(code));
+    private boolean resumeInstall() {
+        String currentStep = "preflight";
+        try {
+            emitRunning(currentStep);
+            new InstallPreflightService().assertReady(installConfig);
+            InstallOperationLock operationLock = InstallOperationLock.tryAcquire(installAction.getLockFile());
+            if (operationLock == null) {
+                throw new InstallOperationInProgressException("INSTALL");
+            }
+            try (InstallOperationLock ignored = operationLock) {
+                if (installAction.isInstalled()) {
+                    throw new InstalledException();
+                }
+                Optional<InstallDatabaseConfig> recoveryConfig =
+                        installRecoveryStore.load(installAction.getLockFile());
+                if (recoveryConfig.isEmpty()) {
+                    return false;
+                }
+                emitComplete(currentStep);
+
+                currentStep = "database";
+                emitRunning(currentStep);
+                InstallDatabaseConfig recoveredDatabase = recoveryConfig.get();
+                try (DataSourceWrapperImpl dataSource = buildDataSource(
+                        recoveredDatabase.toProperties(), EnvKit.isDevMode())) {
+                    dataSource.testConnection();
+                    if (!InstallSchemaSafety.containsCompleteInstallState(dataSource, recoveredDatabase)) {
+                        return false;
+                    }
+                }
+                emitComplete(currentStep);
+
+                currentStep = "config";
+                emitRunning(currentStep);
+                installSuccess(recoveredDatabase);
+                clearRecoveryState();
+                emitComplete(currentStep);
+                return true;
+            }
+        } catch (AbstractInstallException e) {
+            LOGGER.log(Level.WARNING, "Installation recovery request was rejected");
+            throw e;
+        } catch (Exception e) {
+            emitError(currentStep, e);
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                    InstallLogUtil.FailurePhase.INSTALL_RECOVERY, e);
+            return false;
+        }
     }
 
-    private void emitComplete(String code) throws Exception {
-        progressListener.onProgress(InstallProgressEvent.complete(code));
+    private void clearRecoveryState() {
+        try {
+            installRecoveryStore.clear(installAction.getLockFile());
+        } catch (IOException e) {
+            InstallLogUtil.logFailure(LOGGER, Level.WARNING,
+                    InstallLogUtil.FailurePhase.RECOVERY_STATE_CLEANUP, e);
+        }
+    }
+
+    private void emitRunning(String code) {
+        emitProgress(InstallProgressEvent.running(code));
+    }
+
+    private void emitComplete(String code) {
+        emitProgress(InstallProgressEvent.complete(code));
     }
 
     private void emitError(String code, Exception e) {
-        try {
-            progressListener.onProgress(InstallProgressEvent.error(code, sanitizeError(e)));
-        } catch (Exception ignored) {
-            // Client connection may already be closed.
-        }
+        emitProgress(InstallProgressEvent.error(code,
+                InstallI18nUtil.getInstallStringFromRes("streamFailed")));
     }
 
-    String sanitizeError(Exception e) {
-        if (e.getMessage() == null || e.getMessage().trim().isEmpty()) {
-            return e.getClass().getSimpleName();
+    private void emitProgress(InstallProgressEvent event) {
+        try {
+            progressListener.onProgress(event);
+        } catch (Exception listenerFailure) {
+            InstallLogUtil.logFailure(LOGGER, Level.FINE,
+                    InstallLogUtil.FailurePhase.PROGRESS_DELIVERY, listenerFailure);
         }
-        String firstLine = e.getMessage().split("\\R", 2)[0].trim();
-        if (firstLine.length() > 180) {
-            return firstLine.substring(0, 180);
-        }
-        return firstLine;
     }
 
     static String getPlainSearchText(String content) {

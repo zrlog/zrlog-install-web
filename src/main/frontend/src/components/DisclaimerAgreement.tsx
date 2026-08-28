@@ -1,13 +1,14 @@
 import React from 'react';
-import {Card, Typography} from "antd";
+import {Typography} from "antd";
 import {getRes} from "../utils/constants";
-import {marked} from 'marked';
+import {renderSanitizedMarkdown} from "../utils/sanitize-html";
 
 const DisclaimerAgreement: React.FC = () => {
+    const content = renderSanitizedMarkdown(getRes().agreement.content);
+
     return (
-        <Card styles={{body: {maxHeight: 400, overflowY: "auto", paddingTop: 0}}}>
-            <Typography dangerouslySetInnerHTML={{__html: marked(getRes().agreement.content) as string}}/>
-        </Card>
+        <Typography className="install-disclaimer-content"
+                    dangerouslySetInnerHTML={{__html: content}}/>
     );
 };
 

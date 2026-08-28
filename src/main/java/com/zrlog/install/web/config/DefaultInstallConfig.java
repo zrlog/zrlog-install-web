@@ -7,6 +7,9 @@ import com.zrlog.install.business.response.InstallApiResponses;
 import com.zrlog.install.business.response.LastVersionInfo;
 import com.zrlog.install.exception.AbstractInstallException;
 import com.zrlog.install.exception.InstallErrorCodeProvider;
+import com.zrlog.install.util.InstallErrorResponsePolicy;
+import com.zrlog.install.util.InstallI18nUtil;
+import com.zrlog.install.util.InstallLogUtil;
 import com.zrlog.install.web.InstallAction;
 import com.hibegin.common.util.LoggerUtil;
 
@@ -99,16 +102,21 @@ public class DefaultInstallConfig implements InstallConfig {
     @Override
     public HttpErrorHandle getErrorHandler() {
         return (request, response, e) -> {
-            if (e instanceof AbstractInstallException) {
+            if (e instanceof AbstractInstallException
+                    && InstallErrorResponsePolicy.isControlled((AbstractInstallException) e)) {
                 AbstractInstallException ee = (AbstractInstallException) e;
                 String code = null;
                 if (ee instanceof InstallErrorCodeProvider) {
                     code = ((InstallErrorCodeProvider) ee).getCode();
                 }
-                response.renderJson(InstallApiResponses.error(ee.getError(), ee.getMessage(), code));
+                response.renderJson(InstallApiResponses.error(ee.getError(),
+                        InstallErrorResponsePolicy.controlledMessage(ee), code));
             } else {
-                LOGGER.log(Level.SEVERE, "Install request failed", e);
-                response.renderJson(InstallApiResponses.error(9999, e.getMessage(), null));
+                InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                        InstallLogUtil.FailurePhase.INSTALL_REQUEST, e);
+                response.renderJson(InstallApiResponses.error(9999,
+                        InstallI18nUtil.getInstallStringFromRes("requestFailed"),
+                        "INSTALL_REQUEST_FAILED"));
             }
         };
     }

@@ -20,6 +20,7 @@ export type InstallRuntimeResourceInfo = {
     installed?: boolean;
     askConfig?: boolean;
     missingConfig?: boolean;
+    installTokenRequired?: boolean;
     warMode?: boolean;
     lang?: InstallLang;
     currentVersion?: string;
@@ -32,12 +33,13 @@ export type InstallRuntimeResourceInfo = {
     charset?: string;
     runtimeMode?: string;
     localSqliteAvailable?: boolean;
-    dbPropertiesPath?: string;
-    lockFilePath?: string;
+    installRecoveryAvailable?: boolean;
+    installOperationInProgress?: boolean;
 };
 
 export type InstallResourceInfo = InstallI18nResource & InstallRuntimeResourceInfo & {
     copyrightTips: string;
+    installTokenRequired: boolean;
 };
 
 export const resourceKey: string = "installRuntime.v6";
@@ -64,6 +66,7 @@ export const getRes = (): InstallResourceInfo => {
     return {
         ...getInstallI18n(lang),
         ...runtimeRes,
+        installTokenRequired: runtimeRes.installTokenRequired === true,
         copyrightTips: `${getInstallI18n(lang).copyright} <a target="_blank" href="https://blog.zrlog.com/about.html?footer">ZrLog</a>`,
     };
 };

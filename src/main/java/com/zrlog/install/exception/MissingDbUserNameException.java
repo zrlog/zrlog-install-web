@@ -1,5 +1,6 @@
 package com.zrlog.install.exception;
 
+import com.zrlog.install.util.InstallI18nUtil;
 public class MissingDbUserNameException extends AbstractInstallException {
     @Override
     public int getError() {
@@ -8,6 +9,6 @@ public class MissingDbUserNameException extends AbstractInstallException {
 
     @Override
     public String getMessage() {
-        return "数据库用户名不能为空";
+        return InstallI18nUtil.getInstallStringFromRes("missingDbUserName");
     }
 }

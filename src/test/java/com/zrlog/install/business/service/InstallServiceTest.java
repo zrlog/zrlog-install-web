@@ -10,6 +10,11 @@ import com.zrlog.install.business.vo.DefaultWebsiteSettings;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallSiteConfig;
+import com.zrlog.install.exception.InstallOperationInProgressException;
+import com.zrlog.install.exception.InstalledException;
+import com.zrlog.install.util.InstallI18nUtil;
+import com.zrlog.install.util.LogCaptureSupport;
+import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.InstallConstants;
 import com.zrlog.install.web.config.DefaultInstallConfig;
 import org.junit.After;
@@ -26,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -56,6 +62,18 @@ public class InstallServiceTest {
     }
 
     @Test
+    public void shouldClassifySqlExceptionMessagesWithoutAssumingAMessageExists() {
+        assertFalse(InstallService.messageContainsAll(new SQLException((String) null), "Access denied"));
+        assertFalse(InstallService.messageContainsAll(
+                new SQLException("Access denied for user"), "Access denied for user", "using password"));
+        assertTrue(InstallService.messageContainsAll(
+                new SQLException("Access denied for user 'root' using password: YES"),
+                "Access denied for user", "using password"));
+        assertTrue(InstallService.messageContainsAll(
+                new SQLException("Unknown database 'zrlog'"), "Unknown database"));
+    }
+
+    @Test
     public void shouldUseTheSameSqliteConverterForD1AndLocalSqlite() {
         String installSql = IOUtil.getStringInputStream(
                 InstallService.class.getResourceAsStream("/init-table-structure.sql"));
@@ -70,6 +88,7 @@ public class InstallServiceTest {
 
         assertEquals(expected, InstallService.prepareInstallSql(installSql, true, d1));
         assertEquals(expected, InstallService.prepareInstallSql(installSql, false, localSqlite));
+        assertTrue(expected.stream().noneMatch(InstallSchemaSafety::isDropStatement));
     }
 
     @Test
@@ -97,17 +116,63 @@ public class InstallServiceTest {
     }
 
     @Test
-    public void shouldReturnFalseWhenAlreadyInstalled() throws Exception {
+    public void shouldRejectWhenAlreadyInstalled() throws Exception {
         File root = Files.createTempDirectory("zrlog-install-service").toFile();
         FakeInstallConfig config = new FakeInstallConfig(
                 new File(root, "db.properties"),
                 new File(root, "install.lock"));
         config.setInstalled(true);
 
-        boolean installed = new InstallService(config,
-                installConfigVO(Collections.emptyMap(), null, null)).install();
+        InstalledException exception = assertThrows(InstalledException.class, () ->
+                new InstallService(config,
+                        installConfigVO(Collections.emptyMap(), null, null)).install());
 
-        assertFalse(installed);
+        assertEquals("INSTALL_ALREADY_COMPLETED", exception.getCode());
+    }
+
+    @Test
+    public void shouldSurfaceCompletionDetectedInsideTheCrossProcessLock() throws Exception {
+        File root = Files.createTempDirectory("zrlog-install-completed-race").toFile();
+        AtomicInteger installChecks = new AtomicInteger();
+        FakeInstallConfig installConfig = installCompletesOnSecondCheck(root, installChecks);
+
+        InstalledException installException = assertThrows(InstalledException.class, () ->
+                new InstallService(installConfig,
+                        installConfigVO(Collections.emptyMap(), null, null)).install());
+
+        assertEquals("INSTALL_ALREADY_COMPLETED", installException.getCode());
+        assertEquals(2, installChecks.get());
+
+        AtomicInteger recoveryChecks = new AtomicInteger();
+        FakeInstallConfig recoveryConfig = installCompletesOnSecondCheck(root, recoveryChecks);
+
+        InstalledException recoveryException = assertThrows(InstalledException.class, () ->
+                new InstallService(recoveryConfig, new InstallConfigVO()).resume());
+
+        assertEquals("INSTALL_ALREADY_COMPLETED", recoveryException.getCode());
+        assertEquals(2, recoveryChecks.get());
+    }
+
+    @Test
+    public void shouldSurfaceCrossProcessInstallLockConflicts() throws Exception {
+        File root = Files.createTempDirectory("zrlog-install-service-lock-conflict").toFile();
+        FakeInstallConfig config = new FakeInstallConfig(
+                new File(root, "db.properties"), new File(root, "install.lock"));
+        InstallConfigVO request = installConfigVO(Collections.emptyMap(), null, null);
+
+        try (InstallOperationLock ignored = InstallOperationLock.tryAcquire(
+                config.getAction().getLockFile())) {
+            assertNotNull(ignored);
+            InstallOperationInProgressException installConflict = assertThrows(
+                    InstallOperationInProgressException.class,
+                    () -> new InstallService(config, request).install());
+            InstallOperationInProgressException recoveryConflict = assertThrows(
+                    InstallOperationInProgressException.class,
+                    () -> new InstallService(config, request).resume());
+
+            assertEquals("INSTALL_IN_PROGRESS", installConflict.getCode());
+            assertEquals("INSTALL_IN_PROGRESS", recoveryConflict.getCode());
+        }
     }
 
     @Test
@@ -124,7 +189,7 @@ public class InstallServiceTest {
         assertEquals("running", events.get(0).getStatus());
         assertEquals("preflight", events.get(1).getCode());
         assertEquals("error", events.get(1).getStatus());
-        assertEquals("Missing parent directory for db.properties", events.get(1).getDetail());
+        assertEquals(InstallI18nUtil.getInstallStringFromRes("streamFailed"), events.get(1).getDetail());
     }
 
     @Test
@@ -134,14 +199,21 @@ public class InstallServiceTest {
                 new File(root, "db.properties"),
                 new File(root, "install.lock"));
         Map<String, String> dbConn = new HashMap<>();
-        dbConn.put("driverClass", "missing.Driver");
-        dbConn.put("jdbcUrl", "jdbc:missing:test");
+        dbConn.put("driverClass", "missing.do-not-expose.Driver");
+        dbConn.put("jdbcUrl", "jdbc:missing:do-not-expose");
+        dbConn.put("password", "do-not-expose");
         InstallConfigVO installConfigVO = installConfigVO(Collections.emptyMap(), null, null);
         installConfigVO.setDbConfig(dbConn);
 
-        TestConnectDbResult result = new InstallService(config, installConfigVO).testDbConn();
+        try (LogCaptureSupport logs = LogCaptureSupport.capture(InstallService.class)) {
+            TestConnectDbResult result = new InstallService(config, installConfigVO).testDbConn();
 
-        assertEquals(TestConnectDbResult.MISSING_JDBC_DRIVER, result);
+            assertEquals(TestConnectDbResult.MISSING_JDBC_DRIVER, result);
+            assertTrue(logs.text().contains("phase=database-connection-test"));
+            assertTrue(logs.text().contains("exception=java.lang.ClassNotFoundException"));
+            assertFalse(logs.text().contains("do-not-expose"));
+            assertFalse(logs.hasThrown());
+        }
     }
 
     @Test
@@ -328,17 +400,29 @@ public class InstallServiceTest {
         assertTrue(call.args[9] instanceof Date);
     }
 
-    @Test
-    public void shouldSanitizeBlankAndLongProgressErrors() throws Exception {
-        File root = Files.createTempDirectory("zrlog-install-service").toFile();
-        InstallService service = new InstallService(new FakeInstallConfig(
-                new File(root, "db.properties"),
-                new File(root, "install.lock")), installConfigVO(Collections.emptyMap(), null, null));
-        String longMessage = repeat("a", 220) + "\nsecond line";
+    private static FakeInstallConfig installCompletesOnSecondCheck(File root, AtomicInteger checks) {
+        File installLock = new File(root, "install.lock");
+        InstallAction action = new InstallAction() {
+            @Override
+            public void installSuccess() {
+            }
 
-        assertEquals("IllegalStateException", service.sanitizeError(new IllegalStateException(" ")));
-        assertEquals(180, service.sanitizeError(new IllegalStateException(longMessage)).length());
-        assertEquals("first line", service.sanitizeError(new IllegalStateException("first line\nsecond line")));
+            @Override
+            public File getLockFile() {
+                return installLock;
+            }
+
+            @Override
+            public boolean isInstalled() {
+                return checks.incrementAndGet() >= 2;
+            }
+        };
+        return new FakeInstallConfig(new File(root, "db.properties"), installLock) {
+            @Override
+            public InstallAction getAction() {
+                return action;
+            }
+        };
     }
 
     private static InstallConfigVO installConfigVO(Map<String, String> configMsg,
@@ -350,14 +434,6 @@ public class InstallServiceTest {
         installConfigVO.setAppendWebsite(appendWebsite);
         installConfigVO.setContextPath(contextPath);
         return installConfigVO;
-    }
-
-    private static String repeat(String value, int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(value);
-        }
-        return sb.toString();
     }
 
     private static class FakeDao extends DAO {

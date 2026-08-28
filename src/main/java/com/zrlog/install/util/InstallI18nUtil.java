@@ -45,12 +45,14 @@ public class InstallI18nUtil {
                 map.put(entry.getKey().toString(), entry.getValue());
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "load properties error", e);
+            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                    InstallLogUtil.FailurePhase.I18N_RESOURCE_LOAD, e);
         } finally {
             try {
                 inputStream.close();
             } catch (IOException e) {
-                LOGGER.log(Level.SEVERE, "", e);
+                InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
+                        InstallLogUtil.FailurePhase.I18N_RESOURCE_CLOSE, e);
             }
         }
     }

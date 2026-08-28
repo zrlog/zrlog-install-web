@@ -6,17 +6,15 @@ public class InstallProbeItem {
     private String category;
     private String status;
     private String value;
-    private String path;
 
     public InstallProbeItem() {
     }
 
-    public InstallProbeItem(String code, String category, String status, String value, String path) {
+    public InstallProbeItem(String code, String category, String status, String value) {
         this.code = code;
         this.category = category;
         this.status = status;
         this.value = value;
-        this.path = path;
     }
 
     public String getCode() {
@@ -51,11 +49,4 @@ public class InstallProbeItem {
         this.value = value;
     }
 
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
 }

@@ -25,13 +25,11 @@ public class InstallResponseContractTest {
 
     @Test
     public void shouldExposeProbeResponseData() {
-        InstallProbeItem item = new InstallProbeItem("db", "database", "ok", "mysql", "/tmp/db.properties");
+        InstallProbeItem item = new InstallProbeItem("db", "database", "ok", "mysql");
         InstallProbeData data = new InstallProbeData();
         data.setStatus("ready");
         data.setRuntimeMode("jar");
         data.setCharset("UTF-8");
-        data.setDbPropertiesPath("/tmp/db.properties");
-        data.setLockFilePath("/tmp/install.lock");
         data.setItems(Collections.singletonList(item));
 
         InstallProbeResponse response = new InstallProbeResponse(data);
@@ -40,13 +38,10 @@ public class InstallResponseContractTest {
         assertEquals("ready", response.getData().getStatus());
         assertEquals("jar", response.getData().getRuntimeMode());
         assertEquals("UTF-8", response.getData().getCharset());
-        assertEquals("/tmp/db.properties", response.getData().getDbPropertiesPath());
-        assertEquals("/tmp/install.lock", response.getData().getLockFilePath());
         assertEquals("db", response.getData().getItems().get(0).getCode());
         assertEquals("database", response.getData().getItems().get(0).getCategory());
         assertEquals("ok", response.getData().getItems().get(0).getStatus());
         assertEquals("mysql", response.getData().getItems().get(0).getValue());
-        assertEquals("/tmp/db.properties", response.getData().getItems().get(0).getPath());
     }
 
     @Test
@@ -57,13 +52,11 @@ public class InstallResponseContractTest {
         item.setCategory("file");
         item.setStatus("warning");
         item.setValue("missing");
-        item.setPath("/tmp/install.lock");
 
         assertEquals("lock", item.getCode());
         assertEquals("file", item.getCategory());
         assertEquals("warning", item.getStatus());
         assertEquals("missing", item.getValue());
-        assertEquals("/tmp/install.lock", item.getPath());
     }
 
     @Test
@@ -142,8 +135,8 @@ public class InstallResponseContractTest {
         response.setCharset("UTF-8");
         response.setRuntimeMode("war");
         response.setLocalSqliteAvailable(false);
-        response.setDbPropertiesPath("/tmp/db.properties");
-        response.setLockFilePath("/tmp/install.lock");
+        response.setInstallRecoveryAvailable(true);
+        response.setInstallTokenRequired(true);
 
         assertEquals(true, response.getInstalled());
         assertEquals(false, response.getAskConfig());
@@ -159,8 +152,8 @@ public class InstallResponseContractTest {
         assertEquals("UTF-8", response.getCharset());
         assertEquals("war", response.getRuntimeMode());
         assertEquals(false, response.getLocalSqliteAvailable());
-        assertEquals("/tmp/db.properties", response.getDbPropertiesPath());
-        assertEquals("/tmp/install.lock", response.getLockFilePath());
+        assertEquals(true, response.getInstallRecoveryAvailable());
+        assertEquals(true, response.getInstallTokenRequired());
     }
 
     @Test

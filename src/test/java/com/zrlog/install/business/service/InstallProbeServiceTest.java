@@ -1,5 +1,6 @@
 package com.zrlog.install.business.service;
 
+import com.google.gson.Gson;
 import com.zrlog.install.business.response.InstallProbeData;
 import com.zrlog.install.business.response.InstallProbeItem;
 import org.junit.After;
@@ -13,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class InstallProbeServiceTest {
@@ -33,9 +35,12 @@ public class InstallProbeServiceTest {
 
         assertEquals("zip", data.getRuntimeMode());
         assertEquals("pass", data.getStatus());
-        assertEquals(config.getDbPropertiesFile().getAbsolutePath(), data.getDbPropertiesPath());
-        assertEquals(config.getAction().getLockFile().getAbsolutePath(), data.getLockFilePath());
         assertEquals("file-creatable", findItem(data, "file.dbProperties").getValue());
+        String json = new Gson().toJson(data);
+        assertFalse(json.contains(root.getAbsolutePath()));
+        assertFalse(json.contains("dbPropertiesPath"));
+        assertFalse(json.contains("lockFilePath"));
+        assertFalse(json.contains("\"path\""));
     }
 
     @Test

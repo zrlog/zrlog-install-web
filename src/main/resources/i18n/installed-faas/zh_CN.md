@@ -1,38 +1,21 @@
-<style>
-    table {
-        border-collapse: collapse;
-        border-spacing: 0;
-        display: block;
-        width: 100%;
-        overflow: auto;
-    }
-
-    table th {
-        font-weight: 700;
-    }
-
-    table td,
-    table th {
-        padding: 6px 13px;
-        border: 1px solid #ddd;
-    }
-    table tr {
-        border-top: 1px solid #ccc;
-    }
-
-
-</style>
-
 #### 还差一步
 
-> 无服务模式下，请在对应的服务商控制面板，添加环境变量，并完成重启（通常修改环境变量后，平台会自动重启）
+请在函数平台的环境变量或 Secret 配置中添加以下两项，然后发布或重启当前函数版本。所有并发实例和版本别名应使用相同配置。
 
-| 环境变量键                                              | 环境变量值                      |
-|----------------------------------------------------|----------------------------|
-| <div style="min-width: 120px"> DB_PROPERTIES</div> | <pre>${dbProperties}</pre> |
-| <div style="min-width: 120px"> TZ </div>           | Asia/Chongqing             |
+##### `DB_PROPERTIES`
 
+将下面的完整内容原样设置为 `DB_PROPERTIES`：
 
+```properties
+${dbProperties}
+```
 
+##### `TZ`
 
+将 `TZ` 设置为：
 
+```text
+Asia/Shanghai
+```
+
+配置完成后，确认公开路由指向新版本，再返回本页检查配置。

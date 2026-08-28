@@ -1,5 +1,6 @@
 package com.zrlog.install.exception;
 
+import com.zrlog.install.util.InstallI18nUtil;
 
 public class MissingDbHostException extends AbstractInstallException {
     @Override
@@ -9,6 +10,6 @@ public class MissingDbHostException extends AbstractInstallException {
 
     @Override
     public String getMessage() {
-        return "数据库地址不能为空";
+        return InstallI18nUtil.getInstallStringFromRes("missingDbHost");
     }
 }
