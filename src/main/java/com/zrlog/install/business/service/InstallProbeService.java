@@ -17,19 +17,17 @@ public class InstallProbeService {
         InstallProbeData data = new InstallProbeData();
         data.setRuntimeMode(getRuntimeMode(installConfig));
         data.setCharset(Charset.defaultCharset().displayName());
-        data.setDbPropertiesPath(installConfig.getDbPropertiesFile().getAbsolutePath());
-        data.setLockFilePath(installConfig.getAction().getLockFile().getAbsolutePath());
 
         List<InstallProbeItem> items = new ArrayList<>();
-        items.add(new InstallProbeItem("runtime.mode", "runtime", "pass", data.getRuntimeMode(), null));
-        items.add(new InstallProbeItem("runtime.charset", "runtime", isUtfCharset() ? "pass" : "warning", data.getCharset(), null));
+        items.add(new InstallProbeItem("runtime.mode", "runtime", "pass", data.getRuntimeMode()));
+        items.add(new InstallProbeItem("runtime.charset", "runtime", isUtfCharset() ? "pass" : "warning", data.getCharset()));
         items.add(fileProbe("file.dbProperties", installConfig.getDbPropertiesFile()));
         items.add(fileProbe("file.installLock", installConfig.getAction().getLockFile()));
         if (isDockerMode()) {
-            items.add(new InstallProbeItem("runtime.dockerMount", "runtime", "warning", "docker", installConfig.getDbPropertiesFile().getParent()));
+            items.add(new InstallProbeItem("runtime.dockerMount", "runtime", "warning", "docker"));
         }
         if (Objects.equals(data.getRuntimeMode(), "faas")) {
-            items.add(new InstallProbeItem("runtime.faasAskConfig", "runtime", "warning", "askConfig", null));
+            items.add(new InstallProbeItem("runtime.faasAskConfig", "runtime", "warning", "askConfig"));
         }
         data.setItems(items);
         data.setStatus(summaryStatus(items));
@@ -55,13 +53,13 @@ public class InstallProbeService {
     private InstallProbeItem fileProbe(String code, File targetFile) {
         File parent = targetFile.getParentFile();
         if (targetFile.exists() && !targetFile.canWrite()) {
-            return new InstallProbeItem(code, "file", "block", "file-not-writable", targetFile.getAbsolutePath());
+            return new InstallProbeItem(code, "file", "block", "file-not-writable");
         }
         if (!canCreateIn(parent)) {
-            return new InstallProbeItem(code, "file", "block", "parent-not-writable", targetFile.getAbsolutePath());
+            return new InstallProbeItem(code, "file", "block", "parent-not-writable");
         }
         String value = targetFile.exists() ? "file-writable" : "file-creatable";
-        return new InstallProbeItem(code, "file", "pass", value, targetFile.getAbsolutePath());
+        return new InstallProbeItem(code, "file", "pass", value);
     }
 
     private boolean canCreateIn(File directory) {

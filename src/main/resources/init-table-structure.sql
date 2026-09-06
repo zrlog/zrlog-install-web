@@ -4,14 +4,10 @@
 
 /*!40101 SET NAMES utf8 */;
 
-DROP TABLE IF EXISTS `comment`, `link`, `log`, `log_version`, `lognav`, `plugin`, `tag`, `type`,
-    `user_passkey_challenge`, `user_passkey`, `user`, `website`;
-
 #
 # Structure for table "link"
 #
 
-DROP TABLE IF EXISTS `link`;
 CREATE TABLE `link`
 (
     `linkId`   int(11) NOT NULL AUTO_INCREMENT,
@@ -28,7 +24,6 @@ CREATE TABLE `link`
 # Structure for table "lognav"
 #
 
-DROP TABLE IF EXISTS `lognav`;
 CREATE TABLE `lognav`
 (
     `navId`   int(11) NOT NULL AUTO_INCREMENT,
@@ -43,7 +38,6 @@ CREATE TABLE `lognav`
 # Structure for table "plugin"
 #
 
-DROP TABLE IF EXISTS `plugin`;
 CREATE TABLE `plugin`
 (
     `pluginId`   int(11) NOT NULL AUTO_INCREMENT,
@@ -60,7 +54,6 @@ CREATE TABLE `plugin`
 # Structure for table "tag"
 #
 
-DROP TABLE IF EXISTS `tag`;
 CREATE TABLE `tag`
 (
     `tagId` int(11) NOT NULL AUTO_INCREMENT,
@@ -74,8 +67,6 @@ CREATE TABLE `tag`
 # Structure for table "type"
 #
 
-DROP TABLE IF EXISTS `log`;
-DROP TABLE IF EXISTS `type`;
 CREATE TABLE `type`
 (
     `typeId`   int(11) NOT NULL AUTO_INCREMENT,
@@ -94,7 +85,6 @@ CREATE TABLE `type`
 # Structure for table "user"
 #
 
-DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user`
 (
     `userId`            int(11) NOT NULL AUTO_INCREMENT,
@@ -117,7 +107,6 @@ CREATE UNIQUE INDEX `user_passkey_handle`
 # Structure for table "user_passkey"
 #
 
-DROP TABLE IF EXISTS `user_passkey`;
 CREATE TABLE `user_passkey`
 (
     `id`               int(11) NOT NULL AUTO_INCREMENT,
@@ -147,7 +136,6 @@ CREATE INDEX `user_passkey_user`
 # Structure for table "user_passkey_challenge"
 #
 
-DROP TABLE IF EXISTS `user_passkey_challenge`;
 CREATE TABLE `user_passkey_challenge`
 (
     `id`          int(11) NOT NULL AUTO_INCREMENT,
@@ -171,7 +159,6 @@ CREATE INDEX `user_passkey_challenge_user_ceremony`
 # Structure for table "log"
 #
 
-DROP TABLE IF EXISTS `log`;
 CREATE TABLE `log`
 (
     `logId`            int(11) NOT NULL AUTO_INCREMENT,
@@ -208,7 +195,6 @@ CREATE TABLE `log`
 # Structure for table "log_extension_index"
 #
 
-DROP TABLE IF EXISTS `log_extension_index`;
 CREATE TABLE `log_extension_index`
 (
     `id`              int(11) NOT NULL AUTO_INCREMENT,
@@ -229,7 +215,6 @@ CREATE INDEX `log_extension_filter`
 # Structure for table "comment"
 #
 
-DROP TABLE IF EXISTS `comment`;
 CREATE TABLE `comment`
 (
     `commentId`   int(11) NOT NULL AUTO_INCREMENT,
@@ -257,7 +242,6 @@ CREATE TABLE `comment`
 # Structure for table "log_version"
 #
 
-DROP TABLE IF EXISTS `log_version`;
 CREATE TABLE `log_version`
 (
     `id`              int(11) NOT NULL AUTO_INCREMENT,
@@ -278,7 +262,6 @@ CREATE TABLE `log_version`
 # Structure for table "website"
 #
 
-DROP TABLE IF EXISTS `website`;
 CREATE TABLE `website`
 (
     `siteId` int(11) NOT NULL AUTO_INCREMENT,

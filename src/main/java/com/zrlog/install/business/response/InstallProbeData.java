@@ -8,8 +8,6 @@ public class InstallProbeData {
     private String status;
     private String runtimeMode;
     private String charset;
-    private String dbPropertiesPath;
-    private String lockFilePath;
     private List<InstallProbeItem> items = new ArrayList<>();
 
     public String getStatus() {
@@ -34,22 +32,6 @@ public class InstallProbeData {
 
     public void setCharset(String charset) {
         this.charset = charset;
-    }
-
-    public String getDbPropertiesPath() {
-        return dbPropertiesPath;
-    }
-
-    public void setDbPropertiesPath(String dbPropertiesPath) {
-        this.dbPropertiesPath = dbPropertiesPath;
-    }
-
-    public String getLockFilePath() {
-        return lockFilePath;
-    }
-
-    public void setLockFilePath(String lockFilePath) {
-        this.lockFilePath = lockFilePath;
     }
 
     public List<InstallProbeItem> getItems() {

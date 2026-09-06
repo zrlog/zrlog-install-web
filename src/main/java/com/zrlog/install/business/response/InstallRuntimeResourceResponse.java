@@ -17,8 +17,9 @@ public class InstallRuntimeResourceResponse {
     private String charset;
     private String runtimeMode;
     private Boolean localSqliteAvailable;
-    private String dbPropertiesPath;
-    private String lockFilePath;
+    private Boolean installRecoveryAvailable;
+    private Boolean installOperationInProgress;
+    private Boolean installTokenRequired;
 
     public Boolean getInstalled() {
         return installed;
@@ -140,19 +141,27 @@ public class InstallRuntimeResourceResponse {
         this.localSqliteAvailable = localSqliteAvailable;
     }
 
-    public String getDbPropertiesPath() {
-        return dbPropertiesPath;
+    public Boolean getInstallRecoveryAvailable() {
+        return installRecoveryAvailable;
     }
 
-    public void setDbPropertiesPath(String dbPropertiesPath) {
-        this.dbPropertiesPath = dbPropertiesPath;
+    public void setInstallRecoveryAvailable(Boolean installRecoveryAvailable) {
+        this.installRecoveryAvailable = installRecoveryAvailable;
     }
 
-    public String getLockFilePath() {
-        return lockFilePath;
+    public Boolean getInstallOperationInProgress() {
+        return installOperationInProgress;
     }
 
-    public void setLockFilePath(String lockFilePath) {
-        this.lockFilePath = lockFilePath;
+    public void setInstallOperationInProgress(Boolean installOperationInProgress) {
+        this.installOperationInProgress = installOperationInProgress;
+    }
+
+    public Boolean getInstallTokenRequired() {
+        return installTokenRequired;
+    }
+
+    public void setInstallTokenRequired(Boolean installTokenRequired) {
+        this.installTokenRequired = installTokenRequired;
     }
 }

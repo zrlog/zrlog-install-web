@@ -1,23 +1,27 @@
 package com.zrlog.install.util;
 
 import com.hibegin.common.util.EnvKit;
-import com.hibegin.common.util.IOUtil;
 import com.hibegin.http.server.config.ServerConfig;
 import com.hibegin.template.BasicTemplateRender;
+import com.zrlog.install.web.InstallConstants;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 public class InstallSuccessContentUtils {
 
-    private static Map<String, Object> getInstallInfo(File dbProperties, ServerConfig serverConfig) throws IOException {
+    private static final String DEFAULT_LANGUAGE = "zh_CN";
+    private static final String ENGLISH_LANGUAGE = "en_US";
+
+    private static Map<String, Object> getInstallInfo(File dbProperties) throws IOException {
         Properties dataSourceProperties = new Properties();
         try (FileInputStream fileInputStream = new FileInputStream(dbProperties)) {
             dataSourceProperties.load(fileInputStream);
@@ -37,9 +41,7 @@ public class InstallSuccessContentUtils {
                 data.setDbName(uri.getPath().substring(1));
                 data.setDbType(uri.getScheme());
             }
-            data.setDbProperties(Arrays.stream(IOUtil.getStringInputStream(new FileInputStream(dbProperties)).split("\n"))
-                    .filter(e -> !e.startsWith("#"))
-                    .collect(Collectors.joining("<br/>")));
+            data.setDbProperties(Files.readString(dbProperties.toPath(), StandardCharsets.UTF_8));
             return data.toTemplateMap();
         }
     }
@@ -50,24 +52,45 @@ public class InstallSuccessContentUtils {
         return queryIndex < 0 ? pathAndQuery : pathAndQuery.substring(0, queryIndex);
     }
 
-    private static String getMdFilePath() {
-        if (EnvKit.isFaaSMode()) {
-            return "/i18n/installed-faas/zh_CN.md";
+    static String getMdFilePath(boolean faasMode, String language) {
+        String directory = faasMode ? "/i18n/installed-faas/" : "/i18n/installed-docker/";
+        String candidate = directory + normalizeLanguage(language) + ".md";
+        if (InstallSuccessContentUtils.class.getResource(candidate) != null) {
+            return candidate;
         }
-        return "/i18n/installed-docker/zh_CN.md";
+        return directory + DEFAULT_LANGUAGE + ".md";
+    }
+
+    private static String normalizeLanguage(String language) {
+        if (ENGLISH_LANGUAGE.equals(language)) {
+            return ENGLISH_LANGUAGE;
+        }
+        return DEFAULT_LANGUAGE;
     }
 
     public static String getContent(File dbProperties, boolean askConfig, ServerConfig serverConfig) {
-        if (askConfig) {
-            BasicTemplateRender basicTemplateRender;
-            try {
-                basicTemplateRender = new BasicTemplateRender(getInstallInfo(dbProperties, serverConfig), InstallSuccessContentUtils.class);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            return basicTemplateRender.render(InstallSuccessContentUtils.class.getResourceAsStream(getMdFilePath()));
+        String language = InstallConstants.installConfig == null
+                ? DEFAULT_LANGUAGE : InstallConstants.installConfig.getAcceptLanguage();
+        return getContent(dbProperties, askConfig, EnvKit.isFaaSMode(), language);
+    }
+
+    static String getContent(File dbProperties, boolean askConfig, boolean faasMode, String language) {
+        if (!askConfig) {
+            return "";
         }
-        return "";
+        try {
+            BasicTemplateRender templateRender = new BasicTemplateRender(
+                    getInstallInfo(dbProperties), InstallSuccessContentUtils.class);
+            String templatePath = getMdFilePath(faasMode, language);
+            try (InputStream inputStream = InstallSuccessContentUtils.class.getResourceAsStream(templatePath)) {
+                if (inputStream == null) {
+                    throw new IOException("Install success template is unavailable");
+                }
+                return templateRender.render(inputStream);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static class InstallSuccessTemplateData {

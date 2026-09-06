@@ -9,6 +9,9 @@ import java.util.UUID;
 
 public class DefaultWebsiteSettings {
 
+    public static final String ADMIN_FIRST_USE_V4_KEY = "admin_first_use_v4";
+    public static final String ADMIN_FIRST_USE_V4_PENDING = "pending";
+
     private String appId;
     private String title;
     private String secondTitle;
@@ -48,6 +51,7 @@ public class DefaultWebsiteSettings {
         if (Objects.nonNull(appendedSettings)) {
             map.putAll(appendedSettings);
         }
+        map.put(ADMIN_FIRST_USE_V4_KEY, ADMIN_FIRST_USE_V4_PENDING);
         return map;
     }
 

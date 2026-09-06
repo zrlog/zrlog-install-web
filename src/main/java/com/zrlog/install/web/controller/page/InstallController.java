@@ -5,6 +5,7 @@ import com.hibegin.common.util.IOUtil;
 import com.hibegin.http.server.api.HttpRequest;
 import com.hibegin.http.server.web.Controller;
 import com.zrlog.install.business.service.InstallResourceService;
+import com.zrlog.install.util.InstallI18nUtil;
 import com.zrlog.install.web.InstallConstants;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -41,11 +42,14 @@ public class InstallController extends Controller {
         Objects.requireNonNull(document.selectFirst("base")).attr("href", request.getContextPath() + "/");
         Object stringObjectMap = new InstallResourceService().installResourceInfo(getRequest());
         Objects.requireNonNull(document.getElementById("resourceInfo")).text(new Gson().toJson(stringObjectMap));
-        document.title("ZrLog - Install");
+        String pageTitle = InstallI18nUtil.getInstallStringFromRes("installPageTitle");
+        if (!pageTitle.isEmpty()) {
+            document.title(pageTitle);
+        }
         Element htmlElement = document.selectFirst("html");
         if (Objects.nonNull(htmlElement)) {
             String lang = InstallConstants.installConfig.getAcceptLanguage();
-            htmlElement.attr("lang", lang.split("_")[0]);
+            htmlElement.attr("lang", "en_US".equals(lang) ? "en" : "zh-CN");
         }
         Elements favicon = document.head().select("link[rel=shortcut icon]");
         if (!favicon.isEmpty()) {

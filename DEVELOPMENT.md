@@ -41,8 +41,8 @@ yarn start
 ### 3.1 增加适配非默认数据库类型 (以 PostgreSQL 为例)
 
 1. **依赖库扩充**: 引入 Maven `pom.xml` 中 PostgreSQL 对应的底层 JDBC 组件支持。
-2. **后端驱动映射**: 拦截入口并扩展，在于 `ApiInstallController.java` 的 `getDbConn()` 中针对判断新的 `dbType` 参数，匹配对应的驱动全类名（如 `org.postgresql.Driver`）。如需定制自动建表支持，于 `InstallService.java -> createDatabase()` 自建对于方言 DDL 的派发与实现。
-3. **前端表项拓展**: 修改向导组件 `src/main/frontend/src/components/index.tsx` 中的类别表单定义（`<Select name='dbType'>` 加入 Postgres 选项卡），并在 `getDefaultPort()` 根据条件变更默认端口反馈。
+2. **后端驱动映射**: 在 `ApiInstallController.java` 的 `getDbConn()` 中为新的 `dbType` 映射驱动全类名（如 `org.postgresql.Driver`），并同步扩展 `InstallRequestValidator` 的数据库类型白名单与字段校验。如需自动创建数据库，在 `InstallService.java -> createDatabase()` 中按方言实现受约束的 DDL。
+3. **前端表项拓展**: 修改向导组件 `src/main/frontend/src/components/index.tsx` 的 `Radio.Group` 存储方式选项、对应字段区和 `getDefaultPort()`。同时补充桌面、移动端以及浅色、深色主题验收。
 
 ### 3.2 自定义内置博文与系统模板
 
@@ -51,12 +51,24 @@ yarn start
 
 ### 3.3 扩展收集高阶属性参数 (接入第三方组件及平台验证要求等)
 
-由于在设计时前端支持自动扁平化表单，扩展新参数采集无需做复杂的传输逻辑重建：
-1. **添加 UI 节点**: 到需要添加填写的表单步骤层（`components/index.tsx` 中 `state.current === 2` 的渲染条件处），自定义写入属于您的新 `FormItem` 容器和约束规则。
-2. **接收与拦截提取**: 直接于后端的请求流向处 `ApiInstallController.java` 内部，通过语句 `getRequest().getParaToStr("新增字段名")` 从负载中抽离对应特征数据。获取到的数据放入至底层传入的 `business/vo` 及服务配置模型即可应用。
+安装 mutation 接口统一采用 `POST application/json`，扩展字段时应同时维护前后端契约。默认不启用安装令牌；只有运行环境显式设置非空的 `ZRLOG_INSTALL_TOKEN` 后，后端才要求请求通过 `X-ZrLog-Install-Token` 携带相同值：
+1. **添加 UI 节点**: 在对应表单步骤中增加 `FormItem` 与校验规则。数据库配置位于 `state.current === 0`，站点与管理员配置位于 `state.current === 1`，`state.current === 2` 是安装完成页。
+2. **发送 JSON**: 将字段加入 `testDbConn` 或 `startInstall` 的 JSON body。启用安装令牌后，令牌只能通过 `X-ZrLog-Install-Token` 请求头传递；mutation URL 不允许携带 query 参数。
+3. **接收与校验**: 在 `ApiInstallController.RequestParameters` 读取 JSON 原始值，并在 `InstallRequestValidator` 完成长度、字符集、枚举和组合约束，再映射到 `business/vo`。不得退回 `getParaToStr()` 或表单/query 参数提取。
+
+`install.lock` 是安装完成后的重复安装保护，不要删除或用开发脚本绕过。它在首次安装完成前还不存在，因此默认关闭令牌的未安装实例如果直接暴露到公网，仍可能被他人抢先初始化。公网、共享网络或无人值守部署应在服务公开前配置高强度且稳定的 `ZRLOG_INSTALL_TOKEN`；FaaS 的所有冷启动和并发实例必须使用同一个配置值，不能在每次冷启动时临时生成。
 
 ## 4. 国际化 (i18n) 注意规范
 
-项目的多语言字段通过后端向导资源做全局流向绑定，严禁使用前端 TypeScript 强制硬编码中文字符串方案处理交互字眼。
-1. 若要更增补一条语言提醒：前往 `src/main/resources/i18n/` 修改或建立相应的 Properties 条目（其中部分文件要求遵循标准 Unicode 编码录入）。
-2. 在前端任意 React 页面内部中，通过定义并利用全局环境暴露对象法 `getRes()['键名']` 对映射条目的文本执行拉取展现操作。
+安装页脚版权声明是有意保留英文的例外：所有语言统一显示
+`Copyright © 2013–2026 ZrLog. All rights reserved.`。
+这是已确认的产品文案选择，旨在保持版权声明一致，避免英文 `Copyright` 与中文句号、
+中文后缀混排；不是漏翻译。后续 i18n 补齐或文案清理不得自动翻译该声明，
+也不得将品牌名后的英文句点替换为中文句号。年份更新时中英文资源应同步。
+其中 ZrLog 品牌链接指向官网首页，保留固定 UTM 来源参数：`utm_source=zrlog`、
+`utm_medium=referral`、`utm_content=install-footer`，用于识别安装页版权区的访问来源。
+
+安装页资源由前端类型化文案与后端运行时资源合并，交互文案不得直接硬编码在 React 组件中。
+1. 页面、表单、恢复和进度文案维护在 `src/main/frontend/src/i18n/install.ts`，中英文结构必须保持一致，并通过 `getRes()` 读取。
+2. 后端异常、SSE 失败和服务端模板文案维护在 `src/main/resources/i18n/install_*.properties`；新增错误码时应同步后端测试与前端错误映射。
+3. 修改任一资源后至少运行前端测试、`yarn type-check`、`yarn build` 与后端测试，确认 SSR 注入和运行时 API 合并结果一致。

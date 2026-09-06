@@ -9,3 +9,5 @@
 /coverage
 
 # production
+/build
+/tsconfig.tsbuildinfo

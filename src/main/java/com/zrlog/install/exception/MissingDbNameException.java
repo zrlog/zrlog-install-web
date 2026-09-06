@@ -1,5 +1,6 @@
 package com.zrlog.install.exception;
 
+import com.zrlog.install.util.InstallI18nUtil;
 
 public class MissingDbNameException extends AbstractInstallException {
     @Override
@@ -9,6 +10,6 @@ public class MissingDbNameException extends AbstractInstallException {
 
     @Override
     public String getMessage() {
-        return "数据库名不能为空";
+        return InstallI18nUtil.getInstallStringFromRes("missingDbName");
     }
 }

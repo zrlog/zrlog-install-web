@@ -1,0 +1,730 @@
+:root {
+    color-scheme: light;
+}
+
+:root[data-install-theme="dark"] {
+    color-scheme: dark;
+}
+
+html,
+body,
+#app {
+    min-height: 100%;
+}
+
+body {
+    letter-spacing: 0;
+    background: #f5f9ff;
+}
+
+:root[data-install-theme="dark"] body {
+    background: #141414;
+}
+
+.install-shell {
+    min-height: 100vh;
+    background: var(--ant-color-bg-layout);
+    color: var(--ant-color-text);
+}
+
+.install-page {
+    width: min(1080px, calc(100% - 48px));
+    margin: 32px auto 20px;
+    overflow: hidden;
+    border: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
+    border-radius: var(--ant-border-radius-lg);
+    background: var(--ant-color-bg-container);
+    box-shadow: var(--ant-box-shadow-secondary);
+}
+
+.install-header {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 14px 24px;
+    border-bottom: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
+}
+
+.install-brand {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.zrlog-mark {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+}
+
+.install-brand-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.install-brand-name {
+    color: var(--ant-color-text-heading);
+    font-size: 17px;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.install-brand-caption {
+    color: var(--ant-color-text-secondary);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.install-workspace {
+    min-height: 610px;
+    display: grid;
+    grid-template-columns: 238px minmax(0, 1fr);
+}
+
+.install-rail {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 28px;
+    padding: 30px 24px;
+    border-right: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
+    background: var(--ant-color-fill-quaternary);
+}
+
+.install-probe-pass,
+.install-probe-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ant-color-text-secondary);
+    font-size: 12px;
+}
+
+.install-probe-pass {
+    flex-wrap: wrap;
+}
+
+.install-probe-details {
+    width: 100%;
+}
+
+.install-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 34px 42px 28px;
+}
+
+.install-bootstrap-main {
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px;
+}
+
+.install-bootstrap-page {
+    display: flex;
+    flex-direction: column;
+}
+
+.install-bootstrap-main > div,
+.install-bootstrap-result {
+    width: 100%;
+}
+
+.install-bootstrap-result {
+    max-width: 580px;
+    margin: auto;
+}
+
+.install-result-title {
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.35;
+}
+
+.install-result-description {
+    max-width: 500px;
+    margin: 0 auto;
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.install-result-action {
+    min-width: 120px;
+}
+
+.install-mobile-progress {
+    display: none;
+}
+
+.install-mobile-probe {
+    display: none;
+}
+
+.install-content {
+    width: 100%;
+    max-width: 660px;
+}
+
+.install-section-heading {
+    margin-bottom: 24px;
+}
+
+.install-eyebrow {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--ant-color-primary);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.install-section-title,
+.install-section-description {
+    letter-spacing: 0;
+}
+
+.install-section-title {
+    margin: 0 0 7px;
+    font-size: 26px;
+    line-height: 1.3;
+}
+
+.install-section-description {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.install-mode-group {
+    width: 100%;
+    display: grid;
+    gap: 10px;
+}
+
+.install-mode-option {
+    width: 100%;
+    min-height: 72px;
+    margin-inline-end: 0;
+    padding: 14px 15px;
+    border: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border);
+    border-radius: var(--ant-border-radius);
+    background: var(--ant-color-bg-container);
+    transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.install-mode-option:hover {
+    border-color: var(--ant-color-primary-border-hover);
+}
+
+.install-mode-option.is-selected {
+    border-color: var(--ant-color-primary);
+    background: var(--ant-color-primary-bg);
+    box-shadow: 0 0 0 var(--ant-line-width) var(--ant-color-primary-border);
+}
+
+.install-mode-copy {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    gap: 12px;
+}
+
+.install-mode-icon {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--ant-border-radius-sm);
+    background: var(--ant-color-fill-secondary);
+    color: var(--ant-color-text-secondary);
+    font-size: 18px;
+}
+
+.install-mode-option.is-selected .install-mode-icon {
+    background: var(--ant-color-primary-bg-hover);
+    color: var(--ant-color-primary);
+}
+
+.install-mode-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.install-mode-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: var(--ant-color-text-heading);
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.install-mode-description {
+    color: var(--ant-color-text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.install-connection-fields {
+    margin-top: 22px;
+    padding-top: 22px;
+    border-top: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
+}
+
+.install-fields-heading {
+    margin-bottom: 17px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ant-color-text-heading);
+    font-weight: 600;
+}
+
+.install-field-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 130px;
+    gap: 14px;
+}
+
+.install-form-note {
+    margin-top: 4px;
+}
+
+.install-agreement-row {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+    color: var(--ant-color-text-secondary);
+    font-size: 13px;
+}
+
+.install-actions {
+    width: 100%;
+    max-width: 660px;
+    margin-top: auto;
+    padding-top: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.install-action-button {
+    min-width: 108px;
+}
+
+.install-progress-panel {
+    margin-top: 8px;
+    padding: 14px 16px;
+    border: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
+    border-radius: var(--ant-border-radius);
+    background: var(--ant-color-fill-quaternary);
+}
+
+.install-progress-current {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.install-progress-history {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.install-support {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 11px 24px;
+    border-top: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
+    color: var(--ant-color-text-secondary);
+    font-size: 13px;
+}
+
+.install-support-group {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.install-upgrade {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.install-upgrade-progress {
+    width: 100%;
+}
+
+.install-footer {
+    padding: 0 16px 22px;
+    text-align: center;
+    color: var(--ant-color-text-secondary);
+    font-size: 12px;
+}
+
+.install-footer a {
+    color: #0958d9;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.install-footer a:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+:root[data-install-theme="dark"] .install-footer a {
+    color: #69b1ff;
+}
+
+.install-success {
+    width: 100%;
+    max-width: 680px;
+    margin: auto;
+    text-align: center;
+}
+
+.install-recovery-main {
+    min-height: 610px;
+    display: flex;
+    align-items: center;
+    padding: 48px 42px;
+}
+
+.install-recovery {
+    width: min(100%, 620px);
+    margin: auto;
+}
+
+.install-recovery-status {
+    margin: 0 0 14px;
+}
+
+.install-recovery-title {
+    margin: 0 0 10px;
+    font-size: 28px;
+    line-height: 1.3;
+}
+
+.install-recovery-description {
+    max-width: 580px;
+    margin-bottom: 22px !important;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.install-recovery-notice,
+.install-recovery-error {
+    margin-bottom: 18px;
+}
+
+.install-recovery-form {
+    max-width: 520px;
+    margin-top: 24px;
+}
+
+.install-recovery-action {
+    min-width: 150px;
+}
+
+.install-recovery-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.install-success-mark {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--ant-color-success-bg);
+    color: var(--ant-color-success);
+    font-size: 30px;
+}
+
+.install-success-content,
+.install-disclaimer-content {
+    overflow-wrap: anywhere;
+    text-align: left;
+}
+
+.install-success-content {
+    max-height: 360px;
+    margin: 22px 0;
+    overflow: auto;
+    padding: 16px 18px;
+    border: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
+    border-radius: var(--ant-border-radius);
+    background: var(--ant-color-fill-quaternary);
+}
+
+.install-success-content-toolbar {
+    position: sticky;
+    top: -16px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -16px -18px 16px;
+    padding: 10px 18px;
+    border-bottom: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
+    background: var(--ant-color-bg-container);
+}
+
+.install-success-markdown {
+    margin: 0;
+}
+
+.install-completion-recovery {
+    width: min(100%, 520px);
+    margin: 24px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+}
+
+.install-completion-description {
+    margin-bottom: 0;
+}
+
+.install-completion-action {
+    align-self: flex-start;
+    margin-top: 6px;
+}
+
+.install-token-help {
+    display: block;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.install-success-content pre,
+.install-disclaimer-content pre {
+    overflow-x: auto;
+}
+
+.install-disclaimer-content {
+    max-height: min(60vh, 520px);
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+@media (max-width: 767px) {
+    .install-page {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .install-success-content-toolbar .ant-btn {
+        width: 100%;
+    }
+
+    .install-header {
+        min-height: 64px;
+        padding: 11px 16px;
+    }
+
+    .install-brand-caption {
+        display: none;
+    }
+
+    .install-theme-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .install-workspace {
+        min-height: calc(100vh - 113px);
+        display: block;
+    }
+
+    .install-rail {
+        display: none;
+    }
+
+    .install-main {
+        min-height: calc(100vh - 113px);
+        padding: 18px 18px 28px;
+    }
+
+    .install-recovery-main {
+        min-height: calc(100vh - 113px);
+        align-items: flex-start;
+        padding: 30px 18px 36px;
+    }
+
+    .install-bootstrap-main {
+        min-height: 0;
+        flex: 1;
+        padding: 36px 18px;
+    }
+
+    .install-bootstrap-page {
+        min-height: 0;
+        flex: 1;
+    }
+
+    .install-bootstrap-result {
+        padding-inline: 0;
+    }
+
+    .install-result-title {
+        font-size: 23px;
+    }
+
+    .install-recovery-title {
+        font-size: 24px;
+    }
+
+    .install-recovery-description {
+        font-size: 14px;
+    }
+
+    .install-recovery-actions {
+        width: 100%;
+        display: grid;
+    }
+
+    .install-recovery-action {
+        width: 100%;
+    }
+
+    .install-mobile-progress {
+        margin-bottom: 24px;
+        display: block;
+    }
+
+    .install-mobile-progress-copy {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--ant-color-text-secondary);
+        font-size: 12px;
+    }
+
+    .install-mobile-progress-copy strong {
+        color: var(--ant-color-text);
+        font-size: 13px;
+    }
+
+    .install-mobile-probe {
+        display: block;
+        margin-bottom: 18px;
+    }
+
+    .install-eyebrow {
+        display: none;
+    }
+
+    .install-section-heading {
+        margin-bottom: 20px;
+    }
+
+    .install-section-title {
+        font-size: 23px;
+    }
+
+    .install-mode-option {
+        min-height: 76px;
+        padding: 13px;
+    }
+
+    .install-mode-copy {
+        gap: 10px;
+    }
+
+    .install-field-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .install-actions {
+        position: static;
+        max-width: none;
+        margin-top: 28px;
+        padding: 0;
+    }
+
+    .install-action-primary {
+        flex: 1;
+    }
+
+    .install-support {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+        padding: 14px 18px;
+    }
+
+    .install-footer {
+        padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    }
+
+    .install-recovery-page + .install-footer {
+        padding-bottom: calc(18px + env(safe-area-inset-bottom));
+    }
+
+    .install-bootstrap-page + .install-footer {
+        padding-bottom: calc(18px + env(safe-area-inset-bottom));
+    }
+
+    .install-success-content {
+        max-height: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .install-mode-option {
+        transition: none;
+    }
+}

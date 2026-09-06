@@ -24,6 +24,7 @@ public class InstallNativeImageResourceUtils {
         resourceNameList.add("/i18n/init-blog/en_US.html");
         resourceNameList.add("/i18n/init-blog/zh_CN.md");
         resourceNameList.add("/i18n/init-blog/zh_CN.html");
+        resourceNameList.add("/i18n/installed-faas/en_US.md");
         resourceNameList.add("/i18n/installed-faas/zh_CN.md");
         resourceNameList.add("/i18n/installed-docker/zh_CN.md");
         resourceNameList.add("/i18n/install_en_US.properties");
@@ -46,6 +47,7 @@ public class InstallNativeImageResourceUtils {
                 InstallRuntimeResourceResponse.class, InstallProbeResponse.class,
                 InstallAssetManifest.class,
                 InstallApiResponses.Empty.class, InstallApiResponses.Message.class, InstallApiResponses.Error.class,
+                InstallApiResponses.StreamError.class,
                 InstallProbeData.class, InstallProbeItem.class, InstallProgressEvent.class,
                 //vo
                 InstallConfigVO.class, InstallDatabaseConfig.class, InstallSiteConfig.class,

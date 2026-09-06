@@ -19,6 +19,9 @@ class FakeInstallConfig implements InstallConfig {
     private String acceptLanguage = "zh_CN";
     private String buildVersion = "test";
     private LastVersionInfo lastVersionInfo;
+    private RuntimeException nextInstallSuccessFailure;
+    private int installSuccessCalls;
+    private boolean installLockVisibleDuringCallback;
 
     FakeInstallConfig(File dbPropertiesFile, File lockFile) {
         this.dbPropertiesFile = dbPropertiesFile;
@@ -53,11 +56,30 @@ class FakeInstallConfig implements InstallConfig {
         this.lastVersionInfo = lastVersionInfo;
     }
 
+    void failNextInstallSuccess(RuntimeException failure) {
+        this.nextInstallSuccessFailure = failure;
+    }
+
+    int getInstallSuccessCalls() {
+        return installSuccessCalls;
+    }
+
+    boolean isInstallLockVisibleDuringCallback() {
+        return installLockVisibleDuringCallback;
+    }
+
     @Override
     public InstallAction getAction() {
         return new InstallAction() {
             @Override
             public void installSuccess() {
+                installSuccessCalls++;
+                installLockVisibleDuringCallback = lockFile.exists();
+                if (nextInstallSuccessFailure != null) {
+                    RuntimeException failure = nextInstallSuccessFailure;
+                    nextInstallSuccessFailure = null;
+                    throw failure;
+                }
             }
 
             @Override
@@ -67,7 +89,7 @@ class FakeInstallConfig implements InstallConfig {
 
             @Override
             public boolean isInstalled() {
-                return installed;
+                return installed || lockFile.exists();
             }
         };
     }

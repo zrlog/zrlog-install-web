@@ -1,6 +1,7 @@
 package com.zrlog.install.util;
 
 import com.google.gson.Gson;
+import com.hibegin.common.util.LoggerUtil;
 import com.hibegin.http.server.api.HttpResponse;
 import com.zrlog.install.business.response.InstallApiResponses;
 
@@ -8,11 +9,16 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class InstallSseEmitter {
 
     private static final Gson GSON = new Gson();
+    private static final Logger LOGGER = LoggerUtil.getLogger(InstallSseEmitter.class);
+    private static final String FALLBACK_ERROR_MESSAGE =
+            "The operation could not be completed. Retry, then check the runtime logs for the deployment if the " +
+                    "problem continues. Logs do not contain the setup passcode.";
     private final PipedOutputStream outputStream;
 
     public InstallSseEmitter(PipedOutputStream outputStream) {
@@ -52,8 +58,11 @@ public class InstallSseEmitter {
     }
 
     public void sendError(String event, Exception e) {
+        InstallLogUtil.logFailure(LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.EVENT_STREAM, e);
         try {
-            send(event, InstallApiResponses.message(Objects.requireNonNullElse(e.getMessage(), "")));
+            String message = InstallI18nUtil.getInstallStringFromRes("streamFailed");
+            send(event, InstallApiResponses.streamError(
+                    message == null || message.isEmpty() ? FALLBACK_ERROR_MESSAGE : message));
         } catch (IOException ignored) {
             // Client connection may already be closed.
         }

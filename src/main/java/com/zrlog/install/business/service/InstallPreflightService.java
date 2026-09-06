@@ -5,12 +5,20 @@ import com.zrlog.install.web.config.InstallConfig;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public class InstallPreflightService {
 
     public void assertReady(InstallConfig installConfig) throws IOException {
         assertWritableTarget(installConfig.getDbPropertiesFile(), "db.properties");
         assertWritableTarget(installConfig.getAction().getLockFile(), "install.lock");
+        assertWritableTarget(InstallOperationLock.operationLockFile(
+                installConfig.getAction().getLockFile()).toFile(), "install operation lock");
+        assertWritableTarget(InstallRecoveryStore.recoveryFile(
+                installConfig.getAction().getLockFile()), "install recovery state");
         try (InputStream inputStream = InstallPreflightService.class.getResourceAsStream("/init-table-structure.sql")) {
             if (inputStream == null) {
                 throw new IOException("Missing init-table-structure.sql");
@@ -29,12 +37,23 @@ public class InstallPreflightService {
         if (!parent.isDirectory() || !parent.canWrite()) {
             throw new IOException("Parent directory is not writable for " + label);
         }
-        if (targetFile.exists() && !targetFile.canWrite()) {
-            throw new IOException(label + " is not writable");
+        if (targetFile.exists()) {
+            if (!targetFile.isFile()) {
+                throw new IOException(label + " is not a regular file");
+            }
+            if (!targetFile.canWrite()) {
+                throw new IOException(label + " is not writable");
+            }
         }
-        File tempFile = File.createTempFile(".zrlog-install-", ".tmp", parent);
-        if (!tempFile.delete()) {
-            tempFile.deleteOnExit();
+        Path source = Files.createTempFile(parent.toPath(), ".zrlog-install-", ".tmp");
+        Path target = source.resolveSibling(source.getFileName() + ".moved");
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            throw new IOException("Atomic file updates are not supported for " + label, e);
+        } finally {
+            Files.deleteIfExists(source);
+            Files.deleteIfExists(target);
         }
     }
 }

@@ -3,8 +3,10 @@ package com.zrlog.install.web.config;
 import com.hibegin.http.server.api.HttpResponse;
 import com.zrlog.install.business.response.InstallApiResponses;
 import com.zrlog.install.business.response.LastVersionInfo;
+import com.zrlog.install.exception.AbstractInstallException;
 import com.zrlog.install.exception.InstallException;
 import com.zrlog.install.business.type.TestConnectDbResult;
+import com.zrlog.install.util.LogCaptureSupport;
 import org.junit.Test;
 
 import java.lang.reflect.Proxy;
@@ -86,12 +88,48 @@ public class DefaultInstallConfigTest {
         AtomicReference<Object> rendered = new AtomicReference<>();
         HttpResponse response = response(rendered);
 
-        new DefaultInstallConfig().getErrorHandler().doHandle(null, response,
-                new IllegalStateException("boom"));
+        try (LogCaptureSupport logs = LogCaptureSupport.capture(DefaultInstallConfig.class)) {
+            new DefaultInstallConfig().getErrorHandler().doHandle(null, response,
+                    new IllegalStateException("request-do-not-expose"));
 
-        InstallApiResponses.Error error = (InstallApiResponses.Error) rendered.get();
-        assertEquals(Integer.valueOf(9999), error.getError());
-        assertEquals("boom", error.getMessage());
+            InstallApiResponses.Error error = (InstallApiResponses.Error) rendered.get();
+            assertEquals(Integer.valueOf(9999), error.getError());
+            assertEquals("INSTALL_REQUEST_FAILED", error.getCode());
+            assertFalse(error.getMessage().contains("do-not-expose"));
+            assertTrue(error.getMessage().contains("安装请求失败"));
+            assertTrue(logs.text().contains("phase=install-request"));
+            assertFalse(logs.text().contains("do-not-expose"));
+            assertFalse(logs.hasThrown());
+        }
+    }
+
+    @Test
+    public void shouldFailClosedForUncontrolledInstallException() {
+        AtomicReference<Object> rendered = new AtomicReference<>();
+        HttpResponse response = response(rendered);
+        AbstractInstallException uncontrolled = new AbstractInstallException() {
+            @Override
+            public int getError() {
+                return 7777;
+            }
+
+            @Override
+            public String getMessage() {
+                return "jdbc:mysql://db/zrlog?password=json-do-not-expose";
+            }
+        };
+
+        try (LogCaptureSupport logs = LogCaptureSupport.capture(DefaultInstallConfig.class)) {
+            new DefaultInstallConfig().getErrorHandler().doHandle(null, response, uncontrolled);
+
+            InstallApiResponses.Error error = (InstallApiResponses.Error) rendered.get();
+            assertEquals(Integer.valueOf(9999), error.getError());
+            assertEquals("INSTALL_REQUEST_FAILED", error.getCode());
+            assertFalse(error.getMessage().contains("do-not-expose"));
+            assertFalse(logs.text().contains("do-not-expose"));
+            assertFalse(logs.text().contains("jdbc:mysql"));
+            assertFalse(logs.hasThrown());
+        }
     }
 
     private static HttpResponse response(AtomicReference<Object> rendered) {
