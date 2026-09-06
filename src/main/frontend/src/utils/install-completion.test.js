@@ -1,4 +1,4 @@
-import {extractDbProperties} from "./install-completion";
+import {buildInstallHandoffUrls, extractDbProperties} from "./install-completion";
 
 describe("install completion content", () => {
     test("extracts the complete multiline DB_PROPERTIES value", () => {
@@ -49,5 +49,16 @@ describe("install completion content", () => {
         ].join("\n");
 
         expect(extractDbProperties(markdown)).toBeUndefined();
+    });
+
+    test("builds context-aware admin, create, and Markdown import handoff URLs", () => {
+        expect(buildInstallHandoffUrls("https://example.test/blog/install")).toEqual({
+            admin: "https://example.test/blog/admin/",
+            createArticle: "https://example.test/blog/admin/article-edit",
+            importMarkdown: "https://example.test/blog/admin/article-edit?intent=import-markdown",
+        });
+        expect(buildInstallHandoffUrls("https://example.test/install").importMarkdown).toBe(
+            "https://example.test/admin/article-edit?intent=import-markdown",
+        );
     });
 });

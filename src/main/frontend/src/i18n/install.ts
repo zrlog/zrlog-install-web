@@ -246,6 +246,8 @@ ZrLog 是开源项目，遵循 Apache 2.0 许可证。继续安装表示您接�
         installDescription: "ZrLog 已准备就绪，可以开始管理和访问站点。",
         viewSite: "查看站点",
         enterAdmin: "进入后台",
+        createArticle: "创建文章",
+        importMarkdown: "导入 Markdown",
         askConfigTitle: "安装完成，还需保存配置",
         askConfigDescription: "按下方说明保存配置，然后重新检查运行状态。",
         configurationInstructions: "待保存的运行配置",
@@ -253,8 +255,10 @@ ZrLog 是开源项目，遵循 Apache 2.0 许可证。继续安装表示您接�
         dbPropertiesCopied: "DB_PROPERTIES 已复制",
         dbPropertiesCopyFailed: "无法自动复制，请手动选择下方内容后复制",
     },
-    copyright: "Copyright © 2013-2026",
-    copyrightSuffix: "。保留所有权利。",
+    // Product decision: keep the standard English copyright notice in every locale,
+    // including Chinese. This is intentional, not a missing translation.
+    copyright: "Copyright © 2013–2026",
+    copyrightSuffix: ". All rights reserved.",
 };
 
 const enUS: typeof zhCN = {
@@ -503,6 +507,8 @@ The development team is not liable for loss caused by installing, using, or bein
         installDescription: "ZrLog is ready. You can now manage or visit the site.",
         viewSite: "View site",
         enterAdmin: "Open admin",
+        createArticle: "Create article",
+        importMarkdown: "Import Markdown",
         askConfigTitle: "Installation complete; configuration required",
         askConfigDescription: "Save the configuration below, then check the runtime status again.",
         configurationInstructions: "Runtime configuration to save",
@@ -510,7 +516,7 @@ The development team is not liable for loss caused by installing, using, or bein
         dbPropertiesCopied: "DB_PROPERTIES copied",
         dbPropertiesCopyFailed: "Could not copy automatically. Select the value below and copy it manually.",
     },
-    copyright: "Copyright © 2013-2026",
+    copyright: "Copyright © 2013–2026",
     copyrightSuffix: ". All rights reserved.",
 };
 

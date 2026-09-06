@@ -1,11 +1,11 @@
-import {CheckCircleFilled, CopyOutlined} from "@ant-design/icons";
+import {CheckCircleFilled, CopyOutlined, EditOutlined, FileMarkdownOutlined} from "@ant-design/icons";
 import {Button, Input, message, Space, Typography} from "antd";
 import type {InputRef} from "antd";
 import axios from "axios";
 import {useEffect, useRef, useState} from "react";
 import {getRes} from "utils/constants";
 import {renderSanitizedMarkdown} from "utils/sanitize-html";
-import {extractDbProperties} from "utils/install-completion";
+import {buildInstallHandoffUrls, extractDbProperties} from "utils/install-completion";
 import {
     installApiUrl,
     installTokenForRequest,
@@ -30,7 +30,7 @@ const InstallSuccessContent = ({content, configurationRequired, installToken, on
     const completionTokenInputRef = useRef<InputRef>(null);
     const safeContent = renderSanitizedMarkdown(completionContent);
     const dbProperties = extractDbProperties(completionContent);
-    const adminUrl = new URL("admin/", document.baseURI).toString();
+    const handoffUrls = buildInstallHandoffUrls(document.baseURI);
     const installTokenRequired = res.installTokenRequired;
     const completionTokenInvalid = completionTokenTouched &&
         isRequiredInstallTokenMissing(installTokenRequired, installToken);
@@ -191,7 +191,13 @@ const InstallSuccessContent = ({content, configurationRequired, installToken, on
                 <Button size="large" type="primary" loading={checkingConfig} onClick={() => void checkConfig()}>
                     {checkingConfig ? res.installedPage.checkingConfig : res.installedPage.askConfigTips}
                 </Button> : <>
-                    <Button href={adminUrl} size="large" type="primary">{res.success.enterAdmin}</Button>
+                    <Button href={handoffUrls.admin} size="large" type="primary">{res.success.enterAdmin}</Button>
+                    <Button href={handoffUrls.createArticle} icon={<EditOutlined/>} size="large">
+                        {res.success.createArticle}
+                    </Button>
+                    <Button href={handoffUrls.importMarkdown} icon={<FileMarkdownOutlined/>} size="large">
+                        {res.success.importMarkdown}
+                    </Button>
                     <Button href={document.baseURI} size="large">{res.success.viewSite}</Button>
                 </>}
         </Space>}

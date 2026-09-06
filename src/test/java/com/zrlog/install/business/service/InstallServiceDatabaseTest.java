@@ -4,6 +4,7 @@ import com.hibegin.common.dao.DAO;
 import com.hibegin.common.dao.ResultValueConvertUtils;
 import com.zrlog.install.business.response.InstallProgressEvent;
 import com.zrlog.install.business.type.TestConnectDbResult;
+import com.zrlog.install.business.vo.DefaultWebsiteSettings;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.exception.InstallException;
 import com.zrlog.install.support.TestDatabase;
@@ -123,6 +124,9 @@ public class InstallServiceDatabaseTest {
                     "select count(1) from `user_passkey_challenge`")).longValue());
             assertEquals("26", dao.queryFirstObj(
                     "select `value` from `website` where `name`='zrlogSqlVersion'"));
+            assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING, dao.queryFirstObj(
+                    "select `value` from `website` where `name`='" +
+                            DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY + "'"));
             assertEquals("Database Blog", dao.queryFirstObj("select `value` from `website` where `name`='title'"));
             assertEquals("https://example.com", dao.queryFirstObj("select `value` from `website` where `name`='host'"));
             assertEquals("admin", dao.queryFirstObj("select `userName` from `user` where `userId`=1"));

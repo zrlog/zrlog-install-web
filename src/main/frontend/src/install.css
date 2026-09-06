@@ -388,8 +388,24 @@ body {
 .install-footer {
     padding: 0 16px 22px;
     text-align: center;
-    color: var(--ant-color-text-tertiary);
+    color: var(--ant-color-text-secondary);
     font-size: 12px;
+}
+
+.install-footer a {
+    color: #0958d9;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.install-footer a:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+:root[data-install-theme="dark"] .install-footer a {
+    color: #69b1ff;
 }
 
 .install-success {

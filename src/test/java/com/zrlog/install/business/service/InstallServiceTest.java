@@ -101,6 +101,7 @@ public class InstallServiceTest {
         configMsg.put("title", "My Blog");
         Map<String, String> appendWebsite = new HashMap<>();
         appendWebsite.put("host", "example.com");
+        appendWebsite.put(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY, "dismissed");
         InstallService service = new InstallService(config, installConfigVO(configMsg, appendWebsite, "/blog"));
 
         DefaultWebsiteSettings settings = service.getDefaultWebSiteSettings(InstallSiteConfig.from(configMsg));
@@ -112,6 +113,8 @@ public class InstallServiceTest {
         assertEquals("/include/templates/default", settings.getTemplate());
         assertEquals("26", settings.getZrlogSqlVersion());
         assertEquals("example.com", settingsMap.get("host"));
+        assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING,
+                settingsMap.get(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY));
         assertTrue(settingsMap.containsKey("appId"));
     }
 
@@ -273,7 +276,7 @@ public class InstallServiceTest {
         assertEquals(1, dao.calls.size());
         FakeDao.Call call = dao.calls.get(0);
         assertTrue(call.sql.startsWith("INSERT INTO `website` (`name`, `value`) VALUES"));
-        assertEquals(18, call.args.length);
+        assertEquals(20, call.args.length);
         assertEquals("appId", call.args[0]);
         assertNotNull(call.args[1]);
         assertEquals("title", call.args[2]);
@@ -284,6 +287,8 @@ public class InstallServiceTest {
         assertEquals("zh_CN", call.args[7]);
         assertEquals("host", call.args[16]);
         assertEquals("example.com", call.args[17]);
+        assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY, call.args[18]);
+        assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING, call.args[19]);
     }
 
     @Test

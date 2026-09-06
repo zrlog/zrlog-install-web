@@ -60,6 +60,14 @@ yarn start
 
 ## 4. 国际化 (i18n) 注意规范
 
+安装页脚版权声明是有意保留英文的例外：所有语言统一显示
+`Copyright © 2013–2026 ZrLog. All rights reserved.`。
+这是已确认的产品文案选择，旨在保持版权声明一致，避免英文 `Copyright` 与中文句号、
+中文后缀混排；不是漏翻译。后续 i18n 补齐或文案清理不得自动翻译该声明，
+也不得将品牌名后的英文句点替换为中文句号。年份更新时中英文资源应同步。
+其中 ZrLog 品牌链接指向官网首页，保留固定 UTM 来源参数：`utm_source=zrlog`、
+`utm_medium=referral`、`utm_content=install-footer`，用于识别安装页版权区的访问来源。
+
 安装页资源由前端类型化文案与后端运行时资源合并，交互文案不得直接硬编码在 React 组件中。
 1. 页面、表单、恢复和进度文案维护在 `src/main/frontend/src/i18n/install.ts`，中英文结构必须保持一致，并通过 `getRes()` 读取。
 2. 后端异常、SSE 失败和服务端模板文案维护在 `src/main/resources/i18n/install_*.properties`；新增错误码时应同步后端测试与前端错误映射。

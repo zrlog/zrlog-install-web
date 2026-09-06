@@ -67,7 +67,7 @@ export const getRes = (): InstallResourceInfo => {
         ...getInstallI18n(lang),
         ...runtimeRes,
         installTokenRequired: runtimeRes.installTokenRequired === true,
-        copyrightTips: `${getInstallI18n(lang).copyright} <a target="_blank" href="https://blog.zrlog.com/about.html?footer">ZrLog</a>`,
+        copyrightTips: `${getInstallI18n(lang).copyright} <a target="_blank" href="https://www.zrlog.com/?utm_source=zrlog&amp;utm_medium=referral&amp;utm_content=install-footer">ZrLog</a>`,
     };
 };
 
