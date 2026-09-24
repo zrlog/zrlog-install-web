@@ -122,7 +122,7 @@ public class InstallServiceDatabaseTest {
             assertEquals(0L, ((Number) dao.queryFirstObj("select count(1) from `user_passkey`")).longValue());
             assertEquals(0L, ((Number) dao.queryFirstObj(
                     "select count(1) from `user_passkey_challenge`")).longValue());
-            assertEquals("26", dao.queryFirstObj(
+            assertEquals("27", dao.queryFirstObj(
                     "select `value` from `website` where `name`='zrlogSqlVersion'"));
             assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING, dao.queryFirstObj(
                     "select `value` from `website` where `name`='" +

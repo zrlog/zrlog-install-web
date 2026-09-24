@@ -517,7 +517,7 @@ public class InstallService {
     }
 
     boolean initUser(InstallSiteConfig blogMsg, DAO dao) throws SQLException {
-        String insertUserSql = "INSERT INTO `user`( `userId`,`userName`, `password`, `email`,`secretKey`) VALUES (1,?,?,?,?)";
+        String insertUserSql = "INSERT INTO `user`( `userId`,`userName`, `password`, `email`,`secretKey`,`role`) VALUES (1,?,?,?,?,'owner')";
         return dao.execute(insertUserSql, blogMsg.getUsername(), installConfig.encryptPassword(blogMsg.getPassword()),
                 configMsg.getEmail(), configMsg.secretKeyOrNew());
     }
