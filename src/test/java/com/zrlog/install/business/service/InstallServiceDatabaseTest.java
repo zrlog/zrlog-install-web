@@ -106,7 +106,7 @@ public class InstallServiceDatabaseTest {
         try (var ds = InstallService.buildDataSource(stored, true)) {
             DAO dao = new DAO(ds);
             for (String table : List.of("link", "lognav", "plugin", "tag", "type", "user", "user_passkey",
-                    "user_passkey_challenge", "log", "log_extension_index", "comment", "log_version", "website")) {
+                    "user_passkey_challenge", "user_access_token", "log", "log_extension_index", "comment", "log_version", "website")) {
                 assertNotNull(table, dao.queryFirstObj("select count(1) from `" + table + "`"));
             }
             assertEquals(1L, ((Number) dao.queryFirstObj("select count(1) from `user`")).longValue());
@@ -118,11 +118,12 @@ public class InstallServiceDatabaseTest {
             assertEquals(0L, ((Number) dao.queryFirstObj("select count(`extensions`) from `log`")).longValue());
             assertEquals(0L, ((Number) dao.queryFirstObj(
                     "select count(1) from `log_extension_index`")).longValue());
+            assertNull(dao.queryFirstObj("select `preferences` from `user` where `userId`=1"));
             assertNull(dao.queryFirstObj("select `passkeyUserHandle` from `user` where `userId`=1"));
             assertEquals(0L, ((Number) dao.queryFirstObj("select count(1) from `user_passkey`")).longValue());
             assertEquals(0L, ((Number) dao.queryFirstObj(
                     "select count(1) from `user_passkey_challenge`")).longValue());
-            assertEquals("27", dao.queryFirstObj(
+            assertEquals("29", dao.queryFirstObj(
                     "select `value` from `website` where `name`='zrlogSqlVersion'"));
             assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING, dao.queryFirstObj(
                     "select `value` from `website` where `name`='" +
