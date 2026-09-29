@@ -1,5 +1,7 @@
 # ZrLog Install Web 开发与扩展指南
 
+UI 任务先读 [Ops UI 统一入口](../zrlog-ops/docs/ui-design-guide.md)，安装呈现规则见 [专项规范](../zrlog-ops/docs/material3-agent-guide.md#zrlog-install-web-安装视觉工程)，检查矩阵见 [安装契约](../zrlog-ops/acceptance/zrlog-install-web.yaml)。本文维护开发、接口与 i18n 实现，不保存产品视觉规则副本。
+
 ## 1. 工程目录结构
 
 ```text
@@ -60,12 +62,9 @@ yarn start
 
 ## 4. 国际化 (i18n) 注意规范
 
-安装页脚版权声明是有意保留英文的例外：所有语言统一显示
-`Copyright © 2013–2026 ZrLog. All rights reserved.`。
-这是已确认的产品文案选择，旨在保持版权声明一致，避免英文 `Copyright` 与中文句号、
-中文后缀混排；不是漏翻译。后续 i18n 补齐或文案清理不得自动翻译该声明，
-也不得将品牌名后的英文句点替换为中文句号。年份更新时中英文资源应同步。
-其中 ZrLog 品牌链接指向官网首页，保留固定 UTM 来源参数：`utm_source=zrlog`、
+表达规则与产品例外统一读取 [Ops 产品文案规范](../zrlog-ops/docs/content-writing-guide.md)，包括 [安装页脚版权](../zrlog-ops/docs/content-writing-guide.md#安装页脚版权)。本节只维护资源归属和集成方式。
+
+页脚 ZrLog 品牌链接指向官网首页，保留固定 UTM 来源参数：`utm_source=zrlog`、
 `utm_medium=referral`、`utm_content=install-footer`，用于识别安装页版权区的访问来源。
 
 安装页资源由前端类型化文案与后端运行时资源合并，交互文案不得直接硬编码在 React 组件中。

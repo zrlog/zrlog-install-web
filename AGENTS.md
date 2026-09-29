@@ -32,7 +32,9 @@
 - [开发与扩展指南](DEVELOPMENT.md)
 - `zrlog-ops/acceptance/zrlog-install-web.yaml`
 - `zrlog-ops/docs/repository-structure-guide.md`
-- `zrlog-ops/docs/ui-design-guide.md`
+- [Ops UI 统一入口](../zrlog-ops/docs/ui-design-guide.md)
+- 产品表达与版权特例读取 [Ops 产品文案规范](../zrlog-ops/docs/content-writing-guide.md)，资源实现读取 `DEVELOPMENT.md`。
+- 安装呈现规则读取 [M3 安装章节](../zrlog-ops/docs/material3-agent-guide.md#zrlog-install-web-安装视觉工程)；可用 [规范加载提示词](../zrlog-ops/prompts/material3-ui.md)。本入口不复制适用范围或设计规则。
 
 ## 构建与验证
 
@@ -62,7 +64,7 @@ mvn -q -PnodeBuild install
 2. 读取真实 API、service、表单字段和 i18n 资源，不凭页面文案猜参数名。
 3. 保留工作区已有用户改动，不 reset、restore 或覆盖无关文件。
 4. 修改数据库或安装状态时覆盖成功、失败、重复安装和 warning/block 环境分支。
-5. 修改 UI 时按 `zrlog-ops/docs/ui-design-guide.md` 做桌面和移动端验收。
+5. 修改 UI 时按 [Ops 总入口](../zrlog-ops/docs/ui-design-guide.md) 指向的专项规范和 [安装验收契约](../zrlog-ops/acceptance/zrlog-install-web.yaml) 执行。
 6. 最终回复说明安装链路影响、验证命令、生成物清理结果和是否需要主工程预览包验证。
 
 ## 常见任务入口
