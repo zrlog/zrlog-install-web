@@ -3014,17 +3014,19 @@
   resolved "https://registry.npmmirror.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@zrlog/ui@https://dl.zrlog.com/frontend-common/0.1.0/zrlog-ui-0.1.0.tgz":
+"@zrlog/ui@0.1.0":
   version "0.1.0"
-  resolved "https://dl.zrlog.com/frontend-common/0.1.0/zrlog-ui-0.1.0.tgz#0c31664f0d8ff011ee3c553ce07670418521d0aa"
+  resolved "https://registry.npmjs.org/@zrlog/ui/-/ui-0.1.0.tgz#bc6ac10016c6d9c96fc22215c1fe0a97959f92b4"
+  integrity sha512-Z4RFcOABvlYTXJT35OfzIh1BFXrHSAtM1yeS6E33UzG4jqxqi7pGrhH1HjmZ+YZpJYFLOiHAlSvoWat/of0JDw==
   dependencies:
     "@ant-design/fast-color" "3.0.1"
     antd-style "4.1.0"
     clsx "2.1.1"
 
-"@zrlog/utils@https://dl.zrlog.com/frontend-common/0.1.0/zrlog-utils-0.1.0.tgz":
+"@zrlog/utils@0.1.0":
   version "0.1.0"
-  resolved "https://dl.zrlog.com/frontend-common/0.1.0/zrlog-utils-0.1.0.tgz#78cc9a0c0102150fcc139871fc5047451b6bd404"
+  resolved "https://registry.npmjs.org/@zrlog/utils/-/utils-0.1.0.tgz#1206553158f76239cf450fb5b8a92889b4fb9d3b"
+  integrity sha512-EepzVt7CqYYaoYnqz1R+S6jyq2yPyH2b0PfZ0xD4FLMdLZRUWYZXgmUfWqHcjqyD6Td5Sny55oyarfqp3CtkNw==
 
 abab@^2.0.3, abab@^2.0.5:
   version "2.0.6"
