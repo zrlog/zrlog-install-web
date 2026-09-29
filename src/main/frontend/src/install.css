@@ -34,7 +34,7 @@ body {
     border: var(--ant-line-width) var(--ant-line-type) var(--ant-color-border-secondary);
     border-radius: var(--ant-border-radius-lg);
     background: var(--ant-color-bg-container);
-    box-shadow: var(--ant-box-shadow-secondary);
+    box-shadow: var(--ant-box-shadow-tertiary);
 }
 
 .install-header {
