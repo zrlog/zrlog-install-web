@@ -9,7 +9,9 @@ import {legacyLogicalPropertiesTransformer, StyleProvider} from "@ant-design/css
 import {createRoot} from "react-dom/client";
 import {getRes, resourceKey} from "./utils/constants";
 import {isInstallRuntimeResource, normalizeInstallRuntimeResource} from "./utils/install-resource-response";
-import useAdminDefaultTheme from "./theme/admin-default-theme";
+import useInstallTheme from "./theme/install-theme";
+import { MaterialStyles, materialColors } from "@zrlog/ui/material";
+import { DEFAULT_PRIMARY_COLOR } from "@zrlog/ui/themes";
 
 const jsonStr = document.getElementById("resourceInfo")?.textContent;
 export let resLoadedBySsr = false;
@@ -44,12 +46,12 @@ const Index = () => {
     const [currentLang, setCurrentLang] = useState(lang);
     const [systemDark, setSystemDark] = useState(() => EnvUtils.getPreferredColorScheme() === "dark");
     const dark = themeMode === "system" ? systemDark : themeMode === "dark";
-    const themeConfig = useAdminDefaultTheme(dark);
+    const themeConfig = useInstallTheme(dark);
 
     useLayoutEffect(() => {
         document.documentElement.dataset.installTheme = dark ? "dark" : "light";
         document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-            ?.setAttribute("content", dark ? "#141414" : "#f5f9ff");
+            ?.setAttribute("content", materialColors(DEFAULT_PRIMARY_COLOR, dark).surface);
     }, [dark]);
 
     useEffect(() => {
@@ -79,6 +81,7 @@ const Index = () => {
             <App>
                 <BrowserRouter>
                     <StyleProvider transformers={[legacyLogicalPropertiesTransformer]}>
+                        <MaterialStyles/>
                         <AppBase/>
                     </StyleProvider>
                 </BrowserRouter>

@@ -1,4 +1,5 @@
-export type ThemeMode = "light" | "dark" | "system";
+import type { ColorMode as ThemeMode } from "@zrlog/ui";
+export type { ColorMode as ThemeMode } from "@zrlog/ui";
 
 class EnvUtils {
 

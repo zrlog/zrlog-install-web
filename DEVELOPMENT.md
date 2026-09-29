@@ -72,3 +72,14 @@ yarn start
 1. 页面、表单、恢复和进度文案维护在 `src/main/frontend/src/i18n/install.ts`，中英文结构必须保持一致，并通过 `getRes()` 读取。
 2. 后端异常、SSE 失败和服务端模板文案维护在 `src/main/resources/i18n/install_*.properties`；新增错误码时应同步后端测试与前端错误映射。
 3. 修改任一资源后至少运行前端测试、`yarn type-check`、`yarn build` 与后端测试，确认 SSR 注入和运行时 API 合并结果一致。
+
+## 5. 前端公共包
+
+安装器通过固定 `dl.zrlog.com/frontend-common/<version>/` tarball URL 和 yarn.lock 消费 [zrlog-frontend-common](../zrlog-frontend-common/README.md) 的 `@zrlog/ui` / `@zrlog/utils`；不复制后台主题源码。公共源码修改先在公共仓库发布版本，再升级这里的 URL 与锁文件。
+
+- `theme/install-theme.ts` 使用 `@zrlog/ui/material` 的 `createMaterialTheme`，只加载 M3；默认主色来自 `@zrlog/ui/themes`，该轻量入口不加载 React 或样式运行时。
+- `index.tsx` 在 ConfigProvider 内挂载 `MaterialStyles`；品牌组件由本地 `ZrLogMark` 包装共享实现。React、React DOM、Ant Design 由安装器提供一份运行时。
+- `utils/env-utils.tsx` 仍管理 light / dark / system 的保存与首次浅色策略，安装器不提供后台多主题选择。
+- 安装和升级使用 `@zrlog/utils` 的 `readJsonSseStream` 解码。请求 URL、安装令牌、进度文案、终止事件和错误恢复仍由本工程负责。
+
+本地联调可临时安装公共仓库 `npm run pack` 产生的 tarball；不得提交本机绝对路径依赖。正式接入前验证 CDN 下载与校验值，再执行类型、测试、生产构建和真实安装 SSE 验收。

@@ -1,3 +1,5 @@
+import { readJsonSseStream } from "@zrlog/utils";
+import type { SseEvent as SharedSseEvent } from "@zrlog/utils";
 import {useEffect, useRef, useState} from 'react';
 import {
     Alert,
@@ -90,10 +92,7 @@ type InstallProgressEvent = {
     detail?: string;
 };
 
-type SseEvent = {
-    event: string;
-    data: any;
-};
+type SseEvent = SharedSseEvent<any>;
 
 type AppState = {
     current: number;
@@ -129,22 +128,6 @@ const mergeProgressEvent = (events: InstallProgressEvent[], event: InstallProgre
         return [...events, event];
     }
     return events.map((item, itemIndex) => itemIndex === index ? event : item);
-};
-
-const parseSseEvent = (chunk: string): SseEvent | null => {
-    const lines = chunk.replace(/\r\n/g, "\n").split("\n");
-    const event = lines.find((line) => line.startsWith("event:"))?.substring("event:".length).trim();
-    const data = lines
-        .filter((line) => line.startsWith("data:"))
-        .map((line) => line.substring("data:".length).trim())
-        .join("\n");
-    if (!event || !data) {
-        return null;
-    }
-    return {
-        event,
-        data: JSON.parse(data),
-    };
 };
 
 const getDbErrorText = (error?: InstallApiError) => {
@@ -613,35 +596,19 @@ const IndexLayout = () => {
             }));
             return;
         }
-        const reader = response.body?.getReader();
-        if (!reader) {
+        if (!response.body) {
             installingRef.current = false;
             messageApi.error(res.error.requestError);
             setState((prevState) => ({...prevState, installing: false}));
             void refreshInstallRuntimeState();
             return;
         }
-        const decoder = new TextDecoder();
-        let buffer = "";
         let terminalEventReceived = false;
         try {
-            for (;;) {
-                const {done, value} = await reader.read();
-                buffer += done ? decoder.decode() : decoder.decode(value, {stream: true});
-                buffer = buffer.replace(/\r\n/g, "\n");
-                const chunks = buffer.split("\n\n");
-                buffer = done ? "" : chunks.pop() || "";
-                for (const chunk of chunks) {
-                    const event = parseSseEvent(chunk);
-                    if (event) {
-                        terminalEventReceived = terminalEventReceived ||
-                            event.event === "install-complete" || event.event === "install-error";
-                        handleInstallSseEvent(event);
-                    }
-                }
-                if (done) {
-                    break;
-                }
+            for await (const event of readJsonSseStream<any>(response.body)) {
+                terminalEventReceived = terminalEventReceived ||
+                    event.event === "install-complete" || event.event === "install-error";
+                handleInstallSseEvent(event);
             }
             if (!terminalEventReceived) {
                 throw new Error(res.progress.disconnected);

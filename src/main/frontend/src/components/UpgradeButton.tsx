@@ -1,3 +1,4 @@
+import { readJsonSseStream } from "@zrlog/utils";
 import {App, Alert, Button, Collapse, Space, Tag, Typography} from "antd";
 import {formatText, getRes} from "utils/constants";
 import {renderSanitizedMarkdown} from "utils/sanitize-html";
@@ -75,38 +76,16 @@ const UpgradeButton = ({compact = false, installToken}: UpgradeButtonProps) => {
             if (!isUpgradeEventStream(contentType)) {
                 throw new Error(`${res.upgrade.failed}: ${res.error.requestError}`);
             }
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = "";
-            for (;;) {
-                const {done, value} = await reader.read();
-                buffer += done ? decoder.decode() : decoder.decode(value, {stream: true});
-                buffer = buffer.replace(/\r\n/g, "\n");
-                const chunks = buffer.split("\n\n");
-                buffer = done ? "" : chunks.pop() || "";
-                for (const chunk of chunks) {
-                    const lines = chunk.split("\n");
-                    const eventName = lines.find((line) => line.startsWith("event:"))
-                        ?.substring("event:".length).trim();
-                    const dataText = lines.filter((line) => line.startsWith("data:"))
-                        .map((line) => line.substring("data:".length).trim()).join("\n");
-                    if (!eventName || !dataText) {
-                        continue;
-                    }
-                    const data = JSON.parse(dataText);
-                    if (eventName === "upgrade-progress") {
-                        const progress = data as UpgradeProgress;
-                        terminalCompleted = terminalCompleted || isUpgradeCompletedEvent(eventName, progress);
-                        setProgressEvents((events) => mergeProgress(events, progress));
-                    } else if (eventName === "upgrade-error") {
-                        terminalErrorReceived = true;
-                        throw new Error(res.upgrade.failed);
-                    } else if (eventName === "upgrade-complete") {
-                        terminalCompleted = isUpgradeCompletedEvent(eventName, data);
-                    }
-                }
-                if (done) {
-                    break;
+            for await (const {event: eventName, data} of readJsonSseStream(response.body)) {
+                if (eventName === "upgrade-progress") {
+                    const progress = data as UpgradeProgress;
+                    terminalCompleted = terminalCompleted || isUpgradeCompletedEvent(eventName, progress);
+                    setProgressEvents((events) => mergeProgress(events, progress));
+                } else if (eventName === "upgrade-error") {
+                    terminalErrorReceived = true;
+                    throw new Error(res.upgrade.failed);
+                } else if (eventName === "upgrade-complete") {
+                    terminalCompleted = isUpgradeCompletedEvent(eventName, data);
                 }
             }
             if (!terminalCompleted) {
