@@ -3014,19 +3014,19 @@
   resolved "https://registry.npmmirror.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@zrlog/ui@0.1.1":
-  version "0.1.1"
-  resolved "https://registry.npmjs.org/@zrlog/ui/-/ui-0.1.1.tgz#c0172a604ab5a04c72445fc8de494ecd4ef82840"
-  integrity sha512-EhLTzKeu0xLnk8u7/oxJ5rkg5CA3DujU+hrX1kuvZq09UUdEoORmSWXOQDPe7CggMQ/DJsTIAHJhOmX8apjaPg==
+"@zrlog/ui@0.1.2":
+  version "0.1.2"
+  resolved "https://registry.npmjs.org/@zrlog/ui/-/ui-0.1.2.tgz#d1e5be2f158fede1b2a9fb81b0439f4a4baaa61f"
+  integrity sha512-mSO/4OTLveGoq+Nw7PF04V6GHYARAfafsYdTEmt6V26PRoCi3a1i+qyghwgA2GXoTdL1fLhMyMoatV0ENIzHjQ==
   dependencies:
     "@ant-design/fast-color" "3.0.1"
     antd-style "4.1.0"
     clsx "2.1.1"
 
-"@zrlog/utils@0.1.1":
-  version "0.1.1"
-  resolved "https://registry.npmjs.org/@zrlog/utils/-/utils-0.1.1.tgz#1053308d27869cb28d7240d6fe82d13e1e7514ab"
-  integrity sha512-fQb5cegV9l8bwu3q8ULWh+BdcYyZ8W9pOeYFhUBN/bxK/uTHMMFYVbkYoWyKmQXqNXWk6DU4MggLiyqg9xjyfQ==
+"@zrlog/utils@0.1.2":
+  version "0.1.2"
+  resolved "https://registry.npmjs.org/@zrlog/utils/-/utils-0.1.2.tgz#5de01b22da6cc5526bb4361d46181e190d7a2880"
+  integrity sha512-vQOKBrWVBsqHjirW0FSgd182P/Qg/CYPxrvIrfFApL3qIId+5NDmIQOU0TH2cgumlMwLYDT4dByzreLksGwoYA==
 
 abab@^2.0.3, abab@^2.0.5:
   version "2.0.6"

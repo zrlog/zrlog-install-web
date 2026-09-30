@@ -6,8 +6,8 @@
   "dependencies": {
     "@ant-design/cssinjs": "2.1.2",
     "@ant-design/icons": "6.3.2",
-    "@zrlog/ui": "0.1.1",
-    "@zrlog/utils": "0.1.1",
+    "@zrlog/ui": "0.1.2",
+    "@zrlog/utils": "0.1.2",
     "antd": "6.4.3",
     "axios": "1.18.0",
     "dompurify": "3.4.14",
