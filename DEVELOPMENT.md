@@ -78,6 +78,8 @@ yarn start
 
 - `theme/install-theme.ts` 使用 `@zrlog/ui/material` 的 `createMaterialTheme`，只加载 M3；默认主色来自 `@zrlog/ui/themes`，该轻量入口不加载 React 或样式运行时。
 - `index.tsx` 在 ConfigProvider 内挂载 `MaterialStyles`；品牌组件由本地 `ZrLogMark` 包装共享实现。React、React DOM、Ant Design 由安装器提供一份运行时。
+- `UiIconProvider theme="default"` 包裹配置根。页面图标从 `@zrlog/ui/material-icons/<语义名>` 逐个导入，存储方式和明暗选择把选中态传给 `selected`；不会加载后台其他主题的图形。组件级图标槽使用 `@zrlog/ui/antd/<Component>`，状态消息使用 `@zrlog/ui/feedback`。
+- 图标 API 使用已发布的 `@zrlog/ui` / `@zrlog/utils` 0.2.0；package.json 固定版本，yarn.lock 记录 npm registry 的下载地址与完整性校验值。
 - `utils/env-utils.tsx` 仍管理 light / dark / system 的保存与首次浅色策略，安装器不提供后台多主题选择。
 - 安装和升级使用 `@zrlog/utils` 的 `readJsonSseStream` 解码。请求 URL、安装令牌、进度文案、终止事件和错误恢复仍由本工程负责。
 

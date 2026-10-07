@@ -1,5 +1,10 @@
-import {CheckCircleFilled, CopyOutlined, EditOutlined, FileMarkdownOutlined} from "@ant-design/icons";
-import {Button, Input, message, Space, Typography} from "antd";
+import Input from "@zrlog/ui/antd/Input";
+import { useUiMessage } from "@zrlog/ui/feedback";
+import SuccessIcon from "@zrlog/ui/material-icons/success";
+import CopyIcon from "@zrlog/ui/material-icons/copy";
+import EditIcon from "@zrlog/ui/material-icons/edit";
+import MarkdownIcon from "@zrlog/ui/material-icons/markdown";
+import { Button, Space, Typography } from "antd";
 import type {InputRef} from "antd";
 import axios from "axios";
 import {useEffect, useRef, useState} from "react";
@@ -22,7 +27,7 @@ const InstallSuccessContent = ({content, configurationRequired, installToken, on
     onInstallTokenChange: (installToken: string) => void,
 }) => {
     const res = getRes();
-    const [messageApi, contextHolder] = message.useMessage({maxCount: 3});
+    const [messageApi, contextHolder] = useUiMessage({maxCount: 3});
     const [checkingConfig, setCheckingConfig] = useState(false);
     const [loadingCompletion, setLoadingCompletion] = useState(false);
     const [completionContent, setCompletionContent] = useState(content);
@@ -136,7 +141,7 @@ const InstallSuccessContent = ({content, configurationRequired, installToken, on
 
     return <section className="install-success" aria-labelledby="install-success-title">
         {contextHolder}
-        <div className="install-success-mark" aria-hidden="true"><CheckCircleFilled/></div>
+        <div className="install-success-mark" aria-hidden="true"><SuccessIcon selected/></div>
         <Title className="install-success-title" id="install-success-title" level={1} aria-live="polite">
             {configurationRequired ? res.success.askConfigTitle : res.success.installSuccess}
         </Title>
@@ -179,7 +184,7 @@ const InstallSuccessContent = ({content, configurationRequired, installToken, on
                              aria-label={res.success.configurationInstructions}>
             {dbProperties !== undefined && <div className="install-success-content-toolbar">
                 <Text code>DB_PROPERTIES</Text>
-                <Button icon={<CopyOutlined aria-hidden="true"/>} onClick={() => void copyDbProperties()}>
+                <Button icon={<CopyIcon aria-hidden="true"/>} onClick={() => void copyDbProperties()}>
                     {res.success.copyDbProperties}
                 </Button>
             </div>}
@@ -192,10 +197,10 @@ const InstallSuccessContent = ({content, configurationRequired, installToken, on
                     {checkingConfig ? res.installedPage.checkingConfig : res.installedPage.askConfigTips}
                 </Button> : <>
                     <Button href={handoffUrls.admin} size="large" type="primary">{res.success.enterAdmin}</Button>
-                    <Button href={handoffUrls.createArticle} icon={<EditOutlined/>} size="large">
+                    <Button href={handoffUrls.createArticle} icon={<EditIcon/>} size="large">
                         {res.success.createArticle}
                     </Button>
-                    <Button href={handoffUrls.importMarkdown} icon={<FileMarkdownOutlined/>} size="large">
+                    <Button href={handoffUrls.importMarkdown} icon={<MarkdownIcon/>} size="large">
                         {res.success.importMarkdown}
                     </Button>
                     <Button href={document.baseURI} size="large">{res.success.viewSite}</Button>

@@ -1,6 +1,8 @@
+import Result from "@zrlog/ui/antd/Result";
+import RefreshIcon from "@zrlog/ui/material-icons/refresh";
 import axios from "axios";
-import {ReloadOutlined} from "@ant-design/icons";
-import {Button, Layout, Result, Spin, Typography} from "antd";
+
+import { Button, Layout, Spin, Typography } from "antd";
 import {useEffect, useRef, useState} from "react";
 import {getRes, hasRuntimeResource} from "./utils/constants";
 import IndexLayout from "./components";
@@ -93,7 +95,7 @@ const AppBase = () => {
                                 {failed ? res.startup.errorDescription : res.startup.loadingDescription}
                             </Typography.Paragraph>}
                             extra={failed ? <Button className="install-result-action" type="primary" size="large"
-                                                    icon={<ReloadOutlined aria-hidden="true"/>}
+                                                    icon={<RefreshIcon aria-hidden="true"/>}
                                                     onClick={loadResourceFromServer}>
                                 {res.common.retry}
                             </Button> : undefined}

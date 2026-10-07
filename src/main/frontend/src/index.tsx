@@ -12,6 +12,7 @@ import {isInstallRuntimeResource, normalizeInstallRuntimeResource} from "./utils
 import useInstallTheme from "./theme/install-theme";
 import { MaterialStyles, materialColors } from "@zrlog/ui/material";
 import { DEFAULT_PRIMARY_COLOR } from "@zrlog/ui/themes";
+import { UiIconProvider } from "@zrlog/ui/icons";
 
 const jsonStr = document.getElementById("resourceInfo")?.textContent;
 export let resLoadedBySsr = false;
@@ -74,6 +75,7 @@ const Index = () => {
     }, []);
 
     return (
+        <UiIconProvider theme="default">
         <ConfigProvider
             locale={currentLang.startsWith("zh") ? zh_CN : en_US}
             {...themeConfig}
@@ -87,6 +89,7 @@ const Index = () => {
                 </BrowserRouter>
             </App>
         </ConfigProvider>
+        </UiIconProvider>
     );
 };
 

@@ -1,47 +1,33 @@
+import { Alert, Button, Checkbox, Collapse, Form, Layout, List, Radio, Segmented, Space, Tooltip, Typography } from "antd";
+import Tag from "@zrlog/ui/antd/Tag";
+import Progress from "@zrlog/ui/antd/Progress";
+import Input from "@zrlog/ui/antd/Input";
+import InputNumber from "@zrlog/ui/antd/InputNumber";
+import Result from "@zrlog/ui/antd/Result";
+import Steps from "@zrlog/ui/antd/Steps";
+import { useUiMessage, useUiApp } from "@zrlog/ui/feedback";
+import ArrowLeftIcon from "@zrlog/ui/material-icons/arrow-left";
+import ArrowRightIcon from "@zrlog/ui/material-icons/arrow-right";
+import SuccessIcon from "@zrlog/ui/material-icons/success";
+import ServerIcon from "@zrlog/ui/material-icons/server";
+import DatabaseIcon from "@zrlog/ui/material-icons/database";
+import DesktopIcon from "@zrlog/ui/material-icons/desktop";
+import GlobeIcon from "@zrlog/ui/material-icons/globe";
+import LoadingIcon from "@zrlog/ui/material-icons/loading";
+import LockIcon from "@zrlog/ui/material-icons/lock";
+import MoonIcon from "@zrlog/ui/material-icons/moon";
+import HelpIcon from "@zrlog/ui/material-icons/help";
+import RefreshIcon from "@zrlog/ui/material-icons/refresh";
+import SecurityIcon from "@zrlog/ui/material-icons/security";
+import SunIcon from "@zrlog/ui/material-icons/sun";
+import BoltIcon from "@zrlog/ui/material-icons/bolt";
+import UserIcon from "@zrlog/ui/material-icons/user";
 import { readJsonSseStream } from "@zrlog/utils";
 import type { SseEvent as SharedSseEvent } from "@zrlog/utils";
 import {useEffect, useRef, useState} from 'react';
-import {
-    Alert,
-    App,
-    Button,
-    Checkbox,
-    Collapse,
-    Form,
-    Input,
-    InputNumber,
-    Layout,
-    List,
-    message,
-    Progress,
-    Radio,
-    Result,
-    Segmented,
-    Space,
-    Steps,
-    Tag,
-    Tooltip,
-    Typography
-} from 'antd';
+
 import type {FormInstance, InputRef, RadioProps} from 'antd';
-import {
-    ArrowLeftOutlined,
-    ArrowRightOutlined,
-    CheckCircleFilled,
-    CloudServerOutlined,
-    DatabaseOutlined,
-    DesktopOutlined,
-    GlobalOutlined,
-    LoadingOutlined,
-    LockOutlined,
-    MoonOutlined,
-    QuestionCircleOutlined,
-    ReloadOutlined,
-    SafetyCertificateOutlined,
-    SunOutlined,
-    ThunderboltOutlined,
-    UserOutlined,
-} from "@ant-design/icons";
+
 
 import axios from "axios";
 import Text from "antd/es/typography/Text";
@@ -217,8 +203,8 @@ const IndexLayout = () => {
     const testingConnectionRef = useRef(false);
     const installingRef = useRef(false);
     const runtimeRefreshInFlightRef = useRef<Promise<InstallRuntimeView | undefined> | null>(null);
-    const [messageApi, contextHolder] = message.useMessage({maxCount: 3});
-    const {modal} = App.useApp();
+    const [messageApi, contextHolder] = useUiMessage({maxCount: 3});
+    const {modal} = useUiApp();
     const [themeMode, setThemeMode] = useState<ThemeMode>(EnvUtils.getThemeMode());
     const [installToken, setInstallToken] = useState(() => installTokenRequired ? readInstallToken() : "");
     const [installTokenTouched, setInstallTokenTouched] = useState(false);
@@ -647,7 +633,7 @@ const IndexLayout = () => {
         const shouldShowDetails = state.probe.status !== "pass";
         if (!shouldShowDetails) {
             return <div className="install-probe-pass" role="status" aria-live="polite">
-                <CheckCircleFilled aria-hidden="true" style={{color: "var(--ant-color-success)"}}/>
+                <SuccessIcon selected aria-hidden="true" style={{color: "var(--ant-color-success)"}}/>
                 <Text>{messageText}</Text>
                 <Text type="secondary">{res.probe.title}</Text>
                 <Button type="link" size="small" onClick={loadProbe}>{res.probe.retry}</Button>
@@ -741,17 +727,17 @@ const IndexLayout = () => {
                 onChange={(value) => changeThemeMode(value as ThemeMode)}
                 options={[
                     {
-                        icon: <SunOutlined aria-hidden="true"/>,
+                        icon: <SunIcon selected={themeMode === "light"} aria-hidden="true"/>,
                         label: <span className="install-theme-label">{res.theme.light}</span>,
                         value: "light",
                     },
                     {
-                        icon: <MoonOutlined aria-hidden="true"/>,
+                        icon: <MoonIcon selected={themeMode === "dark"} aria-hidden="true"/>,
                         label: <span className="install-theme-label">{res.theme.dark}</span>,
                         value: "dark",
                     },
                     {
-                        icon: <DesktopOutlined aria-hidden="true"/>,
+                        icon: <DesktopIcon selected={themeMode === "system"} aria-hidden="true"/>,
                         label: <span className="install-theme-label">{res.theme.system}</span>,
                         value: "system",
                     },
@@ -830,7 +816,7 @@ const IndexLayout = () => {
                 {brandHeader}
                 <main className="install-recovery-main" aria-live="polite">
                     <Result className="install-operation-result"
-                            icon={<LoadingOutlined spin/>}
+                            icon={<LoadingIcon spin/>}
                             title={<Title className="install-result-title" level={1} aria-live="polite">
                                 {res.operation.title}
                             </Title>}
@@ -838,7 +824,7 @@ const IndexLayout = () => {
                                 {res.operation.description}
                             </Paragraph>}
                             extra={<Button className="install-result-action"
-                                           icon={<ReloadOutlined aria-hidden="true"/>}
+                                           icon={<RefreshIcon aria-hidden="true"/>}
                                            onClick={() => void refreshInstallRuntimeState()}>
                                 {res.operation.refresh}
                             </Button>}/>
@@ -861,7 +847,7 @@ const IndexLayout = () => {
                 </main>
                 <aside className="install-support" aria-label={res.feedback.title}>
                     <div className="install-support-group">
-                        <QuestionCircleOutlined/>
+                        <HelpIcon/>
                         <span>{res.feedback.title}</span>
                         <Button type="link" size="small" target="_blank" rel="noreferrer"
                                 href={res.feedbackUrl}>
@@ -964,7 +950,7 @@ const IndexLayout = () => {
                                             styles={installModeRadioStyles}
                                             className={`install-mode-option ${sqliteSelected ? "is-selected" : ""}`}>
                                             <span className="install-mode-copy">
-                                                <span className="install-mode-icon"><ThunderboltOutlined aria-hidden="true"/></span>
+                                                <span className="install-mode-icon"><BoltIcon selected={sqliteSelected} aria-hidden="true"/></span>
                                                 <span className="install-mode-text">
                                                     <span className="install-mode-title">
                                                         {res.database.sqliteTitle}
@@ -978,7 +964,7 @@ const IndexLayout = () => {
                                                styles={installModeRadioStyles}
                                                className={`install-mode-option ${mysqlSelected ? "is-selected" : ""}`}>
                                             <span className="install-mode-copy">
-                                                <span className="install-mode-icon"><DatabaseOutlined aria-hidden="true"/></span>
+                                                <span className="install-mode-icon"><DatabaseIcon selected={mysqlSelected} aria-hidden="true"/></span>
                                                 <span className="install-mode-text">
                                                     <span className="install-mode-title">MySQL / MariaDB</span>
                                                     <span className="install-mode-description">{res.database.mysqlDescription}</span>
@@ -989,7 +975,7 @@ const IndexLayout = () => {
                                                styles={installModeRadioStyles}
                                                className={`install-mode-option ${currentDbType === "webapi" ? "is-selected" : ""}`}>
                                             <span className="install-mode-copy">
-                                                <span className="install-mode-icon"><CloudServerOutlined aria-hidden="true"/></span>
+                                                <span className="install-mode-icon"><ServerIcon selected={currentDbType === "webapi"} aria-hidden="true"/></span>
                                                 <span className="install-mode-text">
                                                     <span className="install-mode-title">WebApi</span>
                                                     <span className="install-mode-description">{res.database.webApiDescription}</span>
@@ -999,12 +985,12 @@ const IndexLayout = () => {
                                     </Radio.Group>
                                 </FormItem>
                                 {!sqliteSelected && <div className="install-connection-fields">
-                                    <div className="install-fields-heading"><SafetyCertificateOutlined/>
+                                    <div className="install-fields-heading"><SecurityIcon/>
                                         {res.database.connectionTitle}</div>
                                     <div className="install-field-row">
                                         <FormItem name="dbHost" label={res.database.dbHost}
                                                   rules={[{required: true}]}>
-                                            <Input prefix={<GlobalOutlined/>} placeholder="127.0.0.1" autoComplete="off"/>
+                                            <Input prefix={<GlobeIcon/>} placeholder="127.0.0.1" autoComplete="off"/>
                                         </FormItem>
                                         <FormItem name="dbPort" label={res.database.dbPort}
                                                   rules={[{required: true}]}>
@@ -1015,15 +1001,15 @@ const IndexLayout = () => {
                                     <FormItem name="dbName" label={res.database.dbName}
                                               help={mysqlSelected ? res.database.dbNameHelp : undefined}
                                               rules={[{required: true}]}>
-                                        <Input prefix={<DatabaseOutlined/>} placeholder="zrlog" autoComplete="off"/>
+                                        <Input prefix={<DatabaseIcon/>} placeholder="zrlog" autoComplete="off"/>
                                     </FormItem>
                                     <FormItem name="dbUserName" label={res.database.dbUserName}
                                               help={mysqlSelected ? res.database.dbUserHelp : undefined}
                                               rules={[{required: true}]}>
-                                        <Input prefix={<UserOutlined/>} autoComplete="off"/>
+                                        <Input prefix={<UserIcon/>} autoComplete="off"/>
                                     </FormItem>
                                     <FormItem name="dbPassword" label={res.database.dbPassword}>
-                                        <Input.Password prefix={<LockOutlined/>} autoComplete="new-password"/>
+                                        <Input.Password prefix={<LockIcon/>} autoComplete="new-password"/>
                                     </FormItem>
                                     <Alert className="install-form-note" type="warning" showIcon
                                            message={res.database.initRisk}/>
@@ -1073,11 +1059,11 @@ const IndexLayout = () => {
                                   onValuesChange={(k: any, v: Record<string, string | number>) => setWeblogValue(k, v)}>
                                 <FormItem name="username" label={res.website.admin}
                                           rules={[{required: true}, {max: 16}]}>
-                                    <Input prefix={<UserOutlined/>} autoComplete="username"/>
+                                    <Input prefix={<UserIcon/>} autoComplete="username"/>
                                 </FormItem>
                                 <FormItem name="password" label={res.website.adminPassword}
                                           rules={[{required: true}, {min: 8, message: res.website.passwordMin}]}>
-                                    <Input.Password prefix={<LockOutlined/>} autoComplete="new-password"/>
+                                    <Input.Password prefix={<LockIcon/>} autoComplete="new-password"/>
                                 </FormItem>
                                 <FormItem name="confirmPassword" label={res.website.confirmPassword}
                                           dependencies={["password"]}
@@ -1087,15 +1073,15 @@ const IndexLayout = () => {
                                                       Promise.reject(new Error(res.website.passwordMismatch));
                                               },
                                           })]}>
-                                    <Input.Password prefix={<LockOutlined/>} autoComplete="new-password"/>
+                                    <Input.Password prefix={<LockIcon/>} autoComplete="new-password"/>
                                 </FormItem>
                                 <FormItem name="email" label={res.website.adminEmail}
                                           rules={[{type: "email", message: res.website.emailInvalid}]}>
-                                    <Input type="email" prefix={<GlobalOutlined/>} autoComplete="email"/>
+                                    <Input type="email" prefix={<GlobeIcon/>} autoComplete="email"/>
                                 </FormItem>
                                 <FormItem name="title" label={res.website.siteTitle}
                                           rules={[{required: true}, {max: 255}]}>
-                                    <Input prefix={<GlobalOutlined/>} placeholder={res.website.siteTitlePlaceholder}/>
+                                    <Input prefix={<GlobeIcon/>} placeholder={res.website.siteTitlePlaceholder}/>
                                 </FormItem>
                                 <FormItem name="second_title"
                                           label={res.website.siteSubtitle}>
@@ -1117,13 +1103,13 @@ const IndexLayout = () => {
                         <Button className="install-action-button install-action-primary"
                                 loading={state.testConnecting} disabled={nextDisabled} type="primary"
                                 form="install-database-form" htmlType="submit">
-                            {res.common.next}<ArrowRightOutlined aria-hidden="true"/>
+                            {res.common.next}<ArrowRightIcon aria-hidden="true"/>
                         </Button>
                     )}
                     {state.current === 1 && (
                         <>
                             <Button className="install-action-button" disabled={state.installing}
-                                    icon={<ArrowLeftOutlined aria-hidden="true"/>}
+                                    icon={<ArrowLeftIcon aria-hidden="true"/>}
                                     onClick={() => prev()}>
                                 {res.common.previous}
                             </Button>
@@ -1139,7 +1125,7 @@ const IndexLayout = () => {
                 </div>
                 {showFeedback && <aside className="install-support" aria-label={res.feedback.title}>
                     <div className="install-support-group">
-                        <QuestionCircleOutlined/>
+                        <HelpIcon/>
                         <span>{res.feedback.title}</span>
                         <Button type="link" size="small" target="_blank" rel="noreferrer" href={res.feedbackUrl}>
                             {res.feedback.linkText}

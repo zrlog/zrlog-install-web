@@ -1,5 +1,10 @@
-import {ArrowRightOutlined, HistoryOutlined} from "@ant-design/icons";
-import {Alert, App, Button, Form, Input, Tag, Typography} from "antd";
+import { Alert, Button, Form, Typography } from "antd";
+import Tag from "@zrlog/ui/antd/Tag";
+import Input from "@zrlog/ui/antd/Input";
+import { useUiApp } from "@zrlog/ui/feedback";
+import ArrowRightIcon from "@zrlog/ui/material-icons/arrow-right";
+import HistoryIcon from "@zrlog/ui/material-icons/history";
+
 import type {InputRef} from "antd";
 import {useEffect, useRef, useState} from "react";
 import {getRes} from "utils/constants";
@@ -28,7 +33,7 @@ const InstallRecoveryPanel = ({
     onStartNew,
 }: InstallRecoveryPanelProps) => {
     const res = getRes();
-    const {modal} = App.useApp();
+    const {modal} = useUiApp();
     const [resuming, setResuming] = useState(false);
     const [tokenTouched, setTokenTouched] = useState(false);
     const [resumeFailed, setResumeFailed] = useState(false);
@@ -90,7 +95,7 @@ const InstallRecoveryPanel = ({
     };
 
     return <section className="install-recovery" aria-labelledby="install-recovery-title">
-        <Tag className="install-recovery-status" icon={<HistoryOutlined/>} color="processing">
+        <Tag className="install-recovery-status" icon={<HistoryIcon/>} color="processing">
             {res.recovery.status}
         </Tag>
         <Title className="install-recovery-title" id="install-recovery-title" level={1} aria-live="polite">
@@ -136,7 +141,7 @@ const InstallRecoveryPanel = ({
             <div className="install-recovery-actions">
                 <Button className="install-recovery-action" type="primary" size="large"
                         htmlType="submit" loading={resuming}
-                        icon={<ArrowRightOutlined aria-hidden="true"/>}>
+                        icon={<ArrowRightIcon aria-hidden="true"/>}>
                     {resuming ? res.recovery.resuming : res.recovery.resume}
                 </Button>
                 <Button className="install-recovery-action" size="large" htmlType="button"

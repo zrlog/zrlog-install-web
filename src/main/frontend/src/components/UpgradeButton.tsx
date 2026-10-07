@@ -1,5 +1,8 @@
+import { Alert, Button, Collapse, Space, Typography } from "antd";
+import Tag from "@zrlog/ui/antd/Tag";
+import { useUiApp } from "@zrlog/ui/feedback";
 import { readJsonSseStream } from "@zrlog/utils";
-import {App, Alert, Button, Collapse, Space, Tag, Typography} from "antd";
+
 import {formatText, getRes} from "utils/constants";
 import {renderSanitizedMarkdown} from "utils/sanitize-html";
 import {useState} from "react";
@@ -42,7 +45,7 @@ const getSafeDownloadUrl = (downloadUrl?: string) => {
 };
 
 const UpgradeButton = ({compact = false, installToken}: UpgradeButtonProps) => {
-    const {message, modal} = App.useApp();
+    const {message, modal} = useUiApp();
     const [upgrading, setUpgrading] = useState(false);
     const [progressExpanded, setProgressExpanded] = useState(false);
     const [progressEvents, setProgressEvents] = useState<UpgradeProgress[]>([]);
