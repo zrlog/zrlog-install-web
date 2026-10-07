@@ -30,6 +30,10 @@ UI 任务先读 [Ops UI 统一入口](../zrlog-ops/docs/ui-design-guide.md)，�
 2. 内部采用 SimpleWebServer 轻量框架，在开发套件 (IDE) 中定位到主类 `com.zrlog.install.Application` 从而运行 `main` 方法进入调试态。
 
 ### 2.2 前端独立开发调试
+使用 Node.js 22 LTS（至少 22.22.1）和 Yarn 1.x。Maven 的 `nodeBuild` 配置固定使用
+Node.js 22.22.1；本地开发不再通过 npm 的 `node` 或平台专属二进制依赖覆盖运行时。
+Husky 9 使用 `prepare` 脚本安装前端目录下的 Git hooks。
+
 为支持页面实时重载（HMR），建议使用独立的前台端口服务：
 ```bash
 cd src/main/frontend

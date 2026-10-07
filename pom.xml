@@ -196,9 +196,8 @@
                         <artifactId>frontend-maven-plugin</artifactId>
                         <version>1.12.1</version>
                         <configuration>
-                            <nodeVersion>v20.20.2</nodeVersion>
+                            <nodeVersion>v22.22.1</nodeVersion>
                             <yarnVersion>v1.22.18</yarnVersion>
-                            <npmVersion>8.11.0</npmVersion>
                             <workingDirectory>src/main/frontend</workingDirectory>
                             <installDirectory>target</installDirectory>
                             <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
@@ -221,6 +220,16 @@
                                 <configuration>
                                     <arguments>install --registry=https://registry.npmmirror.com --frozen-lockfile
                                     </arguments>
+                                </configuration>
+                                <phase>generate-resources</phase>
+                            </execution>
+                            <execution>
+                                <id>yarn type-check</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>type-check</arguments>
                                 </configuration>
                                 <phase>generate-resources</phase>
                             </execution>
