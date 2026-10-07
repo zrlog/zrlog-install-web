@@ -38,15 +38,29 @@ jobs:
 
       - name: Generate settings.xml
         run: |
-          cat > $GITHUB_WORKSPACE/settings.xml <<EOF
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          # Maven 3.10+ requires an explicit Sonatype origin for central credentials.
+          # Older Maven versions do not recognize repositoryOrigins in settings.xml.
+          MAVEN_VERSION="$(./mvnw -B -Dstyle.color=never --version)"
+          if [[ ! "$MAVEN_VERSION" =~ Apache\ Maven\ ([0-9]+)\.([0-9]+)\. ]]; then
+            echo "Unable to determine Maven version" >&2
+            exit 1
+          fi
+          SETTINGS_VERSION=1.0.0
+          REPOSITORY_ORIGINS=
+          if (( BASH_REMATCH[1] > 3 || (BASH_REMATCH[1] == 3 && BASH_REMATCH[2] >= 10) )); then
+            SETTINGS_VERSION=1.3.0
+            REPOSITORY_ORIGINS='<repositoryOrigins><repositoryOrigin>https://central.sonatype.com</repositoryOrigin></repositoryOrigins>'
+          fi
+          cat > "$GITHUB_WORKSPACE/settings.xml" <<EOF
+          <settings xmlns="http://maven.apache.org/SETTINGS/${SETTINGS_VERSION}"
                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/${SETTINGS_VERSION} https://maven.apache.org/xsd/settings-${SETTINGS_VERSION}.xsd">
             <servers>
               <server>
                 <id>central</id>
                 <username>${{ secrets.OSSRH_USERNAME }}</username>
                 <password>${{ secrets.OSSRH_PASSWORD }}</password>
+                ${REPOSITORY_ORIGINS}
               </server>
             </servers>
           </settings>
