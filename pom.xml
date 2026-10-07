@@ -202,7 +202,6 @@
                             <installDirectory>target</installDirectory>
                             <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
                             <yarnDownloadRoot>https://github.com/yarnpkg/yarn/releases/download/</yarnDownloadRoot>
-                            <npmRegistryURL>https://registry.npmmirror.com</npmRegistryURL>
                         </configuration>
                         <executions>
                             <execution>
