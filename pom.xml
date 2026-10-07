@@ -17,7 +17,7 @@
         <finalName>zrlog-install-web</finalName>
         <libOutputPath>lib</libOutputPath>
         <frontendBuildOutputPath>../resources/install</frontendBuildOutputPath>
-        <sqlite-jdbc.version>3.53.2.1</sqlite-jdbc.version>
+        <sqlite-jdbc.version>3.53.4.0</sqlite-jdbc.version>
         <sqlite-jdbc.scope>test</sqlite-jdbc.scope>
         <gpg.passphrase/>
     </properties>
