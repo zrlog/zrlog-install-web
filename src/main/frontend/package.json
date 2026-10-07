@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "homepage": "./install",
   "private": true,
+  "engines": {
+    "node": ">=22.22.1 <23"
+  },
   "dependencies": {
     "@ant-design/cssinjs": "2.1.2",
     "@ant-design/icons": "6.3.2",
@@ -11,12 +14,12 @@
     "antd": "6.4.3",
     "axios": "1.18.0",
     "dompurify": "3.4.14",
-    "marked": "16.0.0",
+    "marked": "18.0.7",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router": "6.30.3",
     "react-router-dom": "6.30.3",
-    "styled-components": "6.1.15"
+    "styled-components": "6.4.4"
   },
   "resolutions": {
     "@babel/plugin-transform-modules-systemjs": "7.29.4",
@@ -46,7 +49,7 @@
   },
   "scripts": {
     "lint": "yarn type-check",
-    "prepare": "cd ../../../ && husky install src/main/frontend/.husky",
+    "prepare": "cd ../../../ && husky src/main/frontend/.husky",
     "pre-commit": "yarn lint",
     "start": "react-scripts start",
     "test": "react-scripts test --watchAll=false --runInBand",
@@ -63,12 +66,10 @@
     "@types/react-router": "5.1.18",
     "@types/react-router-dom": "5.3.2",
     "@typescript-eslint/typescript-estree": "5.29.0",
-    "cross-env": "7.0.3",
-    "husky": "7.0.4",
-    "lint-staged": "11.1.2",
-    "node": "18.9.0",
-    "node-bin-darwin-arm64": "18.9.0",
-    "prettier": "2.3.2",
+    "cross-env": "10.1.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.2.0",
+    "prettier": "3.9.6",
     "react-loadable": "5.5.0",
     "react-scripts": "5.0.1",
     "typescript": "4.9.5"

@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: '11'
@@ -25,7 +25,7 @@ jobs:
           settings-path: ${{ github.workspace }}
 
       - name: Cache frontend dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             src/main/frontend/node_modules
