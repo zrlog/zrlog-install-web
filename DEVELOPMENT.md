@@ -88,3 +88,7 @@ yarn start
 - 安装和升级使用 `@zrlog/utils` 的 `readJsonSseStream` 解码。请求 URL、安装令牌、进度文案、终止事件和错误恢复仍由本工程负责。
 
 本地联调可临时安装公共仓库 `npm run pack` 产生的 tarball；不得提交本机绝对路径依赖。正式接入前验证版本包下载与校验值，再执行类型、测试、生产构建和真实安装 SSE 验收。
+
+## 发布认证
+
+Maven 3.10 起会按仓库 origin 校验凭证；`central` 默认关联的下载域名与 Sonatype 发布域名不同。发布工作流读取实际 Maven 版本，3.10 及以上使用 settings 1.3.0，并为 `central` 显式声明 `https://central.sonatype.com`；旧 Maven 保留 settings 1.0.0，避免不支持 `repositoryOrigins` 的警告。升级 Maven 时须验证 HTTP 认证上传，文件仓库部署无法覆盖凭证校验。
