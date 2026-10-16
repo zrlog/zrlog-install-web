@@ -3750,27 +3750,15 @@ at-least-node@^1.0.0:
   resolved "https://registry.npmmirror.com/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
   integrity sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==
 
-autoprefixer@^10.4.12:
+autoprefixer@^10.4.12, autoprefixer@^10.4.7:
   version "10.6.1"
-  resolved "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.6.1.tgz#437cea1a0b96cedc4065c05327b728b1594faf27"
+  resolved "https://registry.npmmirror.com/autoprefixer/-/autoprefixer-10.6.1.tgz#437cea1a0b96cedc4065c05327b728b1594faf27"
   integrity sha512-cL1Qz6ADZhcEbny/8HPfe99J6HhNoYtpX2LFLIbhgGE7Q1hlQVkYFdetDN7Id3KiQxhDrHwzlHr/YQCnZ8+xSA==
   dependencies:
     browserslist "^4.28.9"
     caniuse-lite "^1.0.30001810"
     fraction.js "^5.3.4"
     picocolors "^1.1.1"
-    postcss-value-parser "^4.2.0"
-
-autoprefixer@^10.4.7:
-  version "10.4.7"
-  resolved "https://registry.npmmirror.com/autoprefixer/-/autoprefixer-10.4.7.tgz#1db8d195f41a52ca5069b7593be167618edbbedf"
-  integrity sha512-ypHju4Y2Oav95SipEcCcI5J7CGPuvz8oat7sUtYj3ClK44bldfvtvcxK6IEK++7rqB7YchDGzweZIBG+SD0ZAA==
-  dependencies:
-    browserslist "^4.20.3"
-    caniuse-lite "^1.0.30001335"
-    fraction.js "^4.2.0"
-    normalize-range "^0.1.2"
-    picocolors "^1.0.0"
     postcss-value-parser "^4.2.0"
 
 axe-core@^4.3.5:
@@ -4138,7 +4126,7 @@ caniuse-api@^3.0.0:
     lodash.memoize "^4.1.2"
     lodash.uniq "^4.5.0"
 
-caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001335:
+caniuse-lite@^1.0.0:
   version "1.0.30001358"
   resolved "https://registry.npmmirror.com/caniuse-lite/-/caniuse-lite-1.0.30001358.tgz#473d35dabf5e448b463095cab7924e96ccfb8c00"
   integrity sha512-hvp8PSRymk85R20bsDra7ZTCpSVGN/PAz9pSAjPSjKC+rNmnUk5vCRgJwiTT/O4feQ/yu/drvZYpKxxhbFuChw==
@@ -5706,11 +5694,6 @@ forwarded@0.2.0:
   version "0.2.0"
   resolved "https://registry.npmmirror.com/forwarded/-/forwarded-0.2.0.tgz#2269936428aad4c15c7ebe9779a84bf0b2a81811"
   integrity sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==
-
-fraction.js@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.npmmirror.com/fraction.js/-/fraction.js-4.2.0.tgz#448e5109a313a3527f5a3ab2119ec4cf0e0e2950"
-  integrity sha512-MhLuK+2gUcnZe8ZHlaaINnQLl0xRIGRfcGk2yl8xoQAfHrSsL3rYu6FCmBdkdbhc9EPlwyGHewaRsvwRMJtAlA==
 
 fraction.js@^5.3.4:
   version "5.3.4"
@@ -7568,11 +7551,6 @@ normalize-path@^3.0.0, normalize-path@~3.0.0:
   version "3.0.0"
   resolved "https://registry.npmmirror.com/normalize-path/-/normalize-path-3.0.0.tgz#0dcd69ff23a1c9b11fd0978316644a0388216a65"
   integrity sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==
-
-normalize-range@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.npmmirror.com/normalize-range/-/normalize-range-0.1.2.tgz#2d10c06bdfd312ea9777695a4d28439456b75942"
-  integrity sha512-bdok/XvKII3nUpklnV6P2hxtMNrCboOjAcyBuQnWEhO665FwrSNRxU+AqpsyvO6LgGYPspN+lu5CLtw4jPRKNA==
 
 normalize-url@^6.0.1:
   version "6.1.0"

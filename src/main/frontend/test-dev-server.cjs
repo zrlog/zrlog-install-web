@@ -13,11 +13,11 @@ const createCraConfig = require("react-scripts/config/webpackDevServer.config");
 const paths = require("react-scripts/config/paths");
 const adaptConfig = require("./dev-server-config.cjs");
 
-function request(protocol, port, pathname, headers = {}) {
+function requestWithCa(protocol, port, pathname, headers, ca) {
     return new Promise((resolve, reject) => {
         const client = protocol === "https" ? https : http;
         const req = client.get({ hostname: "127.0.0.1", port, path: pathname, headers,
-            rejectUnauthorized: false, timeout: 5000 }, (res) => {
+            ca, servername: "localhost", timeout: 5000 }, (res) => {
             let body = "";
             res.setEncoding("utf8");
             res.on("data", (chunk) => { body += chunk; });
@@ -53,6 +53,11 @@ for (const protocol of ["http", "https"]) {
         });
         await server.start();
         const port = server.server.address().port;
+        // Trust only this development server's generated certificate and keep
+        // hostname/certificate validation enabled, including hostile Host tests.
+        const ca = protocol === "https" ? server.options.server.options.cert : undefined;
+        const request = (protocol, port, pathname, headers = {}) =>
+            requestWithCa(protocol, port, pathname, headers, ca);
         const hook = await request(protocol, port, "/__compat-before");
         assert.equal(hook.status, 200);
         assert.equal(hook.body, "hook preserved");
