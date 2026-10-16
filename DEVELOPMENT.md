@@ -34,6 +34,12 @@ UI 任务先读 [Ops UI 统一入口](../zrlog-ops/docs/ui-design-guide.md)，�
 Node.js 22.22.1；本地开发不再通过 npm 的 `node` 或平台专属二进制依赖覆盖运行时。
 Husky 9 使用 `prepare` 脚本安装前端目录下的 Git hooks。
 
+开发服务器固定为 webpack-dev-server 5.2.6，使用不依赖 node-forge 的证书实现。
+`yarn start` 通过 CRACO 和 `dev-server-config.cjs` 适配 CRA 5 的中间件与 HTTPS 配置；
+生产构建仍使用 react-scripts。适配器将源码映射和用户 proxy 放在 Host/跨站检查之后，
+保留 service-worker 清理，不启用 wildcard CORS 或 `allowedHosts=all`。
+修改依赖锁或适配器后运行 `yarn test:dev-server`，覆盖 HTTP、HTTPS、源码映射及异常 Host/跨站请求。
+
 为支持页面实时重载（HMR），建议使用独立的前台端口服务：
 ```bash
 cd src/main/frontend

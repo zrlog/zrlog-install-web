@@ -243,6 +243,17 @@
                                 <phase>generate-resources</phase>
                             </execution>
                             <execution>
+                                <id>yarn test dev-server</id>
+                                <goals>
+                                    <goal>yarn</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>test:dev-server</arguments>
+                                    <yarnInheritsProxyConfigFromMaven>false</yarnInheritsProxyConfigFromMaven>
+                                </configuration>
+                                <phase>generate-resources</phase>
+                            </execution>
+                            <execution>
                                 <id>yarn build</id>
                                 <goals>
                                     <goal>yarn</goal>
