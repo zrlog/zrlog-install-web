@@ -12,7 +12,6 @@ import java.sql.Statement;
 import java.util.Locale;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 final class InstallSchemaSafety {
 
@@ -23,9 +22,6 @@ final class InstallSchemaSafety {
             + "WHERE type IN ('table','view') AND lower(name) IN ("
             + "'link','lognav','plugin','tag','type','user','user_passkey','user_passkey_challenge',"
             + "'log','log_extension_index','comment','log_version','website')";
-    private static final Pattern DROP_STATEMENT = Pattern.compile(
-            "(?is)^(?:\\s|--[^\\r\\n]*(?:\\r?\\n|$)|#[^\\r\\n]*(?:\\r?\\n|$)|/\\*.*?\\*/)*"
-                    + "DROP(?:\\s|/\\*)");
 
     private InstallSchemaSafety() {
     }
@@ -101,6 +97,33 @@ final class InstallSchemaSafety {
     }
 
     static boolean isDropStatement(String sql) {
-        return sql != null && DROP_STATEMENT.matcher(sql).find();
+        if (sql == null) {
+            return false;
+        }
+        // Scan each leading comment once; a repeated regex alternative can backtrack
+        // exponentially over adjacent block comments in an imported SQL file.
+        int offset = 0;
+        while (offset < sql.length()) {
+            if (Character.isWhitespace(sql.charAt(offset)) || sql.charAt(offset) == '\uFEFF') {
+                offset++;
+            } else if (sql.startsWith("--", offset) || sql.charAt(offset) == '#') {
+                while (offset < sql.length() && sql.charAt(offset) != '\r' && sql.charAt(offset) != '\n') {
+                    offset++;
+                }
+            } else if (sql.startsWith("/*", offset)) {
+                int end = sql.indexOf("*/", offset + 2);
+                if (end < 0) {
+                    return false;
+                }
+                offset = end + 2;
+            } else {
+                break;
+            }
+        }
+        int afterKeyword = offset + 4;
+        return sql.regionMatches(true, offset, "DROP", 0, 4)
+                && (afterKeyword == sql.length()
+                || Character.isWhitespace(sql.charAt(afterKeyword))
+                || sql.startsWith("/*", afterKeyword));
     }
 }
