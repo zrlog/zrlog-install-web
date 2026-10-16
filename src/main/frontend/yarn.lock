@@ -31,28 +31,38 @@
     csstype "^3.1.3"
     stylis "^4.3.4"
 
-"@ant-design/fast-color@3.0.1", "@ant-design/fast-color@^3.0.1":
+"@ant-design/fast-color@3.0.1", "@ant-design/fast-color@^3.0.0", "@ant-design/fast-color@^3.0.1":
   version "3.0.1"
   resolved "https://registry.npmmirror.com/@ant-design/fast-color/-/fast-color-3.0.1.tgz#fee56b95427c0b55b216c93d9a7f3473f31615b5"
   integrity sha512-esKJegpW4nckh0o6kV3Tkb7NPIZYbPnnFxmQDUmL08ukXZAvV85TZBr70eGuke/CIArLaP6aw8lt9KILjnWuOw==
-
-"@ant-design/fast-color@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.npmmirror.com/@ant-design/fast-color/-/fast-color-3.0.0.tgz#fb5178203de825f284809538f5142203d0ef3d80"
-  integrity sha512-eqvpP7xEDm2S7dUzl5srEQCBTXZMmY3ekf97zI+M2DHOYyKdJGH0qua0JACHTqbkRnD/KHFQP9J1uMJ/XWVzzA==
 
 "@ant-design/icons-svg@^4.5.0":
   version "4.5.0"
   resolved "https://registry.npmmirror.com/@ant-design/icons-svg/-/icons-svg-4.5.0.tgz#7b1c567e489840d747f211d3688949bcba363ad2"
   integrity sha512-1BTUFyKPTBZ53MuTP8s0k5SFEXL7o3VHEOwLgzaoWKwnBeqIcqUtVshc4SKzhI6uACfqhJqBwBUE9FsWR3uULA==
 
-"@ant-design/icons@6.3.2", "@ant-design/icons@^6.2.3":
+"@ant-design/icons-svg@^4.6.0":
+  version "4.6.0"
+  resolved "https://registry.yarnpkg.com/@ant-design/icons-svg/-/icons-svg-4.6.0.tgz#5f7ebfe2a6b7c871920f73db095bd4ab50d7764d"
+  integrity sha512-PRomU725ABMf/lnQp5HiB7my1kjEbFY0D10N4lXYxK6TIB1gKjIVD5MRThpDaezLgw1D774J8eOeeDB0M6wHrQ==
+
+"@ant-design/icons@6.3.2":
   version "6.3.2"
   resolved "https://registry.npmmirror.com/@ant-design/icons/-/icons-6.3.2.tgz#8291dffc53003db9a5df59f80ed758473cd5c8df"
   integrity sha512-B6O5a5XJ4wjtNOfZejXYwHW5zvKV5gYkjGf11dHGLEbKn0ABDGndo41+gfIiXyTFhvESj4XTotuud33mUFid0g==
   dependencies:
     "@ant-design/colors" "^8.0.1"
     "@ant-design/icons-svg" "^4.5.0"
+    "@rc-component/util" "^1.11.0"
+    clsx "^2.1.1"
+
+"@ant-design/icons@^6.2.5":
+  version "6.3.4"
+  resolved "https://registry.yarnpkg.com/@ant-design/icons/-/icons-6.3.4.tgz#9a76f7b6b4554a65f25e3e5c439405b96c4ebd71"
+  integrity sha512-kDoUlppczVyCUTFthF6cHmPzMBYqNZQhu9j6EyIX/YIdM9j9CZNZoJUjzVw7/1v1VO8WwVMmPp15r/uwIAS0AQ==
+  dependencies:
+    "@ant-design/colors" "^8.0.1"
+    "@ant-design/icons-svg" "^4.6.0"
     "@rc-component/util" "^1.11.0"
     clsx "^2.1.1"
 
@@ -2130,14 +2140,14 @@
   dependencies:
     "@babel/runtime" "^7.24.4"
 
-"@rc-component/cascader@~1.15.0":
-  version "1.15.0"
-  resolved "https://registry.npmmirror.com/@rc-component/cascader/-/cascader-1.15.0.tgz#554cba8e01e94a1288547cec96422b2cfc73ff40"
-  integrity sha512-ZzpMtwFCRo3fbXHuDnncARJMZQjdqA2w7aDuPofNQt+aDx39st1hgfIpEwTBLhe2Hqsvs/zOr8RTtgxTkCPySw==
+"@rc-component/cascader@~1.16.1":
+  version "1.16.1"
+  resolved "https://registry.yarnpkg.com/@rc-component/cascader/-/cascader-1.16.1.tgz#94193ee55009219999a46e005a0f8589c8c021a2"
+  integrity sha512-wxLopwM+EBed0zNNGdnGE4coYoqcO+XD42fHgn+pDvO+XzhNFbdgSlSNXdKocIYqccvqgWvoxDPNb0OVRdi59A==
   dependencies:
-    "@rc-component/select" "~1.6.0"
-    "@rc-component/tree" "~1.3.0"
-    "@rc-component/util" "^1.4.0"
+    "@rc-component/select" "~1.7.1"
+    "@rc-component/tree" "~1.3.2"
+    "@rc-component/util" "^1.11.1"
     clsx "^2.1.1"
 
 "@rc-component/checkbox@~2.0.0":
@@ -2203,10 +2213,10 @@
     "@rc-component/util" "^1.2.1"
     clsx "^2.1.1"
 
-"@rc-component/form@~1.8.1":
-  version "1.8.5"
-  resolved "https://registry.npmmirror.com/@rc-component/form/-/form-1.8.5.tgz#20571cfd401dc38c74c38cdf4722ddc6c23a9806"
-  integrity sha512-d24EYtvUOBhxEtSd/EqIu9DaMuqrWF2IRIvAFCTM6NQ/GJIYNr8DvEpUSUlv2uPxEJ0ZPwYQ+wwlGIAaiHvdrw==
+"@rc-component/form@~1.8.5":
+  version "1.8.6"
+  resolved "https://registry.yarnpkg.com/@rc-component/form/-/form-1.8.6.tgz#4db8ffb27280e92540546e8bb19e3dacfa260f4b"
+  integrity sha512-1EXVsSKPZC6kGrIqxVck7kAWM6T65b6et/n5wIcyiaIa41VrDshD0nVLHoBDEIZr2ATQsOP6icb4XQkNFMLBAw==
   dependencies:
     "@rc-component/async-validator" "^6.0.0"
     "@rc-component/util" "^1.11.1"
@@ -2231,7 +2241,7 @@
     "@rc-component/util" "^1.4.0"
     clsx "^2.1.1"
 
-"@rc-component/input@~1.3.0":
+"@rc-component/input@~1.3.0", "@rc-component/input@~1.3.1":
   version "1.3.1"
   resolved "https://registry.npmmirror.com/@rc-component/input/-/input-1.3.1.tgz#230b8b59cdde8521d50f0eede63ddacb61cc0cd3"
   integrity sha512-iFvTUT9W+JC/MSin2aGAk8NqsVlTzcExNC9DZariON1IWirju9NoNeEk47an4Q8iHazkoVI/y1LnDi88+CPcig==
@@ -2251,7 +2261,7 @@
     "@rc-component/util" "^1.3.0"
     clsx "^2.1.1"
 
-"@rc-component/menu@~1.3.0":
+"@rc-component/menu@~1.3.0", "@rc-component/menu@~1.3.1":
   version "1.3.1"
   resolved "https://registry.npmmirror.com/@rc-component/menu/-/menu-1.3.1.tgz#16cae71a01080914e8bac08359fccdda7bfce540"
   integrity sha512-pSZl9nBPgKgxN0aaW7NilIBEwWsc+43S+ulGdWAg9afak96dNOGWsGx0DLLBB1VQsAJvo6bQMTDzXoPlEHsBEw==
@@ -2269,17 +2279,9 @@
   dependencies:
     "@babel/runtime" "^7.18.0"
 
-"@rc-component/motion@^1.0.0", "@rc-component/motion@^1.1.3", "@rc-component/motion@^1.1.4":
-  version "1.1.5"
-  resolved "https://registry.npmmirror.com/@rc-component/motion/-/motion-1.1.5.tgz#76e083491371cf2c5e415ae9b0c186f4970d85d9"
-  integrity sha512-IokOGL+aDqG+GDZjPDN4IFSVrThSbBB2CyHl0F58vOio+5ujLesZ1hL83/hMkazqlGM5zOF7QSbR9cRxnsy8hQ==
-  dependencies:
-    "@rc-component/util" "^1.2.0"
-    clsx "^2.1.1"
-
-"@rc-component/motion@^1.3.2":
+"@rc-component/motion@^1.0.0", "@rc-component/motion@^1.1.3", "@rc-component/motion@^1.1.4", "@rc-component/motion@^1.3.3":
   version "1.3.3"
-  resolved "https://registry.npmmirror.com/@rc-component/motion/-/motion-1.3.3.tgz#6a7bbe0a9f070bd11642168f741d40e78bb28565"
+  resolved "https://registry.yarnpkg.com/@rc-component/motion/-/motion-1.3.3.tgz#6a7bbe0a9f070bd11642168f741d40e78bb28565"
   integrity sha512-Xh3IszxvlSv3/PLYFyC2UZi9LNB83yOnkB/LNmRzaypZLvkhqUIPS7MQpGZcCMWrNsXV2p6YTSWbSGvFpEle9A==
   dependencies:
     "@rc-component/util" "^1.11.0"
@@ -2311,12 +2313,12 @@
     "@rc-component/util" "^1.4.0"
     clsx "^2.1.1"
 
-"@rc-component/pagination@~1.2.0":
-  version "1.2.0"
-  resolved "https://registry.npmmirror.com/@rc-component/pagination/-/pagination-1.2.0.tgz#3a97abda8f1077f514e03a74b3b9c77f9e68499a"
-  integrity sha512-YcpUFE8dMLfSo6OARJlK6DbHHvrxz7pMGPGmC/caZSJJz6HRKHC1RPP001PRHCvG9Z/veD039uOQmazVuLJzlw==
+"@rc-component/pagination@~1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@rc-component/pagination/-/pagination-1.3.0.tgz#ee66301e37a03974826fb3028a91a1aeacdcd0ac"
+  integrity sha512-12ahTY+HPITg1L2bjWKXUqBJe/oOnpA2QsChdCjthqLVf/e19StiCsv8OLKpWoHbc+8PFEkNjRqRqrLoRBHjFw==
   dependencies:
-    "@rc-component/util" "^1.3.0"
+    "@rc-component/util" "^1.11.1"
     clsx "^2.1.1"
 
 "@rc-component/picker@~1.10.0":
@@ -2330,15 +2332,7 @@
     "@rc-component/util" "^1.3.0"
     clsx "^2.1.1"
 
-"@rc-component/portal@^2.0.0":
-  version "2.0.1"
-  resolved "https://registry.npmmirror.com/@rc-component/portal/-/portal-2.0.1.tgz#330bc21e6f9c513a8b685615222c22e03ac7af1b"
-  integrity sha512-46KYuA7Udb1LAaLIdDrfmDz3wzyeEZxIURJCn+heoQVbhtW5PQkhBSQtRus+DUdsknmTFQulxSnqrbX3CI4yXw==
-  dependencies:
-    "@rc-component/util" "^1.2.1"
-    clsx "^2.1.1"
-
-"@rc-component/portal@^2.1.0", "@rc-component/portal@^2.1.2", "@rc-component/portal@^2.1.3", "@rc-component/portal@^2.2.0":
+"@rc-component/portal@^2.1.0", "@rc-component/portal@^2.1.2", "@rc-component/portal@^2.1.3", "@rc-component/portal@^2.2.0", "@rc-component/portal@^2.2.1":
   version "2.2.1"
   resolved "https://registry.npmmirror.com/@rc-component/portal/-/portal-2.2.1.tgz#37c34b4c8cd73f53cc7072c96dd0e9ac332669ec"
   integrity sha512-ck+r1kW/JSv0wxPji3KN2ss9K6Z0qqwusw/mf/0JobXhZ8hC2ejZwCJObW/SvDi0uhA0VzmCnx0CaCci95tcmA==
@@ -2354,10 +2348,10 @@
     "@rc-component/util" "^1.2.1"
     clsx "^2.1.1"
 
-"@rc-component/qrcode@~1.1.1":
-  version "1.1.1"
-  resolved "https://registry.npmmirror.com/@rc-component/qrcode/-/qrcode-1.1.1.tgz#909f181bb9a7469d32a6e96c7f35476d4bd92008"
-  integrity sha512-LfLGNymzKdUPjXUbRP+xOhIWY4jQ+YMj5MmWAcgcAq1Ij8XP7tRmAXqyuv96XvLUBE/5cA8hLFl9eO1JQMujrA==
+"@rc-component/qrcode@~2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@rc-component/qrcode/-/qrcode-2.0.0.tgz#ef4134c213002e7a43edbe609b24248914de4974"
+  integrity sha512-aAv3QhPP1xyafuTZOxub6a54pCeBnN3IwQkpETrBtthq4BL5IgxnCbuoBWPDpdLw1y1j6BgBUCAKV92+yX06Dw==
   dependencies:
     "@babel/runtime" "^7.24.7"
 
@@ -2369,14 +2363,7 @@
     "@rc-component/util" "^1.3.0"
     clsx "^2.1.1"
 
-"@rc-component/resize-observer@^1.0.0", "@rc-component/resize-observer@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.npmmirror.com/@rc-component/resize-observer/-/resize-observer-1.0.1.tgz#bd07c2ab29baa019bd83a0870c07f6902d2241a3"
-  integrity sha512-r+w+Mz1EiueGk1IgjB3ptNXLYSLZ5vnEfKHH+gfgj7JMupftyzvUUl3fRcMZe5uMM04x0n8+G2o/c6nlO2+Wag==
-  dependencies:
-    "@rc-component/util" "^1.2.0"
-
-"@rc-component/resize-observer@^1.1.1", "@rc-component/resize-observer@^1.1.2":
+"@rc-component/resize-observer@^1.0.0", "@rc-component/resize-observer@^1.0.1", "@rc-component/resize-observer@^1.1.1", "@rc-component/resize-observer@^1.1.2":
   version "1.1.2"
   resolved "https://registry.npmmirror.com/@rc-component/resize-observer/-/resize-observer-1.1.2.tgz#5897e65d7fed5c6e768dcfd8bdec181a3309a98f"
   integrity sha512-t/Bb0W8uvL4PYKAB3YcChC+DlHh0Wt5kM7q/J+0qpVEUMLe7Hk5zuvc9km0hMnTFPSx5Z7Wu/fzCLN6erVLE8Q==
@@ -2393,15 +2380,15 @@
     "@rc-component/util" "^1.3.0"
     clsx "^2.1.1"
 
-"@rc-component/select@~1.6.0", "@rc-component/select@~1.6.15":
-  version "1.6.15"
-  resolved "https://registry.npmmirror.com/@rc-component/select/-/select-1.6.15.tgz#de2a3c8b020834cabd600b52de573a328c061eef"
-  integrity sha512-SyVCWnqxCQZZcQvQJ/CxSjx2bGma6ds/HtnpkIfZVnt6RoEgbqUmHgD6vrzNarNXwbLXerwVzWwq8F3d1sst7g==
+"@rc-component/select@~1.7.0", "@rc-component/select@~1.7.1":
+  version "1.7.1"
+  resolved "https://registry.yarnpkg.com/@rc-component/select/-/select-1.7.1.tgz#cdda0ac185f00ebed1c85e7809ae1f7855a9f7ab"
+  integrity sha512-GZ1cMJk2xQh0VHyOQjjG8drYL4iu24NcbkXioUcReQOCUr+ub/3fmRonZe6cRPEZhWMbJdeHsqnEltogDaZ5Tg==
   dependencies:
     "@rc-component/overflow" "^1.0.0"
     "@rc-component/trigger" "^3.0.0"
-    "@rc-component/util" "^1.3.0"
-    "@rc-component/virtual-list" "^1.0.1"
+    "@rc-component/util" "^1.11.1"
+    "@rc-component/virtual-list" "^1.2.0"
     clsx "^2.1.1"
 
 "@rc-component/slider@~1.0.1":
@@ -2428,10 +2415,10 @@
     "@rc-component/util" "^1.3.0"
     clsx "^2.1.1"
 
-"@rc-component/table@~1.10.0":
-  version "1.10.3"
-  resolved "https://registry.npmmirror.com/@rc-component/table/-/table-1.10.3.tgz#188df755196574f50b931ad0662c1a99077b8ec8"
-  integrity sha512-AiONZrgXVIewFC2Pk3GTqbov+sJhWDZZ96QbJZQGNSrX/vcMzkqoFJVcipGH4OY6EmFSKApwbOhQth6DVyB6gQ==
+"@rc-component/table@~1.10.2":
+  version "1.10.4"
+  resolved "https://registry.yarnpkg.com/@rc-component/table/-/table-1.10.4.tgz#8c4e33bc150aa39f579c15426421348a789de326"
+  integrity sha512-HwoTnrwc29zeoXkXGhWqzJh8FIibGUxi1jM4LtoSzmR9d5Vv5osUQpZxnXKBP8iOCvyD6BQzZm1nXJRcnrxpAg==
   dependencies:
     "@rc-component/context" "^2.0.1"
     "@rc-component/resize-observer" "^1.0.0"
@@ -2439,9 +2426,9 @@
     "@rc-component/virtual-list" "^1.0.1"
     clsx "^2.1.1"
 
-"@rc-component/tabs@~1.9.0":
+"@rc-component/tabs@~1.9.1":
   version "1.9.1"
-  resolved "https://registry.npmmirror.com/@rc-component/tabs/-/tabs-1.9.1.tgz#52b9cb0392c718fba43e7d558f46f6c910d19acb"
+  resolved "https://registry.yarnpkg.com/@rc-component/tabs/-/tabs-1.9.1.tgz#52b9cb0392c718fba43e7d558f46f6c910d19acb"
   integrity sha512-6mY08Fce6aNOHuGsxbzT+f2ekgL9mg1cGGHkittMlVGymjGg+kGupu5v90sRxcUd/paRU9jclLLXtF/PkK1FUA==
   dependencies:
     "@rc-component/dropdown" "~1.0.0"
@@ -2470,19 +2457,19 @@
     "@rc-component/util" "^1.7.0"
     clsx "^2.1.1"
 
-"@rc-component/tree-select@~1.9.0":
-  version "1.9.0"
-  resolved "https://registry.npmmirror.com/@rc-component/tree-select/-/tree-select-1.9.0.tgz#13ea516478b6cb558e04181abb0a01ae6fbdd31f"
-  integrity sha512-GXcFe15a+trUl1/J3OHWQhsVWFpwFpGFK2cqYWZ1sK22Zs3KZTvMwDpzr75PIo1s6QVioVxpE/pRwRopkeDQ6w==
+"@rc-component/tree-select@~1.10.0":
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/@rc-component/tree-select/-/tree-select-1.10.0.tgz#72e337fd58591f677404189cb3e9d3f718cd3332"
+  integrity sha512-E1U4pn2LAbXEhLJdzIzid7WYbIuFbkTIctuFoeC6weppf8UbPR3+YYB6/ay0c0ksand4gXMRQpa1Z60Auo7VJA==
   dependencies:
-    "@rc-component/select" "~1.6.0"
+    "@rc-component/select" "~1.7.0"
     "@rc-component/tree" "~1.3.0"
     "@rc-component/util" "^1.4.0"
     clsx "^2.1.1"
 
-"@rc-component/tree@~1.3.0", "@rc-component/tree@~1.3.1":
+"@rc-component/tree@~1.3.0", "@rc-component/tree@~1.3.2":
   version "1.3.2"
-  resolved "https://registry.npmmirror.com/@rc-component/tree/-/tree-1.3.2.tgz#4b0c13564314eff61ca948c18ef923b87c9d7e44"
+  resolved "https://registry.yarnpkg.com/@rc-component/tree/-/tree-1.3.2.tgz#4b0c13564314eff61ca948c18ef923b87c9d7e44"
   integrity sha512-bJFj46wEkpBPnWyTm18XmgAgNQ/4YvprxMOPPY2a6rmhGJYxLuNKEFiL5Qej4Qctu9wHJm8WW+v2SYskafE0kA==
   dependencies:
     "@rc-component/motion" "^1.0.0"
@@ -2490,34 +2477,23 @@
     "@rc-component/virtual-list" "^1.2.0"
     clsx "^2.1.1"
 
-"@rc-component/trigger@^3.0.0", "@rc-component/trigger@^3.6.15", "@rc-component/trigger@^3.7.1":
-  version "3.7.1"
-  resolved "https://registry.npmmirror.com/@rc-component/trigger/-/trigger-3.7.1.tgz#3b84eb77a6ea99f240b5fa4c06a2dea34b65d3d5"
-  integrity sha512-+YNP8FywxKJpdqzlAp6TN8UbSK6YsQtIs3kI13mHfm87qi3qUd5Q9AGW8Unfv76kXFUSu7U7D0FygRsGH+6MiA==
+"@rc-component/trigger@^3.0.0", "@rc-component/trigger@^3.6.15", "@rc-component/trigger@^3.7.1", "@rc-component/trigger@^3.9.1":
+  version "3.10.1"
+  resolved "https://registry.yarnpkg.com/@rc-component/trigger/-/trigger-3.10.1.tgz#cb28e1bc0745a2af6897dd7ec774f9b56dc88f86"
+  integrity sha512-mXlDN0IXdtV8Yqqm8195ECCyrbmfvvfKvwVvSlH0+qvKD6BUF8gRhEjSy0FOcD1+CcDRHgTiX99LoxfQrmh3Cw==
   dependencies:
-    "@rc-component/motion" "^1.1.4"
-    "@rc-component/portal" "^2.0.0"
-    "@rc-component/resize-observer" "^1.0.0"
-    "@rc-component/util" "^1.2.1"
+    "@rc-component/motion" "^1.3.3"
+    "@rc-component/portal" "^2.2.1"
+    "@rc-component/resize-observer" "^1.1.2"
+    "@rc-component/util" "^1.11.1"
     clsx "^2.1.1"
 
-"@rc-component/trigger@^3.9.0":
-  version "3.9.1"
-  resolved "https://registry.npmmirror.com/@rc-component/trigger/-/trigger-3.9.1.tgz#3f730315c558bc392921a563ac9109a1d094ef23"
-  integrity sha512-LNsYvz60mrLJ/kRvKcHE7boUvcQfVMCfRqZ71x3Fo9AOiZ1KKIEqkzMA8DNvz2V3Bcvir/vwQNn7JF1NPODQ7Q==
+"@rc-component/upload@~1.1.1":
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/@rc-component/upload/-/upload-1.1.1.tgz#90d16edcdaeb104ffa9111fd0b428061de7c21ac"
+  integrity sha512-GvYWSKeaJTOxxC5p6+nOSadzfvXA1h8C/iHFPFZX+szH3JUXrvs+DLiW8YUTBgvMh8m63mJeHrlYlJzAlg+pDA==
   dependencies:
-    "@rc-component/motion" "^1.1.4"
-    "@rc-component/portal" "^2.2.0"
-    "@rc-component/resize-observer" "^1.1.1"
-    "@rc-component/util" "^1.2.1"
-    clsx "^2.1.1"
-
-"@rc-component/upload@~1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmmirror.com/@rc-component/upload/-/upload-1.1.0.tgz#cb634587ffdf8a8a4a26a279fac06989fb47f593"
-  integrity sha512-LIBV90mAnUE6VK5N4QvForoxZc4XqEYZimcp7fk+lkE4XwHHyJWxpIXQQwMU8hJM+YwBbsoZkGksL1sISWHQxw==
-  dependencies:
-    "@rc-component/util" "^1.3.0"
+    "@rc-component/util" "^1.11.1"
     clsx "^2.1.1"
 
 "@rc-component/util@1.11.1", "@rc-component/util@^1.10.1", "@rc-component/util@^1.11.0", "@rc-component/util@^1.11.1", "@rc-component/util@^1.2.0", "@rc-component/util@^1.2.1", "@rc-component/util@^1.3.0", "@rc-component/util@^1.4.0", "@rc-component/util@^1.7.0", "@rc-component/util@^1.9.0":
@@ -3591,54 +3567,54 @@ antd-style@4.1.0:
     "@emotion/utils" "^1.2.1"
     use-merge-value "^1.2.0"
 
-antd@6.4.3:
-  version "6.4.3"
-  resolved "https://registry.npmmirror.com/antd/-/antd-6.4.3.tgz#80a7aab9c13c35daa0e0e7eea80585ba57cb7203"
-  integrity sha512-6H2avkxCGfxcF67r3J2mwm9Ck50el1pks/73vfM1wDsPL/tPtj5vHuauMgJFnrqmq7CH3g8aoZ0VBQbt+jpAsw==
+antd@6.4.5:
+  version "6.4.5"
+  resolved "https://registry.yarnpkg.com/antd/-/antd-6.4.5.tgz#98372c96af3e562aeff126289ead5e7e5c5f4212"
+  integrity sha512-xyAgX/sqF/CRS1G95oM4ql0+3TBG+tE58aRJqdUPVv4yMZcQrnnkA4cU7Uc5Rny2yK2TrusDVargHzzXUrlJ1g==
   dependencies:
     "@ant-design/colors" "^8.0.1"
     "@ant-design/cssinjs" "^2.1.2"
     "@ant-design/cssinjs-utils" "^2.1.2"
     "@ant-design/fast-color" "^3.0.1"
-    "@ant-design/icons" "^6.2.3"
+    "@ant-design/icons" "^6.2.5"
     "@ant-design/react-slick" "~2.0.0"
     "@babel/runtime" "^7.29.2"
-    "@rc-component/cascader" "~1.15.0"
+    "@rc-component/cascader" "~1.16.1"
     "@rc-component/checkbox" "~2.0.0"
     "@rc-component/collapse" "~1.2.0"
     "@rc-component/color-picker" "~3.1.1"
     "@rc-component/dialog" "~1.9.0"
     "@rc-component/drawer" "~1.4.2"
     "@rc-component/dropdown" "~1.0.2"
-    "@rc-component/form" "~1.8.1"
+    "@rc-component/form" "~1.8.5"
     "@rc-component/image" "~1.9.0"
-    "@rc-component/input" "~1.3.0"
+    "@rc-component/input" "~1.3.1"
     "@rc-component/input-number" "~1.6.2"
     "@rc-component/mentions" "~1.9.0"
-    "@rc-component/menu" "~1.3.0"
-    "@rc-component/motion" "^1.3.2"
+    "@rc-component/menu" "~1.3.1"
+    "@rc-component/motion" "^1.3.3"
     "@rc-component/mutate-observer" "^2.0.1"
     "@rc-component/notification" "~2.0.7"
-    "@rc-component/pagination" "~1.2.0"
+    "@rc-component/pagination" "~1.3.0"
     "@rc-component/picker" "~1.10.0"
     "@rc-component/progress" "~1.0.2"
-    "@rc-component/qrcode" "~1.1.1"
+    "@rc-component/qrcode" "~2.0.0"
     "@rc-component/rate" "~1.0.1"
     "@rc-component/resize-observer" "^1.1.2"
     "@rc-component/segmented" "~1.3.0"
-    "@rc-component/select" "~1.6.15"
+    "@rc-component/select" "~1.7.1"
     "@rc-component/slider" "~1.0.1"
     "@rc-component/steps" "~1.2.2"
     "@rc-component/switch" "~1.0.3"
-    "@rc-component/table" "~1.10.0"
-    "@rc-component/tabs" "~1.9.0"
+    "@rc-component/table" "~1.10.2"
+    "@rc-component/tabs" "~1.9.1"
     "@rc-component/tooltip" "~1.4.0"
     "@rc-component/tour" "~2.4.0"
-    "@rc-component/tree" "~1.3.1"
-    "@rc-component/tree-select" "~1.9.0"
-    "@rc-component/trigger" "^3.9.0"
-    "@rc-component/upload" "~1.1.0"
-    "@rc-component/util" "^1.11.0"
+    "@rc-component/tree" "~1.3.2"
+    "@rc-component/tree-select" "~1.10.0"
+    "@rc-component/trigger" "^3.9.1"
+    "@rc-component/upload" "~1.1.1"
+    "@rc-component/util" "^1.11.1"
     clsx "^2.1.1"
     dayjs "^1.11.11"
     scroll-into-view-if-needed "^3.1.0"
@@ -9762,12 +9738,7 @@ throat@^6.0.1:
   resolved "https://registry.npmmirror.com/throat/-/throat-6.0.1.tgz#d514fedad95740c12c2d7fc70ea863eb51ade375"
   integrity sha512-8hmiGIJMDlwjg7dlJ4yKGLK8EsYqKgPWbG3b4wjJddKNwc7N7Dpn08Df4szr/sZdMVeOstrdYSsqzX6BYbcB+w==
 
-throttle-debounce@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.npmmirror.com/throttle-debounce/-/throttle-debounce-5.0.0.tgz#a17a4039e82a2ed38a5e7268e4132d6960d41933"
-  integrity sha512-2iQTSgkkc1Zyk0MeVrt/3BvuOXYPl/R8Z0U2xxo9rjwNciaHDG3R+Lm6dh4EeUci49DanvBnuqI6jshoQQRGEg==
-
-throttle-debounce@^5.0.2:
+throttle-debounce@^5.0.0, throttle-debounce@^5.0.2:
   version "5.0.2"
   resolved "https://registry.npmmirror.com/throttle-debounce/-/throttle-debounce-5.0.2.tgz#ec5549d84e053f043c9fd0f2a6dd892ff84456b1"
   integrity sha512-B71/4oyj61iNH0KeCamLuE2rmKuTO5byTOSVwECM5FA7TiAiAW+UqTKZ9ERueC4qvgSttUhdmq1mXC3kJqGX7A==
