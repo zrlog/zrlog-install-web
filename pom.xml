@@ -20,6 +20,7 @@
         <sqlite-jdbc.version>3.53.4.0</sqlite-jdbc.version>
         <sqlite-jdbc.scope>test</sqlite-jdbc.scope>
         <gpg.passphrase/>
+        <dagger.version>2.60.1</dagger.version>
     </properties>
 
     <url>https://github.com/zrlog/zrlog-install-web</url>
@@ -50,9 +51,19 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.google.dagger</groupId>
+            <artifactId>dagger</artifactId>
+            <version>${dagger.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
             <groupId>com.hibegin</groupId>
             <artifactId>common-dao</artifactId>
-            <version>1.1.13</version>
+            <version>1.1.16</version>
         </dependency>
         <dependency>
             <groupId>com.hibegin</groupId>
@@ -285,6 +296,13 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <release>${java.version}</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.dagger</groupId>
+                            <artifactId>dagger-compiler</artifactId>
+                            <version>${dagger.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>

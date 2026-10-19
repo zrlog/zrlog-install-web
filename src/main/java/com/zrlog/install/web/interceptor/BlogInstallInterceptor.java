@@ -7,12 +7,15 @@ import com.hibegin.http.server.web.MethodInterceptor;
 import com.zrlog.install.exception.InstalledException;
 import com.zrlog.install.web.config.InstallConfig;
 
+import jakarta.inject.Inject;
+
 import java.util.Objects;
 
 public class BlogInstallInterceptor implements HandleAbleInterceptor {
 
     private final InstallConfig config;
 
+    @Inject
     public BlogInstallInterceptor(InstallConfig config) {
         this.config = Objects.requireNonNull(config);
     }

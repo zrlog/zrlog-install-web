@@ -6,10 +6,12 @@ import com.hibegin.common.util.LoggerUtil;
 import com.hibegin.http.server.WebServerBuilder;
 import com.hibegin.http.server.util.PathUtil;
 import com.zrlog.install.business.service.InstallService;
+import com.zrlog.install.business.service.InstallProgressListener;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.web.config.DefaultInstallConfig;
 import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.config.InstallServerConfig;
+import com.zrlog.install.web.di.DaggerInstallComponent;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,7 +48,8 @@ public class Application {
                     jsonStr = jsonStr.replace("${github_pat}", args[1]);
                 }
                 InstallConfigVO config = new Gson().fromJson(jsonStr, InstallConfigVO.class);
-                InstallService installService = new InstallService(installConfig, config);
+                InstallService installService = DaggerInstallComponent.factory().create(installConfig)
+                        .installers().create(config, InstallProgressListener.NONE, installConfig.getAcceptLanguage());
                 boolean install = installService.install();
                 LOGGER.info("Installed = " + install);
                 return install ? 0 : 1;

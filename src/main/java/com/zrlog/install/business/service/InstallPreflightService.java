@@ -2,6 +2,8 @@ package com.zrlog.install.business.service;
 
 import com.zrlog.install.web.config.InstallConfig;
 
+import jakarta.inject.Inject;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 public class InstallPreflightService {
+    @Inject
+    public InstallPreflightService() {}
 
     public void assertReady(InstallConfig installConfig) throws IOException {
         assertWritableTarget(installConfig.getDbPropertiesFile(), "db.properties");

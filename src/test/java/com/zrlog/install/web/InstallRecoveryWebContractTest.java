@@ -1,5 +1,12 @@
 package com.zrlog.install.web;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
 import com.google.gson.Gson;
 import com.hibegin.http.HttpMethod;
 import com.hibegin.http.server.api.HttpRequest;
@@ -10,6 +17,7 @@ import com.zrlog.install.business.response.InstallResultResponse;
 import com.zrlog.install.business.response.InstallRuntimeResourceResponse;
 import com.zrlog.install.business.service.InstallOperationLock;
 import com.zrlog.install.business.service.InstallOperationState;
+import com.zrlog.install.business.service.InstallProbeService;
 import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.business.service.InstallService;
 import com.zrlog.install.business.service.LocalSqliteSupport;
@@ -22,6 +30,7 @@ import com.zrlog.install.exception.InvalidInstallRequestException;
 import com.zrlog.install.web.config.DefaultInstallConfig;
 import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.controller.api.ApiInstallController;
+import com.zrlog.install.web.di.DaggerInstallComponent;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,13 +51,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 public class InstallRecoveryWebContractTest {
 
@@ -242,7 +244,13 @@ public class InstallRecoveryWebContractTest {
     }
 
     private ApiInstallController controller(HttpRequest request) throws Exception {
-        ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController controller =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         Field requestField = Controller.class.getDeclaredField("request");
         requestField.setAccessible(true);
         requestField.set(controller, request);

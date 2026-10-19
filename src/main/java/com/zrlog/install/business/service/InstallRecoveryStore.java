@@ -2,6 +2,8 @@ package com.zrlog.install.business.service;
 
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
 
+import jakarta.inject.Inject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +23,8 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 final class InstallRecoveryStore {
+    @Inject
+    public InstallRecoveryStore() {}
 
     private static final String FILE_NAME = ".install-recovery.properties";
     private static final String VERSION_KEY = "recoveryVersion";
@@ -106,7 +111,7 @@ final class InstallRecoveryStore {
     }
 
     private static Map<String, String> toStringMap(Properties properties) {
-        Map<String, String> values = new java.util.LinkedHashMap<>();
+        Map<String, String> values = new LinkedHashMap<>();
         for (String name : properties.stringPropertyNames()) {
             values.put(name, properties.getProperty(name));
         }

@@ -1,9 +1,15 @@
 package com.zrlog.install.business.service;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 /** Coordinates requests belonging to one installer; file locks also protect shared directories. */
+@Singleton
 public final class InstallOperationState {
+    @Inject
+    public InstallOperationState() {}
 
     public enum Operation { INSTALL, UPGRADE }
 

@@ -9,9 +9,9 @@ import com.hibegin.common.util.LoggerUtil;
 import com.hibegin.template.BasicTemplateRender;
 import com.zrlog.install.business.response.InstallProgressEvent;
 import com.zrlog.install.business.type.TestConnectDbResult;
-import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.DefaultWebsiteSettings;
 import com.zrlog.install.business.vo.InstallConfigVO;
+import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallSiteConfig;
 import com.zrlog.install.exception.AbstractInstallException;
 import com.zrlog.install.exception.InstallException;
@@ -22,9 +22,13 @@ import com.zrlog.install.util.InstallLogUtil;
 import com.zrlog.install.util.StringUtils;
 import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.config.InstallConfig;
+
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
+
 import org.jsoup.Jsoup;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileAlreadyExistsException;
@@ -50,8 +54,9 @@ public class InstallService {
     private final String language;
     private final String contextPath;
     private final InstallProgressListener progressListener;
-    private final InstallStateStore installStateStore = new InstallStateStore();
-    private final InstallRecoveryStore installRecoveryStore = new InstallRecoveryStore();
+    private final InstallStateStore installStateStore;
+    private final InstallRecoveryStore installRecoveryStore;
+    private final InstallPreflightService preflight;
 
     public InstallService(InstallConfig installConfig, InstallConfigVO installConfigVO) {
         this(installConfig, installConfigVO, InstallProgressListener.NONE);
@@ -64,6 +69,28 @@ public class InstallService {
 
     public InstallService(InstallConfig installConfig, InstallConfigVO installConfigVO,
                           InstallProgressListener progressListener, String language) {
+        this(
+                installConfig,
+                installConfigVO,
+                progressListener,
+                language,
+                new InstallStateStore(),
+                new InstallRecoveryStore(),
+                new InstallPreflightService());
+    }
+
+    @AssistedInject
+    public InstallService(
+            InstallConfig installConfig,
+            @Assisted InstallConfigVO installConfigVO,
+            @Assisted InstallProgressListener progressListener,
+            @Assisted String language,
+            InstallStateStore installStateStore,
+            InstallRecoveryStore installRecoveryStore,
+            InstallPreflightService preflight) {
+        this.installStateStore = installStateStore;
+        this.installRecoveryStore = installRecoveryStore;
+        this.preflight = preflight;
         this.language = language;
         InstallDatabaseConfig requestedDbConn = Objects.requireNonNullElseGet(
                 installConfigVO.getDbConfig(), InstallDatabaseConfig::new);
@@ -76,6 +103,12 @@ public class InstallService {
         this.installConfig = installConfig;
         this.contextPath = Objects.requireNonNullElse(installConfigVO.getContextPath(), "");
         this.progressListener = Objects.requireNonNullElse(progressListener, InstallProgressListener.NONE);
+    }
+
+    @AssistedFactory
+    public interface Factory {
+        InstallService create(
+                InstallConfigVO config, InstallProgressListener progress, String language);
     }
 
     /**
@@ -252,7 +285,7 @@ public class InstallService {
         //
         try {
             emitRunning(currentStep);
-            new InstallPreflightService().assertReady(installConfig);
+            preflight.assertReady(installConfig);
             InstallOperationLock operationLock = InstallOperationLock.tryAcquire(installAction.getLockFile());
             if (operationLock == null) {
                 throw new InstallOperationInProgressException("INSTALL");
@@ -365,7 +398,7 @@ public class InstallService {
         String currentStep = "preflight";
         try {
             emitRunning(currentStep);
-            new InstallPreflightService().assertReady(installConfig);
+            preflight.assertReady(installConfig);
             InstallOperationLock operationLock = InstallOperationLock.tryAcquire(installAction.getLockFile());
             if (operationLock == null) {
                 throw new InstallOperationInProgressException("INSTALL");

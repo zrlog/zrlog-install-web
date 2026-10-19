@@ -7,6 +7,8 @@ import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.web.controller.api.ApiInstallController;
 import com.zrlog.install.web.controller.api.ApiMigrateController;
 import com.zrlog.install.web.controller.page.InstallController;
+import com.zrlog.install.web.di.DaggerInstallComponent;
+import com.zrlog.install.web.di.InstallComponent;
 import com.zrlog.install.web.interceptor.BlogInstallInterceptor;
 
 /** Installer-owned assembly, shared by the standalone entry point and application hosts. */
@@ -15,16 +17,20 @@ public final class InstallWebBindings {
     private InstallWebBindings() { }
 
     public static void configure(ServerConfig server, InstallConfig config) {
+        InstallComponent component = DaggerInstallComponent.factory().create(config);
         server.getBindings()
                 .instance(InstallConfig.class, config)
-                .instance(InstallOperationState.class, new InstallOperationState())
-                .singleton(InstallResourceService.class, r -> new InstallResourceService(config))
-                .controller(ApiInstallController.class, (r, request, response) -> new ApiInstallController(
-                        config, r.get(InstallResourceService.class), r.get(InstallOperationState.class)))
-                .controller(ApiMigrateController.class, (r, request, response) -> new ApiMigrateController(config.getAction()))
-                .controller(InstallController.class, (r, request, response) -> new InstallController(
-                        r.get(InstallResourceService.class), config.getAcceptLanguage()))
-                .interceptor(BlogInstallInterceptor.class, r -> new BlogInstallInterceptor(config));
+                .instance(InstallComponent.class, component)
+                .singleton(InstallOperationState.class, r -> component.operations())
+                .singleton(InstallResourceService.class, r -> component.resources())
+                .controller(
+                        ApiInstallController.class,
+                        (r, request, response) -> component.installApi())
+                .controller(
+                        ApiMigrateController.class,
+                        (r, request, response) -> component.migrateApi())
+                .controller(InstallController.class, (r, request, response) -> component.page())
+                .interceptor(BlogInstallInterceptor.class, r -> component.interceptor());
         InstallRouters.configRouter(server);
         server.addInterceptor(BlogInstallInterceptor.class);
 

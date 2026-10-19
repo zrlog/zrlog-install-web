@@ -6,6 +6,9 @@ import com.hibegin.http.server.api.HttpRequest;
 import com.hibegin.http.server.web.Controller;
 import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.util.InstallI18nUtil;
+
+import jakarta.inject.Inject;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,6 +26,7 @@ public class InstallController extends Controller {
     private final InstallResourceService resources;
     private final String language;
 
+    @Inject
     public InstallController(InstallResourceService resources, String language) {
         this.resources = resources;
         this.language = language;

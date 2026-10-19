@@ -6,8 +6,11 @@ import com.zrlog.install.business.response.InstallRuntimeResourceResponse;
 import com.zrlog.install.business.response.LastVersionInfo;
 import com.zrlog.install.util.InstallLogUtil;
 import com.zrlog.install.web.InstallAction;
-import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.InstallRequestSecurity;
+import com.zrlog.install.web.config.InstallConfig;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -16,18 +19,26 @@ import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@Singleton
 public class InstallResourceService {
 
     private static final Logger LOGGER = LoggerUtil.getLogger(InstallResourceService.class);
     private final BooleanSupplier installTokenRequired;
     private final InstallConfig config;
+    private final InstallProbeService probe;
+    private final InstallRecoveryStore recoveryStore;
 
-    public InstallResourceService(InstallConfig config) {
-        this(config, InstallRequestSecurity::isTokenRequired);
+    @Inject
+    public InstallResourceService(InstallConfig config, InstallProbeService probe,
+                                  InstallRecoveryStore recoveryStore) {
+        this(config, probe, recoveryStore, InstallRequestSecurity::isTokenRequired);
     }
 
-    InstallResourceService(InstallConfig config, BooleanSupplier installTokenRequired) {
+    InstallResourceService(InstallConfig config, InstallProbeService probe,
+                           InstallRecoveryStore recoveryStore, BooleanSupplier installTokenRequired) {
         this.config = Objects.requireNonNull(config);
+        this.probe = Objects.requireNonNull(probe);
+        this.recoveryStore = Objects.requireNonNull(recoveryStore);
         this.installTokenRequired = installTokenRequired;
     }
 
@@ -44,11 +55,10 @@ public class InstallResourceService {
         response.setWarMode(config.isWarMode());
         response.setCurrentVersion(config.getBuildVersion());
         response.setCharset(Charset.defaultCharset().displayName());
-        response.setRuntimeMode(new InstallProbeService().probe(config).getRuntimeMode());
+        response.setRuntimeMode(probe.probe(config).getRuntimeMode());
         response.setLocalSqliteAvailable(LocalSqliteSupport.isAvailable(config));
         response.setInstallTokenRequired(installTokenRequired.getAsBoolean());
         InstallAction installAction = config.getAction();
-        InstallRecoveryStore recoveryStore = new InstallRecoveryStore();
         readInstallState(response, recoveryStore, installAction);
         response.setOnlineUpgradable(config.getUpgradeAction().isSupported());
         response.setFeedbackUrl(getFeedbackUrl(request));

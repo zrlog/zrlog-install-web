@@ -1,5 +1,11 @@
 package com.zrlog.install.web;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
 import com.google.gson.Gson;
 import com.hibegin.http.HttpMethod;
 import com.hibegin.http.server.ApplicationContext;
@@ -19,6 +25,7 @@ import com.zrlog.install.business.response.InstallUpgradeResult;
 import com.zrlog.install.business.service.InstallOperationLock;
 import com.zrlog.install.business.service.InstallOperationLockProcess;
 import com.zrlog.install.business.service.InstallOperationState;
+import com.zrlog.install.business.service.InstallProbeService;
 import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.business.service.InstallUpgradeAction;
 import com.zrlog.install.business.type.TestConnectDbResult;
@@ -40,8 +47,11 @@ import com.zrlog.install.web.config.DefaultInstallConfig;
 import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.config.InstallRouters;
 import com.zrlog.install.web.config.InstallServerConfig;
+import com.zrlog.install.web.config.InstallWebBindings;
 import com.zrlog.install.web.controller.api.ApiInstallController;
 import com.zrlog.install.web.controller.api.ApiMigrateController;
+import com.zrlog.install.web.controller.page.InstallController;
+import com.zrlog.install.web.di.DaggerInstallComponent;
 import com.zrlog.install.web.interceptor.BlogInstallInterceptor;
 
 import org.jsoup.Jsoup;
@@ -68,12 +78,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 public class InstallWebLayerTest {
 
@@ -254,8 +258,9 @@ public class InstallWebLayerTest {
 
         assertNotNull(capturedParameters.get());
         assertEquals("enabled", capturedParameters.get().get("safeOption")[0]);
-        assertFalse(capturedParameters.get().keySet().stream()
-                .anyMatch(key -> key.toLowerCase(java.util.Locale.ROOT).contains("password")));
+        assertFalse(
+                capturedParameters.get().keySet().stream()
+                        .anyMatch(key -> key.toLowerCase(Locale.ROOT).contains("password")));
         assertEquals("database-secret-value", dbConn.getPassword());
         assertTrue(dbConn.getJdbcUrl().endsWith("?safeOption=enabled"));
         assertFalse(dbConn.getJdbcUrl().contains("database-secret-value"));
@@ -318,14 +323,26 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectMutationEndpointsWithoutSecurePostJsonContract() throws Exception {
-        ApiInstallController testController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController testController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(testController, request(
                 "/api/install/testDbConn", Map.of("dbType", "sqlite")));
         InvalidInstallRequestException testException = assertThrows(
                 InvalidInstallRequestException.class, testController::testDbConn);
         assertEquals("INVALID_INSTALL_REQUEST", testException.getCode());
 
-        ApiInstallController installController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController installController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(installController, request(
                 "/api/install/startInstall", sqliteInstallParams(), Map.of(
                         "Content-Type", "application/x-www-form-urlencoded"),
@@ -334,7 +351,13 @@ public class InstallWebLayerTest {
                 InvalidInstallRequestException.class, installController::startInstall);
         assertEquals("INVALID_INSTALL_REQUEST", installException.getCode());
 
-        ApiInstallController upgradeController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController upgradeController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(upgradeController, request(
                 "/api/install/startUpgrade", Map.of(), Map.of(
                         "Content-Type", "application/jsonp"), false, HttpMethod.POST, "{}"));
@@ -345,7 +368,13 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldNeverReadCredentialsFromQueryWhenJsonBodyIsEmpty() throws Exception {
-        ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController controller =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(controller, request(
                 "/api/install/startInstall", installParams("mysql"), Map.of(
                         "Content-Type", "application/json"),
@@ -410,7 +439,13 @@ public class InstallWebLayerTest {
         try {
             Path dbProperties = root.resolve("conf/db.properties");
             installConfig = installConfigWithDbProperties(dbProperties, false);
-            ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController controller =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             CapturedResponse capturedResponse = new CapturedResponse();
             Map<String, String> params = installParams("sqlite");
             params.keySet().removeAll(java.util.Set.of(
@@ -435,7 +470,13 @@ public class InstallWebLayerTest {
         Path dbProperties = root.resolve("missing/conf/db.properties");
         try {
             installConfig = installConfigWithDbProperties(dbProperties, false);
-            ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController controller =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             setControllerRequest(controller, jsonRequest(
                     "/api/install/testDbConn", Map.of("dbType", "sqlite")));
 
@@ -454,7 +495,13 @@ public class InstallWebLayerTest {
                 }));
             }
 
-            ApiInstallController installController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController installController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             CapturedResponse capturedResponse = new CapturedResponse();
             Map<String, String> params = sqliteInstallParams();
             setControllerRequest(installController, jsonRequest("/api/install/startInstall", params));
@@ -534,7 +581,13 @@ public class InstallWebLayerTest {
                 }
             };
             Map<String, String> params = sqliteInstallParams();
-            ApiInstallController firstController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController firstController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             CapturedResponse firstResponse = new CapturedResponse();
             setControllerRequest(firstController, jsonRequest("/api/install/startInstall", params));
             setControllerResponse(firstController, firstResponse.response());
@@ -549,7 +602,13 @@ public class InstallWebLayerTest {
             assertTrue("First installation did not reach install action",
                     installActionEntered.await(10, TimeUnit.SECONDS));
 
-            ApiInstallController jsonController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController jsonController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             setControllerRequest(jsonController, jsonRequest("/api/install/startInstall", params));
             setControllerResponse(jsonController, new CapturedResponse().response());
             InstallOperationInProgressException exception = assertThrows(
@@ -557,7 +616,13 @@ public class InstallWebLayerTest {
             assertEquals(9024, exception.getError());
             assertEquals("INSTALL_IN_PROGRESS", exception.getCode());
 
-            ApiInstallController sseController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController sseController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             CapturedResponse sseResponse = new CapturedResponse();
             setControllerRequest(sseController, jsonRequest(
                     "/api/install/startInstall", params, Map.of("Accept", "text/event-stream")));
@@ -658,7 +723,13 @@ public class InstallWebLayerTest {
             assertTrue("Upgrade did not acquire operation lock",
                     upgradeEntered.await(10, TimeUnit.SECONDS));
 
-            ApiInstallController installController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController installController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             setControllerRequest(installController, jsonRequest(
                     "/api/install/startInstall", sqliteInstallParams()));
             setControllerResponse(installController, new CapturedResponse().response());
@@ -687,7 +758,13 @@ public class InstallWebLayerTest {
             assertNotNull(migrateResponse.json);
             assertTrue(Files.exists(dbProperties.getParent().resolve("sqlite.sql")));
 
-            ApiInstallController retryController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController retryController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             CapturedResponse retryResponse = new CapturedResponse();
             setControllerRequest(retryController, jsonRequest(
                     "/api/install/startInstall", sqliteInstallParams()));
@@ -797,7 +874,13 @@ public class InstallWebLayerTest {
     @Test
     public void shouldRejectRepeatedInstallWithCompletedCode() throws Exception {
         installConfig = installConfig(true, false);
-        ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController controller =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(controller, jsonRequest(
                 "/api/install/startInstall", sqliteInstallParams()));
         setControllerResponse(controller, new CapturedResponse().response());
@@ -840,7 +923,13 @@ public class InstallWebLayerTest {
                     return root.resolve("db.properties").toFile();
                 }
             };
-            ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController controller =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             CapturedResponse capturedResponse = new CapturedResponse();
             setControllerRequest(controller, jsonRequest(
                     "/api/install/startInstall", installParams("mysql"),
@@ -861,8 +950,10 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRenderInstallIndexWithRuntimeResourceInfo() throws Exception {
-        com.zrlog.install.web.controller.page.InstallController controller =
-                new com.zrlog.install.web.controller.page.InstallController(new InstallResourceService(installConfig), installConfig.getAcceptLanguage());
+        InstallController controller =
+                new InstallController(
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        installConfig.getAcceptLanguage());
         CapturedResponse capturedResponse = new CapturedResponse();
         setControllerRequest(controller, request("/install", new HashMap<>()));
         setControllerResponse(controller, capturedResponse.response());
@@ -890,8 +981,10 @@ public class InstallWebLayerTest {
                 return "en_US";
             }
         };
-        com.zrlog.install.web.controller.page.InstallController controller =
-                new com.zrlog.install.web.controller.page.InstallController(new InstallResourceService(installConfig), installConfig.getAcceptLanguage());
+        InstallController controller =
+                new InstallController(
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        installConfig.getAcceptLanguage());
         CapturedResponse capturedResponse = new CapturedResponse();
         setControllerRequest(controller, request("/install", new HashMap<>()));
         setControllerResponse(controller, capturedResponse.response());
@@ -905,7 +998,13 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldExposeInstallResourceAndProbeResponses() throws Exception {
-        ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController controller =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(controller, request("/api/install/resource", new HashMap<>()));
 
         InstallResourceResponse resourceResponse = controller.installResource();
@@ -935,7 +1034,13 @@ public class InstallWebLayerTest {
         try {
             installConfig = completionConfig(dbProperties, true, true);
 
-            ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController controller =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             setControllerRequest(controller, jsonRequest(
                     "/api/install/installCompletion", "{}", Map.of(
                             InstallRequestSecurity.TOKEN_HEADER, "ignored-when-disabled")));
@@ -964,7 +1069,13 @@ public class InstallWebLayerTest {
                 StandardCharsets.UTF_8);
         try {
             installConfig = completionConfig(dbProperties, true, true);
-            ApiInstallController getController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController getController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             setControllerRequest(getController, request(
                     "/api/install/installCompletion", Map.of(), Map.of(
                             "Content-Type", "application/json"),
@@ -972,19 +1083,37 @@ public class InstallWebLayerTest {
             assertThrows(InvalidInstallRequestException.class, getController::installCompletion);
 
             installConfig = completionConfig(dbProperties, true, false);
-            ApiInstallController nonAskConfigController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController nonAskConfigController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             setControllerRequest(nonAskConfigController, jsonRequest(
                     "/api/install/installCompletion", "{}"));
             assertThrows(InvalidInstallRequestException.class, nonAskConfigController::installCompletion);
 
             installConfig = completionConfig(dbProperties, false, true);
-            ApiInstallController incompleteInstallController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController incompleteInstallController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             setControllerRequest(incompleteInstallController, jsonRequest(
                     "/api/install/installCompletion", "{}"));
             assertThrows(InvalidInstallRequestException.class, incompleteInstallController::installCompletion);
 
             installConfig = completionConfig(root.resolve("missing.properties"), true, true);
-            ApiInstallController missingConfigController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+            ApiInstallController missingConfigController =
+                    new ApiInstallController(
+                            installConfig,
+                            DaggerInstallComponent.factory().create(installConfig).resources(),
+                            operations,
+                            DaggerInstallComponent.factory().create(installConfig).installers(),
+                            new InstallProbeService());
             setControllerRequest(missingConfigController, jsonRequest(
                     "/api/install/installCompletion", "{}"));
             assertThrows(InvalidInstallRequestException.class, missingConfigController::installCompletion);
@@ -1016,12 +1145,24 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectInstallApiEntrypointsWhenDatabaseParamsAreMissing() throws Exception {
-        ApiInstallController testController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController testController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(testController, jsonRequest("/api/install/testDbConn", new HashMap<>()));
 
         assertThrows(MissingDbHostException.class, testController::testDbConn);
 
-        ApiInstallController installController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController installController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(installController, jsonRequest("/api/install/startInstall", new HashMap<>()));
         setControllerResponse(installController, new CapturedResponse().response());
 
@@ -1030,27 +1171,57 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectQueryStringsOnEveryInstallMutation() throws Exception {
-        ApiInstallController testController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController testController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(testController, jsonRequest(
                 "/api/install/testDbConn?dbPassword=visible", installParams("mysql")));
         assertThrows(InvalidInstallRequestException.class, testController::testDbConn);
 
-        ApiInstallController installController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController installController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(installController, jsonRequest(
                 "/api/install/startInstall?password=visible", installParams("mysql")));
         assertThrows(InvalidInstallRequestException.class, installController::startInstall);
 
-        ApiInstallController recoveryController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController recoveryController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(recoveryController, jsonRequest(
                 "/api/install/resumeInstall?token=visible", "{}"));
         assertThrows(InvalidInstallRequestException.class, recoveryController::resumeInstall);
 
-        ApiInstallController upgradeController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController upgradeController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(upgradeController, jsonRequest(
                 "/api/install/startUpgrade?token=visible", "{}"));
         assertThrows(InvalidInstallRequestException.class, upgradeController::startUpgrade);
 
-        ApiInstallController completionController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController completionController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(completionController, jsonRequest(
                 "/api/install/installCompletion?token=visible", "{}"));
         assertThrows(InvalidInstallRequestException.class, completionController::installCompletion);
@@ -1067,7 +1238,13 @@ public class InstallWebLayerTest {
 
         Map<String, String> weakAdmin = installParams("mysql");
         weakAdmin.put("password", "short");
-        ApiInstallController installController = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController installController =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(installController, jsonRequest(
                 "/api/install/startInstall", weakAdmin));
         setControllerResponse(installController, new CapturedResponse().response());
@@ -1076,7 +1253,13 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectUnsupportedDatabaseTypeBeforeConnectionTest() throws Exception {
-        ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController controller =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(controller, jsonRequest(
                 "/api/install/testDbConn", installParams("unsupported")));
 
@@ -1089,7 +1272,13 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectUnsupportedDatabaseTypeBeforeNormalInstall() throws Exception {
-        ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController controller =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         setControllerRequest(controller, jsonRequest(
                 "/api/install/startInstall", installParams("unsupported")));
         setControllerResponse(controller, new CapturedResponse().response());
@@ -1102,7 +1291,13 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectUnsupportedDatabaseTypeBeforeSseInstallStarts() throws Exception {
-        ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
+        ApiInstallController controller =
+                new ApiInstallController(
+                        installConfig,
+                        DaggerInstallComponent.factory().create(installConfig).resources(),
+                        operations,
+                        DaggerInstallComponent.factory().create(installConfig).installers(),
+                        new InstallProbeService());
         CapturedResponse capturedResponse = new CapturedResponse();
         setControllerRequest(controller, jsonRequest("/api/install/startInstall", installParams("unsupported"),
                 Map.of("Accept", "text/event-stream")));
@@ -1584,7 +1779,7 @@ public class InstallWebLayerTest {
         ServerConfig serverConfig = new ServerConfig();
         serverConfig.setContextPath("/blog");
         if (installRoutes) {
-            com.zrlog.install.web.config.InstallWebBindings.configure(serverConfig, config);
+            InstallWebBindings.configure(serverConfig, config);
         }
         RequestConfig requestConfig = new RequestConfig();
         requestConfig.setRouter(serverConfig.getRouter());
@@ -1727,7 +1922,12 @@ public class InstallWebLayerTest {
     static class TestApiInstallController extends ApiInstallController {
 
         TestApiInstallController(InstallConfig config, InstallOperationState operations) {
-            super(config, new InstallResourceService(config), operations);
+            super(
+                    config,
+                    DaggerInstallComponent.factory().create(config).resources(),
+                    operations,
+                    DaggerInstallComponent.factory().create(config).installers(),
+                    new InstallProbeService());
         }
 
         InstallDatabaseConfig dbConn() {
@@ -1763,8 +1963,8 @@ public class InstallWebLayerTest {
         }
     }
 
-    private static class TestInstallController extends com.zrlog.install.web.controller.page.InstallController {
-        TestInstallController(InstallConfig config) { super(new InstallResourceService(config), config.getAcceptLanguage()); }
+    private static class TestInstallController extends InstallController {
+        TestInstallController(InstallConfig config) { super(DaggerInstallComponent.factory().create(config).resources(), config.getAcceptLanguage()); }
 
         void fill(HttpRequest request, Element link) {
             fillToRealLink(request, link);

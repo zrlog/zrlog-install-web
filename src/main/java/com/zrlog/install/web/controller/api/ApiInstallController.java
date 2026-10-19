@@ -8,18 +8,20 @@ import com.hibegin.http.annotation.ResponseBody;
 import com.hibegin.http.server.api.HttpRequest;
 import com.hibegin.http.server.web.Controller;
 import com.zrlog.install.business.response.InstallProbeResponse;
+import com.zrlog.install.business.response.InstallProgressEvent;
 import com.zrlog.install.business.response.InstallResourceResponse;
 import com.zrlog.install.business.response.InstallResultResponse;
-import com.zrlog.install.business.response.InstallProgressEvent;
-import com.zrlog.install.business.service.InstallProgressListener;
-import com.zrlog.install.business.service.InstallProbeService;
+import com.zrlog.install.business.response.InstallUpgradeResult;
 import com.zrlog.install.business.response.TestConnectResponse;
-import com.zrlog.install.business.service.LocalSqliteSupport;
 import com.zrlog.install.business.service.InstallOperationLock;
+import com.zrlog.install.business.service.InstallOperationState;
+import com.zrlog.install.business.service.InstallOperationState.Operation;
+import com.zrlog.install.business.service.InstallProbeService;
+import com.zrlog.install.business.service.InstallProgressListener;
 import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.business.service.InstallService;
 import com.zrlog.install.business.service.InstallUpgradeAction;
-import com.zrlog.install.business.response.InstallUpgradeResult;
+import com.zrlog.install.business.service.LocalSqliteSupport;
 import com.zrlog.install.business.type.TestConnectDbResult;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
@@ -27,14 +29,15 @@ import com.zrlog.install.business.vo.InstallSiteConfig;
 import com.zrlog.install.business.vo.InstallSuccessData;
 import com.zrlog.install.exception.*;
 import com.zrlog.install.util.InstallErrorResponsePolicy;
+import com.zrlog.install.util.InstallI18nUtil;
 import com.zrlog.install.util.InstallSseEmitter;
 import com.zrlog.install.util.InstallSuccessContentUtils;
 import com.zrlog.install.util.StringUtils;
-import com.zrlog.install.business.service.InstallOperationState;
-import com.zrlog.install.business.service.InstallOperationState.Operation;
 import com.zrlog.install.web.InstallRequestSecurity;
 import com.zrlog.install.web.InstallRequestValidator;
 import com.zrlog.install.web.config.InstallConfig;
+
+import jakarta.inject.Inject;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,8 +60,18 @@ public class ApiInstallController extends Controller {
     private final String language;
     private final InstallConfig installConfig;
 
-    public ApiInstallController(InstallConfig installConfig, InstallResourceService resources,
-                                InstallOperationState operations) {
+    private final InstallService.Factory installers;
+    private final InstallProbeService probes;
+
+    @Inject
+    public ApiInstallController(
+            InstallConfig installConfig,
+            InstallResourceService resources,
+            InstallOperationState operations,
+            InstallService.Factory installers,
+            InstallProbeService probes) {
+        this.installers = installers;
+        this.probes = probes;
         this.installConfig = Objects.requireNonNull(installConfig);
         this.resources = Objects.requireNonNull(resources);
         this.operations = Objects.requireNonNull(operations);
@@ -75,7 +88,8 @@ public class ApiInstallController extends Controller {
         InstallConfigVO configVO = new InstallConfigVO();
         configVO.setDbConfig(getDbConn(parameters));
         configVO.setContextPath(request.getContextPath());
-        TestConnectDbResult testConnectDbResult = new InstallService(installConfig, configVO).testDbConn();
+        TestConnectDbResult testConnectDbResult =
+                installers.create(configVO, InstallProgressListener.NONE, language).testDbConn();
         if (testConnectDbResult.getError() != 0) {
             throw new InstallException(testConnectDbResult, language);
         }
@@ -148,7 +162,7 @@ public class ApiInstallController extends Controller {
 
     @ResponseBody
     public InstallProbeResponse probe() {
-        return new InstallProbeResponse(new InstallProbeService().probe(installConfig));
+        return new InstallProbeResponse(probes.probe(installConfig));
     }
 
     @ResponseBody
@@ -172,7 +186,7 @@ public class ApiInstallController extends Controller {
             }
             InstallConfigVO configVO = new InstallConfigVO();
             configVO.setContextPath(request.getContextPath());
-            if (!new InstallService(installConfig, configVO).resume()) {
+            if (!installers.create(configVO, InstallProgressListener.NONE, language).resume()) {
                 throw new InstallRecoveryUnavailableException(language);
             }
             return buildInstallResultResponse();
@@ -194,8 +208,9 @@ public class ApiInstallController extends Controller {
             File dbPropertiesFile = installConfig.getDbPropertiesFile();
             if (!installConfig.getAction().isInstalled() || !installConfig.isAskConfig()
                     || !dbPropertiesFile.isFile() || !dbPropertiesFile.canRead()) {
-                String message = com.zrlog.install.util.InstallI18nUtil.getInstallStringFromRes(
-                        "installCompletionUnavailable", language);
+                String message =
+                        InstallI18nUtil.getInstallStringFromRes(
+                                "installCompletionUnavailable", language);
                 throw new InvalidInstallRequestException(message.isEmpty()
                         ? "Invalid installation request" : message);
             }
@@ -288,7 +303,7 @@ public class ApiInstallController extends Controller {
             if (installConfig.getAction().isInstalled()) {
                 throw new InstalledException(installConfig.isWarMode(), language);
             }
-            return new InstallService(installConfig, configVO, progressListener, language).install();
+            return installers.create(configVO, progressListener, language).install();
         } finally {
             operations.release(Operation.INSTALL);
         }

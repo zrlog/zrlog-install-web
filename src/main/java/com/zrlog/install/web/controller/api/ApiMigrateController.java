@@ -18,6 +18,8 @@ import com.zrlog.install.exception.InvalidInstallRequestException;
 import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.InstallRequestSecurity;
 
+import jakarta.inject.Inject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -43,6 +45,7 @@ public class ApiMigrateController extends Controller {
 
     private final InstallAction installAction;
 
+    @Inject
     public ApiMigrateController(InstallAction installAction) {
         this.installAction = Objects.requireNonNull(installAction);
     }

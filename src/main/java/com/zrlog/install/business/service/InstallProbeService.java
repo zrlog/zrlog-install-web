@@ -4,6 +4,8 @@ import com.zrlog.install.business.response.InstallProbeData;
 import com.zrlog.install.business.response.InstallProbeItem;
 import com.zrlog.install.web.config.InstallConfig;
 
+import jakarta.inject.Inject;
+
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -12,6 +14,8 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class InstallProbeService {
+    @Inject
+    public InstallProbeService() {}
 
     public InstallProbeData probe(InstallConfig installConfig) {
         InstallProbeData data = new InstallProbeData();

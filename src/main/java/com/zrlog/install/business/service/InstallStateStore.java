@@ -3,6 +3,8 @@ package com.zrlog.install.business.service;
 import com.hibegin.common.util.LoggerUtil;
 import com.zrlog.install.util.InstallLogUtil;
 
+import jakarta.inject.Inject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -23,6 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 final class InstallStateStore {
+    @Inject
+    public InstallStateStore() {}
 
     private static final Logger LOGGER = LoggerUtil.getLogger(InstallStateStore.class);
     private static final String DB_PROPERTIES_COMMENT = "This is a database configuration dbFile";
