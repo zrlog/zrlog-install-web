@@ -1,6 +1,5 @@
 package com.zrlog.install.util;
 
-import com.hibegin.http.server.config.ServerConfig;
 import org.junit.Test;
 
 import java.io.File;
@@ -17,7 +16,7 @@ public class InstallSuccessContentUtilsTest {
     public void shouldReturnEmptyContentWhenConfigIsNotRequested() throws Exception {
         File dbProperties = Files.createTempFile("zrlog-db", ".properties").toFile();
 
-        assertEquals("", InstallSuccessContentUtils.getContent(dbProperties, false, new ServerConfig()));
+        assertEquals("", InstallSuccessContentUtils.getContent(dbProperties, false, "zh_CN"));
     }
 
     @Test
@@ -30,7 +29,7 @@ public class InstallSuccessContentUtilsTest {
                         "jdbcUrl=jdbc:mysql://localhost:3307/zrlog?characterEncoding=utf8\n")
                 .getBytes(StandardCharsets.UTF_8));
 
-        String content = InstallSuccessContentUtils.getContent(dbProperties, true, new ServerConfig());
+        String content = InstallSuccessContentUtils.getContent(dbProperties, true, "zh_CN");
 
         assertTrue(content.contains("db.password=secret"));
         assertTrue(content.contains("db.host=localhost"));
@@ -50,7 +49,7 @@ public class InstallSuccessContentUtilsTest {
                         "jdbcUrl=jdbc:sqlite:/opt/zrlog/conf/zrlog.db?journal_mode=WAL&busy_timeout=10000\n")
                 .getBytes(StandardCharsets.UTF_8));
 
-        String content = InstallSuccessContentUtils.getContent(dbProperties, true, new ServerConfig());
+        String content = InstallSuccessContentUtils.getContent(dbProperties, true, "zh_CN");
 
         assertTrue(content.contains("db.database=/opt/zrlog/conf/zrlog.db"));
         assertTrue(content.contains("db.type=sqlite"));

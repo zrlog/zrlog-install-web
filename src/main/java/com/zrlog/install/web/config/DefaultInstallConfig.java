@@ -115,7 +115,7 @@ public class DefaultInstallConfig implements InstallConfig {
                 InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
                         InstallLogUtil.FailurePhase.INSTALL_REQUEST, e);
                 response.renderJson(InstallApiResponses.error(9999,
-                        InstallI18nUtil.getInstallStringFromRes("requestFailed"),
+                        InstallI18nUtil.getInstallStringFromRes("requestFailed", getAcceptLanguage()),
                         "INSTALL_REQUEST_FAILED"));
             }
         };

@@ -9,19 +9,20 @@ import com.zrlog.install.business.response.InstallResourceResponse;
 import com.zrlog.install.business.response.InstallResultResponse;
 import com.zrlog.install.business.response.InstallRuntimeResourceResponse;
 import com.zrlog.install.business.service.InstallOperationLock;
+import com.zrlog.install.business.service.InstallOperationState;
+import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.business.service.InstallService;
 import com.zrlog.install.business.service.LocalSqliteSupport;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallSiteConfig;
-import com.zrlog.install.exception.InstallRecoveryUnavailableException;
 import com.zrlog.install.exception.InstallOperationInProgressException;
+import com.zrlog.install.exception.InstallRecoveryUnavailableException;
 import com.zrlog.install.exception.InvalidInstallRequestException;
 import com.zrlog.install.web.config.DefaultInstallConfig;
 import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.controller.api.ApiInstallController;
-import org.junit.After;
-import org.junit.Before;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -51,29 +52,20 @@ import static org.junit.Assert.assertTrue;
 
 public class InstallRecoveryWebContractTest {
 
+    private InstallConfig installConfig = new DefaultInstallConfig();
+    private final InstallOperationState operations = new InstallOperationState();
+
     private static final String RECOVERY_FILE_NAME = ".install-recovery.properties";
 
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    private InstallConfig previousInstallConfig;
-
-    @Before
-    public void rememberInstallConfig() {
-        previousInstallConfig = InstallConstants.installConfig;
-    }
-
-    @After
-    public void restoreInstallConfig() {
-        InstallConstants.installConfig = previousInstallConfig;
-    }
 
     @Test
     public void shouldExposeAndResumeARecoverableSqliteInstallation() throws Exception {
         Path root = temporaryFolder.newFolder("recoverable-sqlite-install").toPath();
         RecoveryInstallConfig config = installConfig(root);
         config.failNextInstallSuccess();
-        InstallConstants.installConfig = config;
+        installConfig = config;
         InstallDatabaseConfig databaseConfig = LocalSqliteSupport.createDatabaseConfig(config);
 
         assertFalse(new InstallService(config, installConfig(databaseConfig)).install());
@@ -127,7 +119,7 @@ public class InstallRecoveryWebContractTest {
         CountDownLatch callbackEntered = new CountDownLatch(1);
         CountDownLatch finishCallback = new CountDownLatch(1);
         config.failNextInstallSuccess(callbackEntered, finishCallback);
-        InstallConstants.installConfig = config;
+        installConfig = config;
         InstallDatabaseConfig databaseConfig = LocalSqliteSupport.createDatabaseConfig(config);
         AtomicReference<Boolean> installResult = new AtomicReference<>();
         AtomicReference<Throwable> installFailure = new AtomicReference<>();
@@ -200,9 +192,9 @@ public class InstallRecoveryWebContractTest {
         assertRecoveryUnavailable(invalidStateConfig);
     }
 
-    private static void assertInvalidResume(RecoveryInstallConfig config, HttpRequest request)
+    private void assertInvalidResume(RecoveryInstallConfig config, HttpRequest request)
             throws Exception {
-        InstallConstants.installConfig = config;
+        installConfig = config;
         InvalidInstallRequestException exception = assertThrows(
                 InvalidInstallRequestException.class,
                 () -> controller(request).resumeInstall());
@@ -213,8 +205,8 @@ public class InstallRecoveryWebContractTest {
         assertFalse(config.getAction().getLockFile().exists());
     }
 
-    private static void assertRecoveryUnavailable(RecoveryInstallConfig config) throws Exception {
-        InstallConstants.installConfig = config;
+    private void assertRecoveryUnavailable(RecoveryInstallConfig config) throws Exception {
+        installConfig = config;
         InstallRecoveryUnavailableException exception = assertThrows(
                 InstallRecoveryUnavailableException.class,
                 () -> controller(request(
@@ -249,8 +241,8 @@ public class InstallRecoveryWebContractTest {
         return config.getAction().getLockFile().toPath().resolveSibling(RECOVERY_FILE_NAME);
     }
 
-    private static ApiInstallController controller(HttpRequest request) throws Exception {
-        ApiInstallController controller = new ApiInstallController();
+    private ApiInstallController controller(HttpRequest request) throws Exception {
+        ApiInstallController controller = new ApiInstallController(installConfig, new InstallResourceService(installConfig), operations);
         Field requestField = Controller.class.getDeclaredField("request");
         requestField.setAccessible(true);
         requestField.set(controller, request);

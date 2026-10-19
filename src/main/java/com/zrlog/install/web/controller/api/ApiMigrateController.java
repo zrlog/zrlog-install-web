@@ -15,7 +15,7 @@ import com.zrlog.install.business.response.InstallApiResponses;
 import com.zrlog.install.business.service.InstallOperationLock;
 import com.zrlog.install.exception.InstallOperationInProgressException;
 import com.zrlog.install.exception.InvalidInstallRequestException;
-import com.zrlog.install.web.InstallConstants;
+import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.InstallRequestSecurity;
 
 import java.io.IOException;
@@ -33,12 +33,19 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 public class ApiMigrateController extends Controller {
+
+    private final InstallAction installAction;
+
+    public ApiMigrateController(InstallAction installAction) {
+        this.installAction = Objects.requireNonNull(installAction);
+    }
 
     private static final Logger LOGGER = LoggerUtil.getLogger(ApiMigrateController.class);
     private static final String MIGRATION_ID = "legacy-mysql-to-sqlite";
@@ -83,11 +90,11 @@ public class ApiMigrateController extends Controller {
         }
     }
 
-    private static InstallOperationLock acquireOperationLock(String phase) throws IOException {
+    private InstallOperationLock acquireOperationLock(String phase) throws IOException {
         InstallOperationLock operationLock;
         try {
             operationLock = InstallOperationLock.tryAcquire(
-                    InstallConstants.installConfig.getAction().getLockFile());
+                    installAction.getLockFile());
         } catch (IOException e) {
             throw migrationFailure(phase, e);
         }
@@ -138,7 +145,7 @@ public class ApiMigrateController extends Controller {
     }
 
     private boolean renderInstalled() {
-        if (!InstallConstants.installConfig.getAction().isInstalled()) {
+        if (!installAction.isInstalled()) {
             return false;
         }
         response.renderCode(403);

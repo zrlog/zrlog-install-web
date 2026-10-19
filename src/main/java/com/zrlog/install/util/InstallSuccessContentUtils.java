@@ -1,9 +1,7 @@
 package com.zrlog.install.util;
 
 import com.hibegin.common.util.EnvKit;
-import com.hibegin.http.server.config.ServerConfig;
 import com.hibegin.template.BasicTemplateRender;
-import com.zrlog.install.web.InstallConstants;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -68,9 +66,7 @@ public class InstallSuccessContentUtils {
         return DEFAULT_LANGUAGE;
     }
 
-    public static String getContent(File dbProperties, boolean askConfig, ServerConfig serverConfig) {
-        String language = InstallConstants.installConfig == null
-                ? DEFAULT_LANGUAGE : InstallConstants.installConfig.getAcceptLanguage();
+    public static String getContent(File dbProperties, boolean askConfig, String language) {
         return getContent(dbProperties, askConfig, EnvKit.isFaaSMode(), language);
     }
 

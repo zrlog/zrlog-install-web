@@ -6,7 +6,6 @@ import com.hibegin.http.server.api.HttpRequest;
 import com.hibegin.http.server.web.Controller;
 import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.util.InstallI18nUtil;
-import com.zrlog.install.web.InstallConstants;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -20,6 +19,14 @@ import java.util.Objects;
  * 注意 install.lock 文件相当重要，如果不是重新安装请不要删除这个自动生成的文件
  */
 public class InstallController extends Controller {
+
+    private final InstallResourceService resources;
+    private final String language;
+
+    public InstallController(InstallResourceService resources, String language) {
+        this.resources = resources;
+        this.language = language;
+    }
 
     protected void fillToRealLink(HttpRequest request, Element link) {
         String newUrl = link.attr("href").replaceFirst("/", request.getContextPath() + "/");
@@ -40,15 +47,15 @@ public class InstallController extends Controller {
         document.body().removeClass("dark");
         document.body().removeClass("light");
         Objects.requireNonNull(document.selectFirst("base")).attr("href", request.getContextPath() + "/");
-        Object stringObjectMap = new InstallResourceService().installResourceInfo(getRequest());
+        Object stringObjectMap = resources.installResourceInfo(getRequest());
         Objects.requireNonNull(document.getElementById("resourceInfo")).text(new Gson().toJson(stringObjectMap));
-        String pageTitle = InstallI18nUtil.getInstallStringFromRes("installPageTitle");
+        String pageTitle = InstallI18nUtil.getInstallStringFromRes("installPageTitle", language);
         if (!pageTitle.isEmpty()) {
             document.title(pageTitle);
         }
         Element htmlElement = document.selectFirst("html");
         if (Objects.nonNull(htmlElement)) {
-            String lang = InstallConstants.installConfig.getAcceptLanguage();
+            String lang = language;
             htmlElement.attr("lang", "en_US".equals(lang) ? "en" : "zh-CN");
         }
         Elements favicon = document.head().select("link[rel=shortcut icon]");

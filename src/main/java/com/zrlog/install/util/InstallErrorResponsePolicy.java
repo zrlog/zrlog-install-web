@@ -74,9 +74,11 @@ public final class InstallErrorResponsePolicy {
             return true;
         }
         for (String resourceKey : CONTROLLED_INVALID_MESSAGE_KEYS) {
-            String controlledMessage = InstallI18nUtil.getInstallStringFromRes(resourceKey);
-            if (!controlledMessage.isEmpty() && controlledMessage.equals(message)) {
-                return true;
+            for (String language : List.of("zh_CN", "en_US")) {
+                String controlledMessage = InstallI18nUtil.getInstallStringFromRes(resourceKey, language);
+                if (!controlledMessage.isEmpty() && controlledMessage.equals(message)) {
+                    return true;
+                }
             }
         }
         return false;

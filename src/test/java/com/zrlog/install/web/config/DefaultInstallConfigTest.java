@@ -11,7 +11,6 @@ import org.junit.Test;
 
 import java.lang.reflect.Proxy;
 import java.util.Collections;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
@@ -75,7 +74,7 @@ public class DefaultInstallConfigTest {
         HttpResponse response = response(rendered);
 
         new DefaultInstallConfig().getErrorHandler().doHandle(null, response,
-                new InstallException(TestConnectDbResult.MISSING_JDBC_DRIVER));
+                new InstallException(TestConnectDbResult.MISSING_JDBC_DRIVER, "zh_CN"));
 
         InstallApiResponses.Error error = (InstallApiResponses.Error) rendered.get();
         assertEquals(Integer.valueOf(9000), error.getError());

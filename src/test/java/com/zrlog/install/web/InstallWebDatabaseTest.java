@@ -1,8 +1,12 @@
 package com.zrlog.install.web;
 
+import com.zrlog.install.business.service.InstallOperationState;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.support.TestDatabase;
+import com.zrlog.install.web.config.DefaultInstallConfig;
+import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.controller.api.ApiMigrateController;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -39,6 +43,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 public class InstallWebDatabaseTest {
 
+    private InstallConfig installConfig = new DefaultInstallConfig();
+    private final InstallOperationState operations = new InstallOperationState();
+
     @Parameterized.Parameters(name = "{0}")
     public static TestDatabase[] databases() {
         return TestDatabase.values();
@@ -54,12 +61,11 @@ public class InstallWebDatabaseTest {
     public void shouldWriteInstallCompleteEventWhenSseInstallSucceeds() throws Exception {
         Path confPath = Files.createTempDirectory("zrlog-install-controller-sse-success");
         String previousConfPath = System.getProperty("sws.conf.path");
-        com.zrlog.install.web.config.InstallConfig previousConfig = InstallConstants.installConfig;
         try {
             System.setProperty("sws.conf.path", confPath.toString());
-            InstallConstants.installConfig = installConfig(false, false);
+            installConfig = installConfig(false, false);
             InstallWebLayerTest.TestApiInstallController controller =
-                    new InstallWebLayerTest.TestApiInstallController();
+                    new InstallWebLayerTest.TestApiInstallController(installConfig, operations);
             InstallWebLayerTest.CapturedResponse capturedResponse = new InstallWebLayerTest.CapturedResponse();
             setControllerRequest(controller, request("/api/install/start", new HashMap<>(),
                     Map.of("Accept", "text/event-stream")));
@@ -76,7 +82,6 @@ public class InstallWebDatabaseTest {
             assertTrue(body, body.contains("event: install-complete"));
             assertTrue(body, body.contains("\"content\""));
         } finally {
-            InstallConstants.installConfig = previousConfig;
             restoreProperty("sws.conf.path", previousConfPath);
             delete(confPath);
         }
@@ -104,7 +109,7 @@ public class InstallWebDatabaseTest {
                     + "INSERT INTO `log` VALUES (1,'hello');\n"
                     + "INSERT INTO `log` VALUES (2,'world');\n");
             databaseConfig.writeProperties(confPath.resolve("sqlite-db.properties").toFile());
-            ApiMigrateController controller = new ApiMigrateController();
+            ApiMigrateController controller = new ApiMigrateController(installConfig.getAction());
             InstallWebLayerTest.CapturedResponse capturedResponse = new InstallWebLayerTest.CapturedResponse();
             setControllerRequest(controller, migrationRequest("/api/migrate/import"));
             setControllerResponse(controller, capturedResponse.response());
@@ -135,7 +140,6 @@ public class InstallWebDatabaseTest {
     public void shouldNotExposeSqlOrMigrationValuesWhenImportFails() throws Exception {
         Path confPath = Files.createTempDirectory("zrlog-install-migrate-failure");
         String previousConfPath = System.getProperty("sws.conf.path");
-        com.zrlog.install.web.config.InstallConfig previousConfig = InstallConstants.installConfig;
         TestDatabase.Configuration databaseConfig = database.create(confPath.toFile(), "zrlog_migrate_failure");
         Logger logger = com.hibegin.common.util.LoggerUtil.getLogger(ApiMigrateController.class);
         Level previousLevel = logger.getLevel();
@@ -156,7 +160,7 @@ public class InstallWebDatabaseTest {
         };
         try {
             System.setProperty("sws.conf.path", confPath.toString());
-            InstallConstants.installConfig = installConfig(false, false);
+            installConfig = installConfig(false, false);
             Files.writeString(confPath.resolve("mysql.sql"), ""
                     + "CREATE TABLE `log` (`id` int(11), `title` varchar(255));\n"
                     + "INSERT INTO `missing_private_table` VALUES (1,'sensitive-migration-value');\n");
@@ -164,7 +168,7 @@ public class InstallWebDatabaseTest {
             logger.setLevel(Level.ALL);
             handler.setLevel(Level.ALL);
             logger.addHandler(handler);
-            ApiMigrateController controller = new ApiMigrateController();
+            ApiMigrateController controller = new ApiMigrateController(installConfig.getAction());
             setControllerRequest(controller, migrationRequest("/api/migrate/import"));
 
             IOException failure = assertThrows(IOException.class, controller::doImportSqlite);
@@ -177,7 +181,6 @@ public class InstallWebDatabaseTest {
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previousLevel);
-            InstallConstants.installConfig = previousConfig;
             restoreProperty("sws.conf.path", previousConfPath);
             delete(confPath);
         }

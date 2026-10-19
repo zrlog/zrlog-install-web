@@ -1,9 +1,16 @@
 package com.zrlog.install.exception;
 
 import com.zrlog.install.util.InstallI18nUtil;
-import com.zrlog.install.web.InstallConstants;
 
 public class InstalledException extends AbstractInstallException implements InstallErrorCodeProvider {
+    private final boolean warMode;
+    private final String language;
+
+    public InstalledException(boolean warMode, String language) {
+        this.warMode = warMode;
+        this.language = language;
+    }
+
     @Override
     public int getError() {
         return 9020;
@@ -11,7 +18,7 @@ public class InstalledException extends AbstractInstallException implements Inst
 
     @Override
     public String getMessage() {
-        return InstallI18nUtil.getInstallStringFromRes(InstallConstants.installConfig.isWarMode() ? "installedWarTips" : "installedTips");
+        return InstallI18nUtil.getInstallStringFromRes(warMode ? "installedWarTips" : "installedTips", language);
     }
 
     @Override

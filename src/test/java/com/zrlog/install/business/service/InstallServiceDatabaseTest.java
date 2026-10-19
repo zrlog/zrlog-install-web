@@ -9,9 +9,6 @@ import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.exception.InstallException;
 import com.zrlog.install.support.TestDatabase;
 import com.zrlog.install.util.LogCaptureSupport;
-import com.zrlog.install.web.InstallConstants;
-import com.zrlog.install.web.config.DefaultInstallConfig;
-import org.junit.After;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,18 +59,12 @@ public class InstallServiceDatabaseTest {
         this.database = database;
     }
 
-    @After
-    public void tearDown() {
-        InstallConstants.installConfig = new DefaultInstallConfig();
-    }
-
     @Test
     public void shouldInstallSchemaAndSeedDataUsingSupportedDatabase() throws Exception {
         File root = temporaryFolder.newFolder("zrlog-install-service");
         File dbFile = new File(root, "conf/db.properties");
         File lockFile = new File(root, "conf/install.lock");
         FakeInstallConfig config = new FakeInstallConfig(dbFile, lockFile);
-        InstallConstants.installConfig = config;
         List<InstallProgressEvent> events = new ArrayList<>();
         Map<String, String> configMsg = new LinkedHashMap<>();
         configMsg.put("title", "Database Blog");

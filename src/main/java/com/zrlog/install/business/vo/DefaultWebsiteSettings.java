@@ -23,13 +23,13 @@ public class DefaultWebsiteSettings {
     private Map<String, String> appendedSettings;
 
     public static DefaultWebsiteSettings from(InstallSiteConfig webSite, InstallConfig installConfig,
-                                              Map<String, String> appendedSettings) {
+                                              Map<String, String> appendedSettings, String language) {
         DefaultWebsiteSettings settings = new DefaultWebsiteSettings();
         InstallSiteConfig source = Objects.requireNonNullElseGet(webSite, InstallSiteConfig::new);
         settings.setAppId(UUID.randomUUID().toString());
         settings.setTitle(Objects.requireNonNullElse(source.getTitle(), ""));
         settings.setSecondTitle(Objects.requireNonNullElse(source.getSecondTitle(), ""));
-        settings.setLanguage(installConfig.getAcceptLanguage());
+        settings.setLanguage(language);
         settings.setRows(10);
         settings.setTemplate(installConfig.defaultTemplatePath());
         settings.setAutoUpgradeVersion(86400);

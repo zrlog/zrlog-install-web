@@ -6,7 +6,7 @@ import com.zrlog.install.business.response.InstallRuntimeResourceResponse;
 import com.zrlog.install.business.response.LastVersionInfo;
 import com.zrlog.install.util.InstallLogUtil;
 import com.zrlog.install.web.InstallAction;
-import com.zrlog.install.web.InstallConstants;
+import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.InstallRequestSecurity;
 
 import java.io.IOException;
@@ -20,12 +20,14 @@ public class InstallResourceService {
 
     private static final Logger LOGGER = LoggerUtil.getLogger(InstallResourceService.class);
     private final BooleanSupplier installTokenRequired;
+    private final InstallConfig config;
 
-    public InstallResourceService() {
-        this(InstallRequestSecurity::isTokenRequired);
+    public InstallResourceService(InstallConfig config) {
+        this(config, InstallRequestSecurity::isTokenRequired);
     }
 
-    InstallResourceService(BooleanSupplier installTokenRequired) {
+    InstallResourceService(InstallConfig config, BooleanSupplier installTokenRequired) {
+        this.config = Objects.requireNonNull(config);
         this.installTokenRequired = installTokenRequired;
     }
 
@@ -36,21 +38,21 @@ public class InstallResourceService {
 
     public Object installResourceInfo(HttpRequest request) {
         InstallRuntimeResourceResponse response = new InstallRuntimeResourceResponse();
-        response.setLang(InstallConstants.installConfig.getAcceptLanguage());
-        response.setAskConfig(InstallConstants.installConfig.isAskConfig());
-        response.setMissingConfig(InstallConstants.installConfig.isMissingConfig());
-        response.setWarMode(InstallConstants.installConfig.isWarMode());
-        response.setCurrentVersion(InstallConstants.installConfig.getBuildVersion());
+        response.setLang(config.getAcceptLanguage());
+        response.setAskConfig(config.isAskConfig());
+        response.setMissingConfig(config.isMissingConfig());
+        response.setWarMode(config.isWarMode());
+        response.setCurrentVersion(config.getBuildVersion());
         response.setCharset(Charset.defaultCharset().displayName());
-        response.setRuntimeMode(new InstallProbeService().probe(InstallConstants.installConfig).getRuntimeMode());
-        response.setLocalSqliteAvailable(LocalSqliteSupport.isAvailable(InstallConstants.installConfig));
+        response.setRuntimeMode(new InstallProbeService().probe(config).getRuntimeMode());
+        response.setLocalSqliteAvailable(LocalSqliteSupport.isAvailable(config));
         response.setInstallTokenRequired(installTokenRequired.getAsBoolean());
-        InstallAction installAction = InstallConstants.installConfig.getAction();
+        InstallAction installAction = config.getAction();
         InstallRecoveryStore recoveryStore = new InstallRecoveryStore();
         readInstallState(response, recoveryStore, installAction);
-        response.setOnlineUpgradable(InstallConstants.installConfig.getUpgradeAction().isSupported());
+        response.setOnlineUpgradable(config.getUpgradeAction().isSupported());
         response.setFeedbackUrl(getFeedbackUrl(request));
-        LastVersionInfo lastVersionInfo = InstallConstants.installConfig.getLastVersionInfo();
+        LastVersionInfo lastVersionInfo = config.getLastVersionInfo();
         if (Objects.nonNull(lastVersionInfo) && Objects.equals(lastVersionInfo.getLatestVersion(), false)) {
             response.setUpgradeVersion(lastVersionInfo.getNewVersion());
             response.setUpgradeChangeLog(lastVersionInfo.getChangeLog());

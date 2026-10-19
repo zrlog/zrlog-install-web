@@ -1,7 +1,6 @@
 package com.zrlog.install.util;
 
 import com.hibegin.common.util.LoggerUtil;
-import com.zrlog.install.web.InstallConstants;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,16 +56,16 @@ public class InstallI18nUtil {
         }
     }
 
-    public static Map<String, Object> getInstallMap() {
-        Map<String, Object> stringObjectMap = resMap.get(InstallConstants.installConfig.getAcceptLanguage());
+    public static Map<String, Object> getInstallMap(String language) {
+        Map<String, Object> stringObjectMap = resMap.get(language);
         if (stringObjectMap == null) {
             return new HashMap<>();
         }
         return new TreeMap<>(stringObjectMap);
     }
 
-    public static String getInstallStringFromRes(String key) {
-        Map<String, Object> i18nVO = getInstallMap();
+    public static String getInstallStringFromRes(String key, String language) {
+        Map<String, Object> i18nVO = getInstallMap(language);
         Object obj = i18nVO.get(key);
         if (obj != null) {
             return obj.toString();

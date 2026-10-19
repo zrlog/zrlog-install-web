@@ -12,9 +12,9 @@ public class InstallRequestValidatorTest {
 
     @Test
     public void shouldAcceptEverySupportedDatabaseType() {
-        InstallRequestValidator.validateDatabase(validDatabase("mysql"));
-        InstallRequestValidator.validateDatabase(validDatabase("webapi"));
-        InstallRequestValidator.validateDatabase(Map.of("dbType", "sqlite"));
+        InstallRequestValidator.validateDatabase(validDatabase("mysql"), "zh_CN");
+        InstallRequestValidator.validateDatabase(validDatabase("webapi"), "zh_CN");
+        InstallRequestValidator.validateDatabase(Map.of("dbType", "sqlite"), "zh_CN");
     }
 
     @Test
@@ -34,10 +34,10 @@ public class InstallRequestValidatorTest {
 
     @Test
     public void shouldAcceptValidSiteValuesIncludingAnEmptyEmail() {
-        InstallRequestValidator.validateSite(validSite());
+        InstallRequestValidator.validateSite(validSite(), "zh_CN");
         Map<String, String> noEmail = validSite();
         noEmail.put("email", "");
-        InstallRequestValidator.validateSite(noEmail);
+        InstallRequestValidator.validateSite(noEmail, "zh_CN");
     }
 
     @Test
@@ -59,14 +59,14 @@ public class InstallRequestValidatorTest {
         Map<String, String> values = validDatabase("mysql");
         values.put(key, value);
         assertThrows(InvalidInstallRequestException.class,
-                () -> InstallRequestValidator.validateDatabase(values));
+                () -> InstallRequestValidator.validateDatabase(values, "zh_CN"));
     }
 
     private static void assertInvalidSite(String key, String value) {
         Map<String, String> values = validSite();
         values.put(key, value);
         assertThrows(InvalidInstallRequestException.class,
-                () -> InstallRequestValidator.validateSite(values));
+                () -> InstallRequestValidator.validateSite(values, "zh_CN"));
     }
 
     private static Map<String, String> validDatabase(String dbType) {

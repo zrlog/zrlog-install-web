@@ -25,10 +25,10 @@ public final class InstallRequestValidator {
     private InstallRequestValidator() {
     }
 
-    public static void validateDatabase(Map<String, String> values) {
+    public static void validateDatabase(Map<String, String> values, String language) {
         String dbType = trimmedOrDefault(values.get("dbType"), "mysql").toLowerCase(Locale.ROOT);
         if (!SUPPORTED_DATABASE_TYPES.contains(dbType)) {
-            throw invalid("validationDbType");
+            throw invalid("validationDbType", language);
         }
         if ("sqlite".equals(dbType)) {
             return;
@@ -36,67 +36,67 @@ public final class InstallRequestValidator {
 
         String dbHost = trimmed(values.get("dbHost"));
         if (dbHost.isEmpty()) {
-            throw new MissingDbHostException();
+            throw new MissingDbHostException(language);
         }
         if (!SAFE_DATABASE_HOST.matcher(dbHost).matches()) {
-            throw invalid("validationDbHost");
+            throw invalid("validationDbHost", language);
         }
 
         String dbPort = trimmed(values.get("dbPort"));
         if (dbPort.isEmpty()) {
-            throw new MissingDbPortException();
+            throw new MissingDbPortException(language);
         }
         if (!isValidPort(dbPort)) {
-            throw invalid("validationDbPort");
+            throw invalid("validationDbPort", language);
         }
 
         String dbUserName = trimmed(values.get("dbUserName"));
         if (dbUserName.isEmpty()) {
-            throw new MissingDbUserNameException();
+            throw new MissingDbUserNameException(language);
         }
         if (dbUserName.length() > 128 || containsControlCharacter(dbUserName)) {
-            throw invalid("validationDbUserName");
+            throw invalid("validationDbUserName", language);
         }
 
         String dbName = trimmed(values.get("dbName"));
         if (dbName.isEmpty()) {
-            throw new MissingDbNameException();
+            throw new MissingDbNameException(language);
         }
         if (!SAFE_DATABASE_NAME.matcher(dbName).matches()) {
-            throw invalid("validationDbName");
+            throw invalid("validationDbName", language);
         }
 
         String dbPassword = valueOrEmpty(values.get("dbPassword"));
         if (dbPassword.length() > 4096 || containsControlCharacter(dbPassword)) {
-            throw invalid("validationDbPassword");
+            throw invalid("validationDbPassword", language);
         }
     }
 
-    public static void validateSite(Map<String, String> values) {
+    public static void validateSite(Map<String, String> values, String language) {
         String username = trimmed(values.get("username"));
         if (username.isEmpty() || username.length() > 16 || containsControlCharacter(username)) {
-            throw invalid("validationAdminUsername");
+            throw invalid("validationAdminUsername", language);
         }
 
         String password = valueOrEmpty(values.get("password"));
         if (password.trim().isEmpty() || password.length() < 8 || password.length() > 1024
                 || containsControlCharacter(password)) {
-            throw invalid("validationAdminPassword");
+            throw invalid("validationAdminPassword", language);
         }
 
         String title = trimmed(values.get("title"));
         if (title.isEmpty() || title.length() > 255 || containsControlCharacter(title)) {
-            throw invalid("validationSiteTitle");
+            throw invalid("validationSiteTitle", language);
         }
 
         String secondTitle = trimmed(values.get("second_title"));
         if (secondTitle.length() > 255 || containsControlCharacter(secondTitle)) {
-            throw invalid("validationSiteSubtitle");
+            throw invalid("validationSiteSubtitle", language);
         }
 
         String email = trimmed(values.get("email"));
         if (!email.isEmpty() && (email.length() > 64 || !EMAIL.matcher(email).matches())) {
-            throw invalid("validationAdminEmail");
+            throw invalid("validationAdminEmail", language);
         }
     }
 
@@ -129,8 +129,8 @@ public final class InstallRequestValidator {
         return value == null ? "" : value;
     }
 
-    private static InvalidInstallRequestException invalid(String resourceKey) {
-        String message = InstallI18nUtil.getInstallStringFromRes(resourceKey);
+    private static InvalidInstallRequestException invalid(String resourceKey, String language) {
+        String message = InstallI18nUtil.getInstallStringFromRes(resourceKey, language);
         if (message.isEmpty()) {
             message = "Invalid installation request";
         }

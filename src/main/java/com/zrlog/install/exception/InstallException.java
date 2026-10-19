@@ -6,8 +6,10 @@ import com.zrlog.install.util.InstallI18nUtil;
 public class InstallException extends AbstractInstallException implements InstallErrorCodeProvider {
 
     private final TestConnectDbResult result;
+    private final String language;
 
-    public InstallException(TestConnectDbResult result) {
+    public InstallException(TestConnectDbResult result, String language) {
+        this.language = language;
         this.result = result;
     }
 
@@ -18,7 +20,7 @@ public class InstallException extends AbstractInstallException implements Instal
 
     @Override
     public String getMessage() {
-        return "[Error-" + result + "] - " + InstallI18nUtil.getInstallStringFromRes("connectDbError_" + result.getError());
+        return "[Error-" + result + "] - " + InstallI18nUtil.getInstallStringFromRes("connectDbError_" + result.getError(), language);
     }
 
     @Override

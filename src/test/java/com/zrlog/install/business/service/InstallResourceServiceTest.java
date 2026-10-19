@@ -8,9 +8,6 @@ import com.zrlog.install.business.response.LastVersionInfo;
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.web.InstallAction;
-import com.zrlog.install.web.InstallConstants;
-import com.zrlog.install.web.config.DefaultInstallConfig;
-import org.junit.After;
 import org.junit.Test;
 
 import java.io.File;
@@ -33,11 +30,6 @@ import static org.junit.Assert.assertTrue;
 
 public class InstallResourceServiceTest {
 
-    @After
-    public void tearDown() {
-        InstallConstants.installConfig = new DefaultInstallConfig();
-    }
-
     @Test
     public void shouldBuildRuntimeResourceInfoFromInstallConfig() throws Exception {
         File root = Files.createTempDirectory("zrlog-install-resource").toFile();
@@ -50,10 +42,9 @@ public class InstallResourceServiceTest {
         config.setMissingConfig(true);
         config.setWarMode(true);
         config.setLastVersionInfo(upgradableVersion());
-        InstallConstants.installConfig = config;
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                new InstallResourceService().installResourceInfo(request("3.6.1-SNAPSHOT"));
+                new InstallResourceService(config).installResourceInfo(request("3.6.1-SNAPSHOT"));
 
         assertEquals("en_US", response.getLang());
         assertEquals(false, response.getInstalled());
@@ -81,11 +72,11 @@ public class InstallResourceServiceTest {
     @Test
     public void shouldExposeOnlyWhetherInstallTokenIsRequired() throws Exception {
         File root = Files.createTempDirectory("zrlog-install-token-resource").toFile();
-        InstallConstants.installConfig = new FakeInstallConfig(
+        FakeInstallConfig config = new FakeInstallConfig(
                 new File(root, "db.properties"), new File(root, "install.lock"));
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                new InstallResourceService(() -> true).installResourceInfo(request("3.6.1"));
+                new InstallResourceService(config, () -> true).installResourceInfo(request("3.6.1"));
         String json = new Gson().toJson(response);
 
         assertEquals(true, response.getInstallTokenRequired());
@@ -107,10 +98,9 @@ public class InstallResourceServiceTest {
                 "dbType", "sqlite",
                 "jdbcUrl", "jdbc:sqlite:" + new File(root, "zrlog.db").getAbsolutePath(),
                 "driverClass", "org.sqlite.JDBC")));
-        InstallConstants.installConfig = config;
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                new InstallResourceService().installResourceInfo(request("3.6.1"));
+                new InstallResourceService(config).installResourceInfo(request("3.6.1"));
 
         assertEquals(true, response.getInstalled());
         assertNull(response.getInstallSuccessContent());
@@ -128,10 +118,9 @@ public class InstallResourceServiceTest {
                 "dbType", "sqlite",
                 "jdbcUrl", "jdbc:sqlite:" + new File(root, "zrlog.db").getAbsolutePath(),
                 "driverClass", "org.sqlite.JDBC")));
-        InstallConstants.installConfig = config;
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                new InstallResourceService().installResourceInfo(request("3.6.1"));
+                new InstallResourceService(config).installResourceInfo(request("3.6.1"));
 
         assertEquals(true, response.getInstallRecoveryAvailable());
         assertEquals(false, response.getInstallOperationInProgress());
@@ -145,10 +134,9 @@ public class InstallResourceServiceTest {
                 new File(root, "db.properties"), new File(root, "install.lock"));
         Files.writeString(InstallRecoveryStore.recoveryFile(
                 config.getAction().getLockFile()).toPath(), "recoveryVersion=unsupported\n");
-        InstallConstants.installConfig = config;
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                new InstallResourceService().installResourceInfo(request("3.6.1"));
+                new InstallResourceService(config).installResourceInfo(request("3.6.1"));
 
         assertEquals(false, response.getInstallRecoveryAvailable());
     }
@@ -161,10 +149,9 @@ public class InstallResourceServiceTest {
         FakeInstallConfig config = new FakeInstallConfig(
                 root.resolve("db.properties").toFile(),
                 invalidParent.resolve("install.lock").toFile());
-        InstallConstants.installConfig = config;
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                new InstallResourceService().installResourceInfo(request("3.6.1"));
+                new InstallResourceService(config).installResourceInfo(request("3.6.1"));
 
         assertEquals(false, response.getInstalled());
         assertEquals(false, response.getInstallRecoveryAvailable());
@@ -211,7 +198,6 @@ public class InstallResourceServiceTest {
                 return action;
             }
         };
-        InstallConstants.installConfig = config;
         InstallConfigVO installRequest = new InstallConfigVO();
         installRequest.setDbConfig(Map.of("dbType", "sqlite"));
         installRequest.setConfigMsg(Map.of(
@@ -236,7 +222,7 @@ public class InstallResourceServiceTest {
             assertTrue(new InstallRecoveryStore().isAvailable(installLock));
 
             InstallRuntimeResourceResponse installingResponse = (InstallRuntimeResourceResponse)
-                    new InstallResourceService().installResourceInfo(request("3.6.1"));
+                    new InstallResourceService(config).installResourceInfo(request("3.6.1"));
 
             assertEquals(false, installingResponse.getInstalled());
             assertEquals(false, installingResponse.getInstallRecoveryAvailable());
@@ -254,7 +240,7 @@ public class InstallResourceServiceTest {
         assertTrue(new InstallRecoveryStore().isAvailable(installLock));
 
         InstallRuntimeResourceResponse recoveryResponse = (InstallRuntimeResourceResponse)
-                new InstallResourceService().installResourceInfo(request("3.6.1"));
+                new InstallResourceService(config).installResourceInfo(request("3.6.1"));
         assertEquals(false, recoveryResponse.getInstalled());
         assertEquals(true, recoveryResponse.getInstallRecoveryAvailable());
         assertEquals(false, recoveryResponse.getInstallOperationInProgress());

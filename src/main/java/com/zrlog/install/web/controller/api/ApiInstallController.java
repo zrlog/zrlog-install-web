@@ -30,7 +30,8 @@ import com.zrlog.install.util.InstallErrorResponsePolicy;
 import com.zrlog.install.util.InstallSseEmitter;
 import com.zrlog.install.util.InstallSuccessContentUtils;
 import com.zrlog.install.util.StringUtils;
-import com.zrlog.install.web.InstallConstants;
+import com.zrlog.install.business.service.InstallOperationState;
+import com.zrlog.install.business.service.InstallOperationState.Operation;
 import com.zrlog.install.web.InstallRequestSecurity;
 import com.zrlog.install.web.InstallRequestValidator;
 import com.zrlog.install.web.config.InstallConfig;
@@ -44,7 +45,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 与安装向导相关的路由进行控制
@@ -52,11 +52,17 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ApiInstallController extends Controller {
 
-    private static final AtomicReference<InstallOperation> RUNNING_OPERATION = new AtomicReference<>();
+    private final InstallOperationState operations;
+    private final InstallResourceService resources;
+    private final String language;
     private final InstallConfig installConfig;
 
-    public ApiInstallController() {
-        this.installConfig = InstallConstants.installConfig;
+    public ApiInstallController(InstallConfig installConfig, InstallResourceService resources,
+                                InstallOperationState operations) {
+        this.installConfig = Objects.requireNonNull(installConfig);
+        this.resources = Objects.requireNonNull(resources);
+        this.operations = Objects.requireNonNull(operations);
+        this.language = installConfig.getAcceptLanguage();
     }
 
     /**
@@ -71,7 +77,7 @@ public class ApiInstallController extends Controller {
         configVO.setContextPath(request.getContextPath());
         TestConnectDbResult testConnectDbResult = new InstallService(installConfig, configVO).testDbConn();
         if (testConnectDbResult.getError() != 0) {
-            throw new InstallException(testConnectDbResult);
+            throw new InstallException(testConnectDbResult, language);
         }
         return new TestConnectResponse();
     }
@@ -81,11 +87,11 @@ public class ApiInstallController extends Controller {
     }
 
     private InstallDatabaseConfig getDbConn(RequestParameters parameters) {
-        InstallRequestValidator.validateDatabase(parameters.asMap());
+        InstallRequestValidator.validateDatabase(parameters.asMap(), language);
         String dbType = parameters.getTrimmed("dbType", "mysql").toLowerCase(Locale.ROOT);
         if ("sqlite".equalsIgnoreCase(dbType)) {
             if (!LocalSqliteSupport.isAvailable(installConfig)) {
-                throw new InstallException(TestConnectDbResult.UNSUPPORTED_DATABASE);
+                throw new InstallException(TestConnectDbResult.UNSUPPORTED_DATABASE, language);
             }
             return LocalSqliteSupport.createDatabaseConfig(installConfig);
         }
@@ -113,8 +119,8 @@ public class ApiInstallController extends Controller {
     public void startInstall() throws IOException {
         InstallRequestSecurity.assertMutationRequest(request);
         RequestParameters parameters = readRequestParameters();
-        InstallRequestValidator.validateDatabase(parameters.asMap());
-        InstallRequestValidator.validateSite(parameters.asMap());
+        InstallRequestValidator.validateDatabase(parameters.asMap(), language);
+        InstallRequestValidator.validateSite(parameters.asMap(), language);
         InstallSiteConfig configMsg = new InstallSiteConfig();
         configMsg.setTitle(parameters.getTrimmed("title", ""));
         configMsg.setSecondTitle(parameters.getTrimmed("second_title", ""));
@@ -130,14 +136,14 @@ public class ApiInstallController extends Controller {
             return;
         }
         if (!executeInstall(configVO, InstallProgressListener.NONE)) {
-            throw new InstallException(TestConnectDbResult.UNKNOWN);
+            throw new InstallException(TestConnectDbResult.UNKNOWN, language);
         }
         response.renderJson(buildInstallResultResponse());
     }
 
     @ResponseBody
     public InstallResourceResponse installResource() {
-        return new InstallResourceResponse(new InstallResourceService().installResourceInfo(getRequest()));
+        return new InstallResourceResponse(resources.installResourceInfo(getRequest()));
     }
 
     @ResponseBody
@@ -156,22 +162,22 @@ public class ApiInstallController extends Controller {
     public InstallResultResponse resumeInstall() {
         InstallRequestSecurity.assertMutationRequest(request);
         readRequestParameters();
-        InstallOperation blockingOperation = acquireOperation(InstallOperation.INSTALL);
+        Operation blockingOperation = operations.tryAcquire(Operation.INSTALL);
         if (blockingOperation != null) {
             throw new InstallOperationInProgressException(blockingOperation.name());
         }
         try {
             if (installConfig.getAction().isInstalled()) {
-                throw new InstalledException();
+                throw new InstalledException(installConfig.isWarMode(), language);
             }
             InstallConfigVO configVO = new InstallConfigVO();
             configVO.setContextPath(request.getContextPath());
             if (!new InstallService(installConfig, configVO).resume()) {
-                throw new InstallRecoveryUnavailableException();
+                throw new InstallRecoveryUnavailableException(language);
             }
             return buildInstallResultResponse();
         } finally {
-            releaseOperation(InstallOperation.INSTALL);
+            operations.release(Operation.INSTALL);
         }
     }
 
@@ -182,14 +188,14 @@ public class ApiInstallController extends Controller {
         InstallOperationLock operationLock = InstallOperationLock.tryAcquire(
                 installConfig.getAction().getLockFile());
         if (operationLock == null) {
-            throw new InstallOperationInProgressException(InstallOperation.INSTALL.name());
+            throw new InstallOperationInProgressException(Operation.INSTALL.name());
         }
         try (InstallOperationLock ignored = operationLock) {
             File dbPropertiesFile = installConfig.getDbPropertiesFile();
             if (!installConfig.getAction().isInstalled() || !installConfig.isAskConfig()
                     || !dbPropertiesFile.isFile() || !dbPropertiesFile.canRead()) {
                 String message = com.zrlog.install.util.InstallI18nUtil.getInstallStringFromRes(
-                        "installCompletionUnavailable");
+                        "installCompletionUnavailable", language);
                 throw new InvalidInstallRequestException(message.isEmpty()
                         ? "Invalid installation request" : message);
             }
@@ -198,8 +204,8 @@ public class ApiInstallController extends Controller {
     }
 
     protected void writeUpgradeStream() throws IOException {
-        InstallSseEmitter.write(response, "install-upgrade", "upgrade-error", emitter -> {
-            InstallOperation blockingOperation = acquireOperation(InstallOperation.UPGRADE);
+        InstallSseEmitter.write(response, "install-upgrade", "upgrade-error", language, emitter -> {
+            Operation blockingOperation = operations.tryAcquire(Operation.UPGRADE);
             if (blockingOperation != null) {
                 sendUpgradeOperationInProgress(emitter, blockingOperation);
                 return;
@@ -208,7 +214,7 @@ public class ApiInstallController extends Controller {
                 InstallOperationLock operationLock = InstallOperationLock.tryAcquire(
                         installConfig.getAction().getLockFile());
                 if (operationLock == null) {
-                    sendUpgradeOperationInProgress(emitter, InstallOperation.INSTALL);
+                    sendUpgradeOperationInProgress(emitter, Operation.INSTALL);
                     return;
                 }
                 try (InstallOperationLock ignored = operationLock) {
@@ -227,13 +233,13 @@ public class ApiInstallController extends Controller {
                     emitter.send(result.isFinish() ? "upgrade-complete" : "upgrade-error", result);
                 }
             } finally {
-                releaseOperation(InstallOperation.UPGRADE);
+                operations.release(Operation.UPGRADE);
             }
         });
     }
 
     private static void sendUpgradeOperationInProgress(InstallSseEmitter emitter,
-                                                       InstallOperation blockingOperation) throws IOException {
+                                                       Operation blockingOperation) throws IOException {
         InstallOperationInProgressException exception =
                 new InstallOperationInProgressException(blockingOperation.name());
         emitter.send("upgrade-error", new InstallUpgradeResult(
@@ -241,7 +247,7 @@ public class ApiInstallController extends Controller {
     }
 
     protected void writeInstallStream(InstallConfigVO configVO) throws IOException {
-        InstallSseEmitter.write(response, "install-start", "install-error", emitter -> {
+        InstallSseEmitter.write(response, "install-start", "install-error", language, emitter -> {
             AtomicBoolean errorSent = new AtomicBoolean(false);
             boolean installed;
             try {
@@ -274,38 +280,22 @@ public class ApiInstallController extends Controller {
     }
 
     private boolean executeInstall(InstallConfigVO configVO, InstallProgressListener progressListener) {
-        InstallOperation blockingOperation = acquireOperation(InstallOperation.INSTALL);
+        Operation blockingOperation = operations.tryAcquire(Operation.INSTALL);
         if (blockingOperation != null) {
             throw new InstallOperationInProgressException(blockingOperation.name());
         }
         try {
             if (installConfig.getAction().isInstalled()) {
-                throw new InstalledException();
+                throw new InstalledException(installConfig.isWarMode(), language);
             }
-            return new InstallService(installConfig, configVO, progressListener).install();
+            return new InstallService(installConfig, configVO, progressListener, language).install();
         } finally {
-            releaseOperation(InstallOperation.INSTALL);
+            operations.release(Operation.INSTALL);
         }
-    }
-
-    private static InstallOperation acquireOperation(InstallOperation requestedOperation) {
-        while (true) {
-            InstallOperation runningOperation = RUNNING_OPERATION.get();
-            if (runningOperation != null) {
-                return runningOperation;
-            }
-            if (RUNNING_OPERATION.compareAndSet(null, requestedOperation)) {
-                return null;
-            }
-        }
-    }
-
-    private static void releaseOperation(InstallOperation operation) {
-        RUNNING_OPERATION.compareAndSet(operation, null);
     }
 
     protected InstallResultResponse buildInstallResultResponse() {
-        return new InstallResultResponse(new InstallSuccessData(InstallSuccessContentUtils.getContent(installConfig.getDbPropertiesFile(), installConfig.isAskConfig(), request.getServerConfig())));
+        return new InstallResultResponse(new InstallSuccessData(InstallSuccessContentUtils.getContent(installConfig.getDbPropertiesFile(), installConfig.isAskConfig(), language)));
     }
 
     protected boolean isSseRequest() {
@@ -391,8 +381,4 @@ public class ApiInstallController extends Controller {
         }
     }
 
-    private enum InstallOperation {
-        INSTALL,
-        UPGRADE
-    }
 }

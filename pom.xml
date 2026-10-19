@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.hibegin</groupId>
     <artifactId>zrlog-install-web</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.1-SNAPSHOT</version>
 
     <name>ZrLog install web</name>
 
@@ -57,7 +57,7 @@
         <dependency>
             <groupId>com.hibegin</groupId>
             <artifactId>simplewebserver</artifactId>
-            <version>4.1.12</version>
+            <version>4.1.16</version>
         </dependency>
         <dependency>
             <groupId>org.jsoup</groupId>

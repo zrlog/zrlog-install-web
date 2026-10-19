@@ -5,11 +5,17 @@ import com.hibegin.http.server.api.HttpRequest;
 import com.hibegin.http.server.api.HttpResponse;
 import com.hibegin.http.server.web.MethodInterceptor;
 import com.zrlog.install.exception.InstalledException;
-import com.zrlog.install.web.InstallConstants;
+import com.zrlog.install.web.config.InstallConfig;
 
 import java.util.Objects;
 
 public class BlogInstallInterceptor implements HandleAbleInterceptor {
+
+    private final InstallConfig config;
+
+    public BlogInstallInterceptor(InstallConfig config) {
+        this.config = Objects.requireNonNull(config);
+    }
 
     private static final String INSTALL_STATIC_PREFIX = "/install/static/";
     private static final String INSTALL_COMPLETION_PATH = "/api/install/installCompletion";
@@ -42,8 +48,8 @@ public class BlogInstallInterceptor implements HandleAbleInterceptor {
             return false;
         }
         String target = request.getUri();
-        if (target.startsWith("/api/install/") && InstallConstants.installConfig.getAction().isInstalled()) {
-            throw new InstalledException();
+        if (target.startsWith("/api/install/") && config.getAction().isInstalled()) {
+            throw new InstalledException(config.isWarMode(), config.getAcceptLanguage());
         }
         new MethodInterceptor().doInterceptor(request, response);
         return false;

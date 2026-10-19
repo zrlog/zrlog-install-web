@@ -15,9 +15,6 @@ import com.zrlog.install.exception.InstalledException;
 import com.zrlog.install.util.InstallI18nUtil;
 import com.zrlog.install.util.LogCaptureSupport;
 import com.zrlog.install.web.InstallAction;
-import com.zrlog.install.web.InstallConstants;
-import com.zrlog.install.web.config.DefaultInstallConfig;
-import org.junit.After;
 import org.junit.Test;
 
 import java.io.File;
@@ -41,11 +38,6 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class InstallServiceTest {
-
-    @After
-    public void tearDown() {
-        InstallConstants.installConfig = new DefaultInstallConfig();
-    }
 
     @Test
     public void shouldStripHtmlWhenBuildingPlainSearchText() throws Exception {
@@ -192,7 +184,7 @@ public class InstallServiceTest {
         assertEquals("running", events.get(0).getStatus());
         assertEquals("preflight", events.get(1).getCode());
         assertEquals("error", events.get(1).getStatus());
-        assertEquals(InstallI18nUtil.getInstallStringFromRes("streamFailed"), events.get(1).getDetail());
+        assertEquals(InstallI18nUtil.getInstallStringFromRes("streamFailed", "zh_CN"), events.get(1).getDetail());
     }
 
     @Test
@@ -340,7 +332,6 @@ public class InstallServiceTest {
         FakeInstallConfig config = new FakeInstallConfig(
                 new File(root, "db.properties"),
                 new File(root, "install.lock"));
-        InstallConstants.installConfig = config;
         InstallService service = new InstallService(config,
                 installConfigVO(new HashMap<>(), null, null));
         FakeDao dao = new FakeDao(true);
@@ -365,7 +356,6 @@ public class InstallServiceTest {
         FakeInstallConfig config = new FakeInstallConfig(
                 new File(root, "db.properties"),
                 new File(root, "install.lock"));
-        InstallConstants.installConfig = config;
         Map<String, String> configMsg = new HashMap<>();
         configMsg.put("installDate", "2026-06-29 10:20:30 +0800");
         InstallService service = new InstallService(config, installConfigVO(configMsg, null, "/blog"));
@@ -394,7 +384,6 @@ public class InstallServiceTest {
         FakeInstallConfig config = new FakeInstallConfig(
                 new File(root, "db.properties"),
                 new File(root, "install.lock"));
-        InstallConstants.installConfig = config;
         InstallService service = new InstallService(config, installConfigVO(new HashMap<>(), null, "/blog"));
         FakeDao dao = new FakeDao(true);
 

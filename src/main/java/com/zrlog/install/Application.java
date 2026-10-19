@@ -7,7 +7,8 @@ import com.hibegin.http.server.WebServerBuilder;
 import com.hibegin.http.server.util.PathUtil;
 import com.zrlog.install.business.service.InstallService;
 import com.zrlog.install.business.vo.InstallConfigVO;
-import com.zrlog.install.web.InstallConstants;
+import com.zrlog.install.web.config.DefaultInstallConfig;
+import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.config.InstallServerConfig;
 
 import java.io.File;
@@ -26,16 +27,17 @@ public class Application {
     public static void main(String[] args) throws FileNotFoundException {
         System.getProperties().put("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %5$s%6$s%n");
         PathUtil.setRootPath(System.getProperty("user.dir"));
-        Integer installExitCode = installFromConfigFile(args);
+        InstallConfig installConfig = new DefaultInstallConfig();
+        Integer installExitCode = installFromConfigFile(args, installConfig);
         if (installExitCode != null) {
             System.exit(installExitCode);
             return;
         }
-        WebServerBuilder builder = new WebServerBuilder.Builder().config(new InstallServerConfig()).build();
+        WebServerBuilder builder = new WebServerBuilder.Builder().config(new InstallServerConfig(installConfig)).build();
         builder.start();
     }
 
-    static Integer installFromConfigFile(String[] args) throws FileNotFoundException {
+    static Integer installFromConfigFile(String[] args, InstallConfig installConfig) throws FileNotFoundException {
         if (args.length >= 1) {
             File configFile = new File(args[0]);
             if (configFile.exists()) {
@@ -44,7 +46,7 @@ public class Application {
                     jsonStr = jsonStr.replace("${github_pat}", args[1]);
                 }
                 InstallConfigVO config = new Gson().fromJson(jsonStr, InstallConfigVO.class);
-                InstallService installService = new InstallService(InstallConstants.installConfig, config);
+                InstallService installService = new InstallService(installConfig, config);
                 boolean install = installService.install();
                 LOGGER.info("Installed = " + install);
                 return install ? 0 : 1;

@@ -20,8 +20,10 @@ public class InstallSseEmitter {
             "The operation could not be completed. Retry, then check the runtime logs for the deployment if the " +
                     "problem continues. Logs do not contain the setup passcode.";
     private final PipedOutputStream outputStream;
+    private final String language;
 
-    public InstallSseEmitter(PipedOutputStream outputStream) {
+    public InstallSseEmitter(PipedOutputStream outputStream, String language) {
+        this.language = language;
         this.outputStream = outputStream;
     }
 
@@ -32,13 +34,13 @@ public class InstallSseEmitter {
         response.addHeader("X-Accel-Buffering", "no");
     }
 
-    public static void write(HttpResponse response, String threadName, String errorEvent, SseStreamWriter writer)
+    public static void write(HttpResponse response, String threadName, String errorEvent, String language, SseStreamWriter writer)
             throws IOException {
         setHeaders(response);
         PipedInputStream inputStream = new PipedInputStream();
         PipedOutputStream outputStream = new PipedOutputStream(inputStream);
         Thread streamThread = new Thread(() -> {
-            InstallSseEmitter emitter = new InstallSseEmitter(outputStream);
+            InstallSseEmitter emitter = new InstallSseEmitter(outputStream, language);
             try {
                 writer.write(emitter);
             } catch (Exception e) {
@@ -60,7 +62,7 @@ public class InstallSseEmitter {
     public void sendError(String event, Exception e) {
         InstallLogUtil.logFailure(LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.EVENT_STREAM, e);
         try {
-            String message = InstallI18nUtil.getInstallStringFromRes("streamFailed");
+            String message = InstallI18nUtil.getInstallStringFromRes("streamFailed", language);
             send(event, InstallApiResponses.streamError(
                     message == null || message.isEmpty() ? FALLBACK_ERROR_MESSAGE : message));
         } catch (IOException ignored) {

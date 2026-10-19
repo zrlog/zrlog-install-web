@@ -5,9 +5,7 @@ import com.zrlog.install.business.service.LocalSqliteSupport;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.support.TestDatabase;
 import com.zrlog.install.web.InstallAction;
-import com.zrlog.install.web.InstallConstants;
 import com.zrlog.install.web.config.DefaultInstallConfig;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -40,11 +38,6 @@ public class ApplicationDatabaseTest {
         this.database = database;
     }
 
-    @After
-    public void tearDown() {
-        InstallConstants.installConfig = new DefaultInstallConfig();
-    }
-
     @Test
     public void shouldInstallFromConfigFileUsingSupportedDatabase() throws Exception {
         File root = temporaryFolder.newFolder("zrlog-application-install");
@@ -52,7 +45,6 @@ public class ApplicationDatabaseTest {
         TestInstallConfig installConfig = new TestInstallConfig(
                 new File(root, "conf/db.properties"),
                 new File(root, "conf/install.lock"));
-        InstallConstants.installConfig = installConfig;
         InstallConfigVO configVO = new InstallConfigVO();
         Map<String, String> configMsg = new LinkedHashMap<>();
         configMsg.put("title", "Application Install");
@@ -67,7 +59,7 @@ public class ApplicationDatabaseTest {
         configVO.setContextPath("/blog");
         Files.writeString(configFile.toPath(), new Gson().toJson(configVO));
 
-        Integer exitCode = Application.installFromConfigFile(new String[]{configFile.getAbsolutePath(), "password"});
+        Integer exitCode = Application.installFromConfigFile(new String[]{configFile.getAbsolutePath(), "password"}, installConfig);
 
         assertEquals(Integer.valueOf(0), exitCode);
         assertTrue(installConfig.dbPropertiesFile.exists());
