@@ -1,7 +1,7 @@
 package com.zrlog.install.web;
 
-import com.zrlog.install.business.service.InstallOperationState;
 import com.zrlog.install.business.vo.InstallConfigVO;
+import com.zrlog.install.support.InstallApplications;
 import com.zrlog.install.support.TestDatabase;
 import com.zrlog.install.web.config.DefaultInstallConfig;
 import com.zrlog.install.web.config.InstallConfig;
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 public class InstallWebDatabaseTest {
 
     private InstallConfig installConfig = new DefaultInstallConfig();
-    private final InstallOperationState operations = new InstallOperationState();
+    private final InstallApplications applications = new InstallApplications();
 
     @Parameterized.Parameters(name = "{0}")
     public static TestDatabase[] databases() {
@@ -65,7 +65,8 @@ public class InstallWebDatabaseTest {
             System.setProperty("sws.conf.path", confPath.toString());
             installConfig = installConfig(false, false);
             InstallWebLayerTest.TestApiInstallController controller =
-                    new InstallWebLayerTest.TestApiInstallController(installConfig, operations);
+                    new InstallWebLayerTest.TestApiInstallController(installConfig,
+                            applications.component(installConfig));
             InstallWebLayerTest.CapturedResponse capturedResponse = new InstallWebLayerTest.CapturedResponse();
             setControllerRequest(controller, request("/api/install/start", new HashMap<>(),
                     Map.of("Accept", "text/event-stream")));
@@ -109,7 +110,7 @@ public class InstallWebDatabaseTest {
                     + "INSERT INTO `log` VALUES (1,'hello');\n"
                     + "INSERT INTO `log` VALUES (2,'world');\n");
             databaseConfig.writeProperties(confPath.resolve("sqlite-db.properties").toFile());
-            ApiMigrateController controller = new ApiMigrateController(installConfig.getAction());
+            ApiMigrateController controller = applications.component(installConfig).migrateApi();
             InstallWebLayerTest.CapturedResponse capturedResponse = new InstallWebLayerTest.CapturedResponse();
             setControllerRequest(controller, migrationRequest("/api/migrate/import"));
             setControllerResponse(controller, capturedResponse.response());
@@ -168,7 +169,7 @@ public class InstallWebDatabaseTest {
             logger.setLevel(Level.ALL);
             handler.setLevel(Level.ALL);
             logger.addHandler(handler);
-            ApiMigrateController controller = new ApiMigrateController(installConfig.getAction());
+            ApiMigrateController controller = applications.component(installConfig).migrateApi();
             setControllerRequest(controller, migrationRequest("/api/migrate/import"));
 
             IOException failure = assertThrows(IOException.class, controller::doImportSqlite);

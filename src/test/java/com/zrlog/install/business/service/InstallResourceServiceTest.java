@@ -1,6 +1,6 @@
 package com.zrlog.install.business.service;
 
-import com.zrlog.install.web.di.DaggerInstallComponent;
+import com.zrlog.install.support.InstallApplications;
 
 import com.google.gson.Gson;
 import com.hibegin.http.server.api.HttpRequest;
@@ -31,6 +31,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class InstallResourceServiceTest {
+    private final InstallApplications applications =
+            new InstallApplications();
+
 
     @Test
     public void shouldBuildRuntimeResourceInfoFromInstallConfig() throws Exception {
@@ -46,7 +49,7 @@ public class InstallResourceServiceTest {
         config.setLastVersionInfo(upgradableVersion());
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                DaggerInstallComponent.factory().create(config).resources().installResourceInfo(request("3.6.1-SNAPSHOT"));
+                applications.component(config).resources().installResourceInfo(request("3.6.1-SNAPSHOT"));
 
         assertEquals("en_US", response.getLang());
         assertEquals(false, response.getInstalled());
@@ -102,7 +105,7 @@ public class InstallResourceServiceTest {
                 "driverClass", "org.sqlite.JDBC")));
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                DaggerInstallComponent.factory().create(config).resources().installResourceInfo(request("3.6.1"));
+                applications.component(config).resources().installResourceInfo(request("3.6.1"));
 
         assertEquals(true, response.getInstalled());
         assertNull(response.getInstallSuccessContent());
@@ -122,7 +125,7 @@ public class InstallResourceServiceTest {
                 "driverClass", "org.sqlite.JDBC")));
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                DaggerInstallComponent.factory().create(config).resources().installResourceInfo(request("3.6.1"));
+                applications.component(config).resources().installResourceInfo(request("3.6.1"));
 
         assertEquals(true, response.getInstallRecoveryAvailable());
         assertEquals(false, response.getInstallOperationInProgress());
@@ -138,7 +141,7 @@ public class InstallResourceServiceTest {
                 config.getAction().getLockFile()).toPath(), "recoveryVersion=unsupported\n");
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                DaggerInstallComponent.factory().create(config).resources().installResourceInfo(request("3.6.1"));
+                applications.component(config).resources().installResourceInfo(request("3.6.1"));
 
         assertEquals(false, response.getInstallRecoveryAvailable());
     }
@@ -153,7 +156,7 @@ public class InstallResourceServiceTest {
                 invalidParent.resolve("install.lock").toFile());
 
         InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                DaggerInstallComponent.factory().create(config).resources().installResourceInfo(request("3.6.1"));
+                applications.component(config).resources().installResourceInfo(request("3.6.1"));
 
         assertEquals(false, response.getInstalled());
         assertEquals(false, response.getInstallRecoveryAvailable());
@@ -210,7 +213,7 @@ public class InstallResourceServiceTest {
                 "email", "admin@example.com"));
         Thread installThread = new Thread(() -> {
             try {
-                firstInstallResult.set(new InstallService(config, installRequest).install());
+                firstInstallResult.set(applications.service(config, installRequest).install());
             } catch (Throwable e) {
                 installThreadFailure.set(e);
             }
@@ -224,7 +227,7 @@ public class InstallResourceServiceTest {
             assertTrue(new InstallRecoveryStore().isAvailable(installLock));
 
             InstallRuntimeResourceResponse installingResponse = (InstallRuntimeResourceResponse)
-                    DaggerInstallComponent.factory().create(config).resources().installResourceInfo(request("3.6.1"));
+                    applications.component(config).resources().installResourceInfo(request("3.6.1"));
 
             assertEquals(false, installingResponse.getInstalled());
             assertEquals(false, installingResponse.getInstallRecoveryAvailable());
@@ -242,11 +245,11 @@ public class InstallResourceServiceTest {
         assertTrue(new InstallRecoveryStore().isAvailable(installLock));
 
         InstallRuntimeResourceResponse recoveryResponse = (InstallRuntimeResourceResponse)
-                DaggerInstallComponent.factory().create(config).resources().installResourceInfo(request("3.6.1"));
+                applications.component(config).resources().installResourceInfo(request("3.6.1"));
         assertEquals(false, recoveryResponse.getInstalled());
         assertEquals(true, recoveryResponse.getInstallRecoveryAvailable());
         assertEquals(false, recoveryResponse.getInstallOperationInProgress());
-        assertTrue(new InstallService(config, new InstallConfigVO()).resume());
+        assertTrue(applications.service(config, new InstallConfigVO()).resume());
         assertEquals(2, callbackCalls.get());
         assertTrue(installLock.exists());
         assertFalse(new InstallRecoveryStore().isAvailable(installLock));

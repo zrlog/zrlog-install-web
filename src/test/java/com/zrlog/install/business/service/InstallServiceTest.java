@@ -12,6 +12,7 @@ import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallSiteConfig;
 import com.zrlog.install.exception.InstallOperationInProgressException;
 import com.zrlog.install.exception.InstalledException;
+import com.zrlog.install.support.InstallApplications;
 import com.zrlog.install.util.InstallI18nUtil;
 import com.zrlog.install.util.LogCaptureSupport;
 import com.zrlog.install.web.InstallAction;
@@ -33,11 +34,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class InstallServiceTest {
+    private final InstallApplications applications =
+            new InstallApplications();
+
 
     @Test
     public void shouldStripHtmlWhenBuildingPlainSearchText() throws Exception {
@@ -94,7 +97,7 @@ public class InstallServiceTest {
         Map<String, String> appendWebsite = new HashMap<>();
         appendWebsite.put("host", "example.com");
         appendWebsite.put(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY, "dismissed");
-        InstallService service = new InstallService(config, installConfigVO(configMsg, appendWebsite, "/blog"));
+        InstallService service = applications.service(config, installConfigVO(configMsg, appendWebsite, "/blog"));
 
         DefaultWebsiteSettings settings = service.getDefaultWebSiteSettings(InstallSiteConfig.from(configMsg));
         Map<?, ?> settingsMap = settings.toMap();
@@ -119,7 +122,7 @@ public class InstallServiceTest {
         config.setInstalled(true);
 
         InstalledException exception = assertThrows(InstalledException.class, () ->
-                new InstallService(config,
+                applications.service(config,
                         installConfigVO(Collections.emptyMap(), null, null)).install());
 
         assertEquals("INSTALL_ALREADY_COMPLETED", exception.getCode());
@@ -132,7 +135,7 @@ public class InstallServiceTest {
         FakeInstallConfig installConfig = installCompletesOnSecondCheck(root, installChecks);
 
         InstalledException installException = assertThrows(InstalledException.class, () ->
-                new InstallService(installConfig,
+                applications.service(installConfig,
                         installConfigVO(Collections.emptyMap(), null, null)).install());
 
         assertEquals("INSTALL_ALREADY_COMPLETED", installException.getCode());
@@ -142,7 +145,7 @@ public class InstallServiceTest {
         FakeInstallConfig recoveryConfig = installCompletesOnSecondCheck(root, recoveryChecks);
 
         InstalledException recoveryException = assertThrows(InstalledException.class, () ->
-                new InstallService(recoveryConfig, new InstallConfigVO()).resume());
+                applications.service(recoveryConfig, new InstallConfigVO()).resume());
 
         assertEquals("INSTALL_ALREADY_COMPLETED", recoveryException.getCode());
         assertEquals(2, recoveryChecks.get());
@@ -160,10 +163,10 @@ public class InstallServiceTest {
             assertNotNull(ignored);
             InstallOperationInProgressException installConflict = assertThrows(
                     InstallOperationInProgressException.class,
-                    () -> new InstallService(config, request).install());
+                    () -> applications.service(config, request).install());
             InstallOperationInProgressException recoveryConflict = assertThrows(
                     InstallOperationInProgressException.class,
-                    () -> new InstallService(config, request).resume());
+                    () -> applications.service(config, request).resume());
 
             assertEquals("INSTALL_IN_PROGRESS", installConflict.getCode());
             assertEquals("INSTALL_IN_PROGRESS", recoveryConflict.getCode());
@@ -175,7 +178,7 @@ public class InstallServiceTest {
         FakeInstallConfig config = new FakeInstallConfig(new File("db.properties"), new File("install.lock"));
         List<com.zrlog.install.business.response.InstallProgressEvent> events = new ArrayList<>();
 
-        boolean installed = new InstallService(config,
+        boolean installed = applications.service(config,
                 installConfigVO(Collections.emptyMap(), null, null), events::add).install();
 
         assertFalse(installed);
@@ -201,7 +204,7 @@ public class InstallServiceTest {
         installConfigVO.setDbConfig(dbConn);
 
         try (LogCaptureSupport logs = LogCaptureSupport.capture(InstallService.class)) {
-            TestConnectDbResult result = new InstallService(config, installConfigVO).testDbConn();
+            TestConnectDbResult result = applications.service(config, installConfigVO).testDbConn();
 
             assertEquals(TestConnectDbResult.MISSING_JDBC_DRIVER, result);
             assertTrue(logs.text().contains("phase=database-connection-test"));
@@ -222,7 +225,7 @@ public class InstallServiceTest {
         InstallConfigVO installConfigVO = installConfigVO(Collections.emptyMap(), null, null);
         installConfigVO.setDbConfig(dbConn);
 
-        TestConnectDbResult result = new InstallService(config, installConfigVO).testDbConn();
+        TestConnectDbResult result = applications.service(config, installConfigVO).testDbConn();
 
         assertEquals(TestConnectDbResult.MISSING_JDBC_DRIVER, result);
     }
@@ -242,7 +245,7 @@ public class InstallServiceTest {
         dbConfig.put("password", "");
         installConfigVO.setDbConfig(dbConfig);
 
-        InstallService service = new InstallService(config, installConfigVO);
+        InstallService service = applications.service(config, installConfigVO);
 
         assertEquals(TestConnectDbResult.UNSUPPORTED_DATABASE, service.testDbConn());
         assertFalse(service.install());
@@ -260,7 +263,7 @@ public class InstallServiceTest {
         configMsg.put("second_title", "Notes");
         Map<String, String> appendWebsite = new LinkedHashMap<>();
         appendWebsite.put("host", "example.com");
-        InstallService service = new InstallService(config, installConfigVO(configMsg, appendWebsite, "/blog"));
+        InstallService service = applications.service(config, installConfigVO(configMsg, appendWebsite, "/blog"));
         FakeDao dao = new FakeDao(true);
 
         assertTrue(service.initWebSite(dao));
@@ -294,7 +297,7 @@ public class InstallServiceTest {
         configMsg.put("password", "password");
         configMsg.put("email", "admin@example.com");
         configMsg.put("secretKey", "secret");
-        InstallService service = new InstallService(config, installConfigVO(configMsg, null, null));
+        InstallService service = applications.service(config, installConfigVO(configMsg, null, null));
         FakeDao dao = new FakeDao(true);
 
         assertTrue(service.initUser(InstallSiteConfig.from(configMsg), dao));
@@ -318,7 +321,7 @@ public class InstallServiceTest {
         configMsg.put("username", "admin");
         configMsg.put("password", "password");
         configMsg.put("email", "admin@example.com");
-        InstallService service = new InstallService(config, installConfigVO(configMsg, null, null));
+        InstallService service = applications.service(config, installConfigVO(configMsg, null, null));
         FakeDao dao = new FakeDao(true);
 
         assertTrue(service.initUser(InstallSiteConfig.from(configMsg), dao));
@@ -332,7 +335,7 @@ public class InstallServiceTest {
         FakeInstallConfig config = new FakeInstallConfig(
                 new File(root, "db.properties"),
                 new File(root, "install.lock"));
-        InstallService service = new InstallService(config,
+        InstallService service = applications.service(config,
                 installConfigVO(new HashMap<>(), null, null));
         FakeDao dao = new FakeDao(true);
 
@@ -358,7 +361,7 @@ public class InstallServiceTest {
                 new File(root, "install.lock"));
         Map<String, String> configMsg = new HashMap<>();
         configMsg.put("installDate", "2026-06-29 10:20:30 +0800");
-        InstallService service = new InstallService(config, installConfigVO(configMsg, null, "/blog"));
+        InstallService service = applications.service(config, installConfigVO(configMsg, null, "/blog"));
         FakeDao dao = new FakeDao(true);
 
         assertTrue(service.insertFirstArticle(dao));
@@ -384,7 +387,7 @@ public class InstallServiceTest {
         FakeInstallConfig config = new FakeInstallConfig(
                 new File(root, "db.properties"),
                 new File(root, "install.lock"));
-        InstallService service = new InstallService(config, installConfigVO(new HashMap<>(), null, "/blog"));
+        InstallService service = applications.service(config, installConfigVO(new HashMap<>(), null, "/blog"));
         FakeDao dao = new FakeDao(true);
 
         assertTrue(service.insertFirstArticle(dao));

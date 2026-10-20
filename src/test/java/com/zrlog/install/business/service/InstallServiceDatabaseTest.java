@@ -7,6 +7,7 @@ import com.zrlog.install.business.type.TestConnectDbResult;
 import com.zrlog.install.business.vo.DefaultWebsiteSettings;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.exception.InstallException;
+import com.zrlog.install.support.InstallApplications;
 import com.zrlog.install.support.TestDatabase;
 import com.zrlog.install.util.LogCaptureSupport;
 import org.junit.Assume;
@@ -44,6 +45,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class InstallServiceDatabaseTest {
+    private final InstallApplications applications =
+            new InstallApplications();
+
 
     @Parameterized.Parameters(name = "{0}")
     public static TestDatabase[] databases() {
@@ -79,7 +83,7 @@ public class InstallServiceDatabaseTest {
         TestDatabase.Configuration databaseConfig = database.create(root, "zrlog_install");
         installConfigVO.setDbConfig(databaseConfig.asMap());
 
-        boolean installed = new InstallService(config, installConfigVO, events::add).install();
+        boolean installed = applications.service(config, installConfigVO, events::add).install();
 
         assertTrue(installed);
         assertTrue(dbFile.exists());
@@ -153,7 +157,7 @@ public class InstallServiceDatabaseTest {
         InstallConfigVO installConfigVO = installConfigVO(Collections.emptyMap(), null, null);
         installConfigVO.setDbConfig(database.create(root, "zrlog_connection").asMap());
 
-        TestConnectDbResult result = new InstallService(config, installConfigVO).testDbConn();
+        TestConnectDbResult result = applications.service(config, installConfigVO).testDbConn();
 
         assertEquals(TestConnectDbResult.SUCCESS, result);
     }
@@ -292,7 +296,7 @@ public class InstallServiceDatabaseTest {
         }
         InstallConfigVO installConfigVO = installConfigVO(validSiteConfig(), null, null);
         installConfigVO.setDbConfig(databaseValues);
-        InstallService service = new InstallService(config, installConfigVO);
+        InstallService service = applications.service(config, installConfigVO);
 
         assertEquals(TestConnectDbResult.DATABASE_NOT_EMPTY, service.testDbConn());
         InstallException exception = assertThrows(InstallException.class, service::install);
@@ -322,7 +326,7 @@ public class InstallServiceDatabaseTest {
         List<InstallProgressEvent> firstAttemptEvents = new ArrayList<>();
 
         try (LogCaptureSupport logs = LogCaptureSupport.capture(InstallService.class)) {
-            boolean firstAttempt = new InstallService(config, installConfigVO, firstAttemptEvents::add).install();
+            boolean firstAttempt = applications.service(config, installConfigVO, firstAttemptEvents::add).install();
 
             assertFalse(firstAttempt);
             assertTrue(config.isInstallLockVisibleDuringCallback());
@@ -342,14 +346,14 @@ public class InstallServiceDatabaseTest {
             assertFalse(logs.hasThrown());
 
             config.failNextInstallSuccess(new IllegalStateException(recoveryFailure));
-            assertFalse(new InstallService(config, new InstallConfigVO()).resume());
+            assertFalse(applications.service(config, new InstallConfigVO()).resume());
             assertTrue(new InstallRecoveryStore().isAvailable(lockFile));
             assertTrue(logs.text().contains("phase=install-recovery"));
             assertFalse(logs.text().contains("resume-do-not-expose"));
             assertFalse(logs.text().contains("jdbc:mysql"));
             assertFalse(logs.hasThrown());
 
-            assertTrue(new InstallService(config, new InstallConfigVO()).resume());
+            assertTrue(applications.service(config, new InstallConfigVO()).resume());
             assertEquals(3, config.getInstallSuccessCalls());
             assertTrue(dbFile.exists());
             assertTrue(lockFile.exists());
@@ -368,7 +372,7 @@ public class InstallServiceDatabaseTest {
         TestDatabase.Configuration databaseConfig = database.create(root, "zrlog_incomplete_recovery");
         installConfigVO.setDbConfig(databaseConfig.asMap());
 
-        assertFalse(new InstallService(config, installConfigVO).install());
+        assertFalse(applications.service(config, installConfigVO).install());
         assertTrue(new InstallRecoveryStore().isAvailable(lockFile));
         Properties recovered = new InstallRecoveryStore()
                 .load(lockFile).orElseThrow().toProperties();
@@ -376,7 +380,7 @@ public class InstallServiceDatabaseTest {
             assertTrue(new DAO(dataSource).execute("DELETE FROM `user` WHERE `userId` = 1"));
         }
 
-        assertFalse(new InstallService(config, new InstallConfigVO()).resume());
+        assertFalse(applications.service(config, new InstallConfigVO()).resume());
         assertEquals(1, config.getInstallSuccessCalls());
         assertFalse(dbFile.exists());
         assertFalse(lockFile.exists());
@@ -393,7 +397,7 @@ public class InstallServiceDatabaseTest {
         installConfigVO.setDbConfig(database.create(root, "zrlog_listener_failure").asMap());
         AtomicInteger deliveryAttempts = new AtomicInteger();
 
-        boolean installed = new InstallService(config, installConfigVO, event -> {
+        boolean installed = applications.service(config, installConfigVO, event -> {
             deliveryAttempts.incrementAndGet();
             throw new java.io.IOException("client disconnected");
         }).install();
@@ -418,7 +422,7 @@ public class InstallServiceDatabaseTest {
     private InstallService localSqliteService(File root, FakeInstallConfig config, String databaseName) {
         InstallConfigVO installConfigVO = installConfigVO(validSiteConfig(), null, null);
         installConfigVO.setDbConfig(database.create(root, databaseName).asMap());
-        return new InstallService(config, installConfigVO);
+        return applications.service(config, installConfigVO);
     }
 
     private static void assertLocalSqliteConflict(InstallService service) {

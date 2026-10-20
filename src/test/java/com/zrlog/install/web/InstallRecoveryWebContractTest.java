@@ -16,10 +16,6 @@ import com.zrlog.install.business.response.InstallResourceResponse;
 import com.zrlog.install.business.response.InstallResultResponse;
 import com.zrlog.install.business.response.InstallRuntimeResourceResponse;
 import com.zrlog.install.business.service.InstallOperationLock;
-import com.zrlog.install.business.service.InstallOperationState;
-import com.zrlog.install.business.service.InstallProbeService;
-import com.zrlog.install.business.service.InstallResourceService;
-import com.zrlog.install.business.service.InstallService;
 import com.zrlog.install.business.service.LocalSqliteSupport;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
@@ -27,10 +23,10 @@ import com.zrlog.install.business.vo.InstallSiteConfig;
 import com.zrlog.install.exception.InstallOperationInProgressException;
 import com.zrlog.install.exception.InstallRecoveryUnavailableException;
 import com.zrlog.install.exception.InvalidInstallRequestException;
+import com.zrlog.install.support.InstallApplications;
 import com.zrlog.install.web.config.DefaultInstallConfig;
 import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.controller.api.ApiInstallController;
-import com.zrlog.install.web.di.DaggerInstallComponent;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,9 +49,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class InstallRecoveryWebContractTest {
+    private final InstallApplications applications =
+            new InstallApplications();
+
 
     private InstallConfig installConfig = new DefaultInstallConfig();
-    private final InstallOperationState operations = new InstallOperationState();
 
     private static final String RECOVERY_FILE_NAME = ".install-recovery.properties";
 
@@ -70,7 +68,7 @@ public class InstallRecoveryWebContractTest {
         installConfig = config;
         InstallDatabaseConfig databaseConfig = LocalSqliteSupport.createDatabaseConfig(config);
 
-        assertFalse(new InstallService(config, installConfig(databaseConfig)).install());
+        assertFalse(applications.service(config, installConfig(databaseConfig)).install());
 
         Path recoveryFile = recoveryFile(config);
         assertEquals(1, config.installSuccessCalls());
@@ -127,7 +125,7 @@ public class InstallRecoveryWebContractTest {
         AtomicReference<Throwable> installFailure = new AtomicReference<>();
         Thread installThread = new Thread(() -> {
             try {
-                installResult.set(new InstallService(
+                installResult.set(applications.service(
                         config, installConfig(databaseConfig)).install());
             } catch (Throwable e) {
                 installFailure.set(e);
@@ -245,12 +243,7 @@ public class InstallRecoveryWebContractTest {
 
     private ApiInstallController controller(HttpRequest request) throws Exception {
         ApiInstallController controller =
-                new ApiInstallController(
-                        installConfig,
-                        DaggerInstallComponent.factory().create(installConfig).resources(),
-                        operations,
-                        DaggerInstallComponent.factory().create(installConfig).installers(),
-                        new InstallProbeService());
+                applications.component(installConfig).installApi();
         Field requestField = Controller.class.getDeclaredField("request");
         requestField.setAccessible(true);
         requestField.set(controller, request);
