@@ -30,6 +30,9 @@ jobs:
       - name: Check frontend, run tests and generate coverage
         run: ./mvnw -q -PnodeBuild org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent test org.jacoco:jacoco-maven-plugin:0.8.12:report
 
+      - name: Verify the release bundle without publishing
+        run: python3 scripts/check-release-bundle.py
+
       - name: Summarize JaCoCo coverage
         shell: bash
         run: |
