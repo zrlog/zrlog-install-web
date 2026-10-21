@@ -48,7 +48,8 @@ def main():
             names = {name for name in archive.namelist() if not name.endswith("/")}
             prefix = f"com/hibegin/{artifact}/{version}/{artifact}-{version}"
             required = {prefix + suffix for suffix in (".pom", ".jar", "-sources.jar", "-javadoc.jar")}
-            expected = {name + suffix for name in required for suffix in ("", ".md5", ".sha1")}
+            algorithms = ("md5", "sha1", "sha256", "sha512")
+            expected = required | {name + "." + algorithm for name in required for algorithm in algorithms}
             if not required <= names:
                 raise AssertionError(f"Missing release files: {required - names}")
             for name in names:
@@ -58,7 +59,9 @@ def main():
                 if name not in expected:
                     raise AssertionError(f"Unexpected bundle file: {name}")
             for name in required:
-                for algorithm in ("md5", "sha1"):
+                for algorithm in algorithms:
+                    if name + "." + algorithm not in names and algorithm not in ("md5", "sha1"):
+                        continue
                     checksum = archive.read(name + "." + algorithm).decode().strip()
                     if checksum != hashlib.new(algorithm, archive.read(name)).hexdigest():
                         raise AssertionError(f"Checksum mismatch: {name}")
