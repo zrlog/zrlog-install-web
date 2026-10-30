@@ -1,14 +1,13 @@
 package com.zrlog.install.business.service;
 
+import com.hibegin.common.dao.DAO;
 import com.hibegin.common.dao.DataSourceWrapper;
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Locale;
 import java.util.HashSet;
 import java.util.Set;
@@ -41,23 +40,20 @@ final class InstallSchemaSafety {
         if (!containsCompleteInstallSchema(dataSource, databaseConfig)) {
             return false;
         }
-        try (Connection connection = dataSource.getConnection()) {
-            return hasRows(connection, "SELECT COUNT(1) FROM `user` WHERE `userId` = 1", 1)
-                    && hasRows(connection, "SELECT COUNT(1) FROM `website` WHERE `name` IN "
-                    + "('zrlogSqlVersion','title','template','language')", 4)
-                    && hasRows(connection, "SELECT COUNT(1) FROM `lognav`", 2)
-                    && hasRows(connection, "SELECT COUNT(1) FROM `plugin`", 4)
-                    && hasRows(connection, "SELECT COUNT(1) FROM `type` WHERE `typeId` = 1", 1)
-                    && hasRows(connection, "SELECT COUNT(1) FROM `tag` WHERE `tagId` = 1", 1)
-                    && hasRows(connection, "SELECT COUNT(1) FROM `log` WHERE `logId` = 1", 1);
-        }
+        DAO dao = new DAO(dataSource);
+        return hasRows(dao, "SELECT COUNT(1) FROM `user` WHERE `userId` = 1", 1)
+                && hasRows(dao, "SELECT COUNT(1) FROM `website` WHERE `name` IN "
+                + "('zrlogSqlVersion','title','template','language')", 4)
+                && hasRows(dao, "SELECT COUNT(1) FROM `lognav`", 2)
+                && hasRows(dao, "SELECT COUNT(1) FROM `plugin`", 4)
+                && hasRows(dao, "SELECT COUNT(1) FROM `type` WHERE `typeId` = 1", 1)
+                && hasRows(dao, "SELECT COUNT(1) FROM `tag` WHERE `tagId` = 1", 1)
+                && hasRows(dao, "SELECT COUNT(1) FROM `log` WHERE `logId` = 1", 1);
     }
 
-    private static boolean hasRows(Connection connection, String sql, long minimum) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            return resultSet.next() && resultSet.getLong(1) >= minimum;
-        }
+    private static boolean hasRows(DAO dao, String sql, long minimum) throws SQLException {
+        Object count = dao.queryFirstObj(sql);
+        return count instanceof Number && ((Number) count).longValue() >= minimum;
     }
 
     private static Set<String> findInstallTables(DataSourceWrapper dataSource,
@@ -83,14 +79,11 @@ final class InstallSchemaSafety {
 
     private static Set<String> findSqliteInstallTables(DataSourceWrapper dataSource) throws SQLException {
         Set<String> installedTables = new HashSet<>();
-        try (Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet tables = statement.executeQuery(SQLITE_TABLE_QUERY)) {
-            while (tables.next()) {
-                String tableName = tables.getString(1);
-                if (tableName != null) {
-                    installedTables.add(tableName.toLowerCase(Locale.ROOT));
-                }
+        // WebAPI has a QueryRunner, but cannot expose a JDBC connection.
+        for (var table : new DAO(dataSource).queryListWithParams(SQLITE_TABLE_QUERY)) {
+            Object tableName = table.get("name");
+            if (tableName != null) {
+                installedTables.add(tableName.toString().toLowerCase(Locale.ROOT));
             }
         }
         return installedTables;
