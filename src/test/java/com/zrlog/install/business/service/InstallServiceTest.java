@@ -106,7 +106,7 @@ public class InstallServiceTest {
         assertEquals("", settings.getSecondTitle());
         assertEquals("zh_CN", settings.getLanguage());
         assertEquals("/include/templates/default", settings.getTemplate());
-        assertEquals("29", settings.getZrlogSqlVersion());
+        assertEquals("30", settings.getZrlogSqlVersion());
         assertEquals("example.com", settingsMap.get("host"));
         assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING,
                 settingsMap.get(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY));
