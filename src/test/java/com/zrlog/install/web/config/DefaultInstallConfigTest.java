@@ -28,7 +28,7 @@ public class DefaultInstallConfigTest {
         assertFalse(config.isWarMode());
         assertEquals("zh_CN", config.getAcceptLanguage());
         assertEquals("/include/templates/hexo-theme-fluid", config.defaultTemplatePath());
-        assertEquals("29", config.getZrLogSqlVersion());
+        assertEquals("30", config.getZrLogSqlVersion());
         assertEquals("1.0.0-SNAPSHOT", config.getBuildVersion());
         assertTrue(config.isAskConfig());
         assertTrue(config.isMissingConfig());

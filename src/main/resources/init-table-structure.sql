@@ -2,7 +2,7 @@
 # Date: 2014-07-22 13:23:19
 # Generator: MySQL-Front 5.3  (Build 4.43)
 
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 
 #
 # Structure for table "link"
@@ -18,7 +18,7 @@ CREATE TABLE `link`
     `url`      varchar(255) DEFAULT NULL,
     `icon`     longtext     DEFAULT NULL,
     PRIMARY KEY (`linkId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 #
 # Structure for table "lognav"
@@ -32,7 +32,7 @@ CREATE TABLE `lognav`
     `url`     varchar(255) DEFAULT NULL,
     `icon`    longtext     DEFAULT NULL,
     PRIMARY KEY (`navId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 #
 # Structure for table "plugin"
@@ -48,7 +48,7 @@ CREATE TABLE `plugin`
     `pluginName` varchar(255) DEFAULT NULL,
     `level`      int(11) DEFAULT NULL,
     PRIMARY KEY (`pluginId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 #
 # Structure for table "tag"
@@ -61,7 +61,7 @@ CREATE TABLE `tag`
     `text`  varchar(64) DEFAULT NULL,
     PRIMARY KEY (`tagId`),
     UNIQUE KEY `text` (`text`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 #
 # Structure for table "type"
@@ -78,7 +78,7 @@ CREATE TABLE `type`
     PRIMARY KEY (`typeId`),
     UNIQUE KEY `alias` (`alias`),
     KEY        `pid` (`pid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
 #
@@ -102,7 +102,7 @@ CREATE TABLE `user`
     `preferences`      text          DEFAULT NULL,
     PRIMARY KEY (`userId`),
     UNIQUE KEY `userName` (`userName`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE UNIQUE INDEX `user_passkey_handle`
     ON `user` (`passkeyUserHandle`);
@@ -239,7 +239,7 @@ CREATE TABLE `comment`
     PRIMARY KEY (`commentId`),
     UNIQUE KEY `postId` (`postId`),
     KEY           `logId` (`logId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
 #
@@ -274,7 +274,7 @@ CREATE TABLE `website`
     `remark` varchar(2000) DEFAULT NULL,
     PRIMARY KEY (`siteId`),
     UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `oauth_client` (
     `clientId` varchar(64) NOT NULL,

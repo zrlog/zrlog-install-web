@@ -118,14 +118,30 @@ public class InstallServiceDatabaseTest {
             assertEquals(0L, ((Number) dao.queryFirstObj("select count(1) from `user_passkey`")).longValue());
             assertEquals(0L, ((Number) dao.queryFirstObj(
                     "select count(1) from `user_passkey_challenge`")).longValue());
-            assertEquals("29", dao.queryFirstObj(
+            assertEquals("30", dao.queryFirstObj(
                     "select `value` from `website` where `name`='zrlogSqlVersion'"));
             assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING, dao.queryFirstObj(
                     "select `value` from `website` where `name`='" +
                             DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY + "'"));
             assertEquals("Database Blog", dao.queryFirstObj("select `value` from `website` where `name`='title'"));
             assertEquals("https://example.com", dao.queryFirstObj("select `value` from `website` where `name`='host'"));
+            String unicode = "桂林🛶、大理🌿，保留𠮷和 JSON 字面转义 \\ud83d\\udef6";
+            assertTrue(dao.execute("insert into website(name,value) values(?,?)", "unicode-value", unicode));
+            assertEquals(unicode, dao.queryFirstObj("select value from website where name=?", "unicode-value"));
             assertEquals("admin", dao.queryFirstObj("select `userName` from `user` where `userId`=1"));
+            String label = "旅行🛶𠮷";
+            for (Map.Entry<String, String> field : Map.of(
+                    "lognav", "navName", "plugin", "pTitle", "tag", "text", "type", "typeName",
+                    "user", "userName", "log", "title").entrySet()) {
+                String table = "`" + field.getKey() + "`";
+                String column = "`" + field.getValue() + "`";
+                assertTrue(dao.execute("update " + table + " set " + column + "=?", label));
+                assertEquals(label, dao.queryFirstObj("select " + column + " from " + table));
+            }
+            assertTrue(dao.execute("insert into link(linkName) values(?)", label));
+            assertEquals(label, dao.queryFirstObj("select linkName from link"));
+            assertTrue(dao.execute("insert into comment(userComment) values(?)", unicode));
+            assertEquals(unicode, dao.queryFirstObj("select userComment from comment"));
             assertThrows(SQLException.class, () -> dao.execute(
                     "insert into `website` (`name`, `value`) values ('title', 'duplicate')"));
             if (database.isSqlite()) {
