@@ -80,4 +80,4 @@ mvn -q -PnodeBuild install
 
 ## 跨工程测试标准
 
-遵守 `zrlog-ops/docs/test-case-writing-guide.md` 与 base 的 `docs/test-support.md`：临时目录、H2/SQLite、真实安装结果断言、资源及全局状态恢复。install-web 是 SQL schema 和安装流程的生产者，继续使用 common-dao 的 InMemoryDatabase 及本仓库的 typed 安装配置夹具，不反向依赖消费安装 schema 的 base 测试构件，避免 install → base → install 的构建环。安装用例不得使用预建 schema 或手写 install.lock 替代 InstallService。
+遵守 `zrlog-ops/docs/test-case-writing-guide.md` 与 `zrlog-ops/docs/zrlog-base/test-support.md`：临时目录、H2/SQLite、真实安装结果断言、资源及全局状态恢复。install-web 是 SQL schema 和安装流程的生产者，继续使用 common-dao 的 InMemoryDatabase 及本仓库的 typed 安装配置夹具，不反向依赖消费安装 schema 的 base 测试构件，避免 install → base → install 的构建环。安装用例不得使用预建 schema 或手写 install.lock 替代 InstallService。
