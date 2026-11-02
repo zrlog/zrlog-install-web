@@ -153,7 +153,6 @@ public class InstallService {
         dataSource.setPassword(dbProperties.getProperty("password"));
 
         return dataSource;
-        /*}*/
     }
 
     /**
