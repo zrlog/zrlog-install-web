@@ -6,7 +6,6 @@ import com.zrlog.install.exception.MissingDbNameException;
 import com.zrlog.install.exception.MissingDbPortException;
 import com.zrlog.install.exception.MissingDbUserNameException;
 import com.zrlog.install.util.InstallI18nUtil;
-
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -16,14 +15,15 @@ public final class InstallRequestValidator {
 
     private static final Set<String> SUPPORTED_DATABASE_TYPES = Set.of("mysql", "webapi", "sqlite");
     private static final Pattern SAFE_DATABASE_NAME = Pattern.compile("[A-Za-z0-9_-]{1,64}");
-    private static final Pattern SAFE_DATABASE_HOST = Pattern.compile("[A-Za-z0-9._:\\-\\[\\]]{1,255}");
-    private static final Pattern EMAIL = Pattern.compile(
-            "[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9]"
-                    + "(?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
-                    + "(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+");
+    private static final Pattern SAFE_DATABASE_HOST =
+            Pattern.compile("[A-Za-z0-9._:\\-\\[\\]]{1,255}");
+    private static final Pattern EMAIL =
+            Pattern.compile(
+                    "[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9]"
+                            + "(?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+                            + "(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+");
 
-    private InstallRequestValidator() {
-    }
+    private InstallRequestValidator() {}
 
     public static void validateDatabase(Map<String, String> values, String language) {
         String dbType = trimmedOrDefault(values.get("dbType"), "mysql").toLowerCase(Locale.ROOT);
@@ -79,7 +79,9 @@ public final class InstallRequestValidator {
         }
 
         String password = valueOrEmpty(values.get("password"));
-        if (password.trim().isEmpty() || password.length() < 8 || password.length() > 1024
+        if (password.trim().isEmpty()
+                || password.length() < 8
+                || password.length() > 1024
                 || containsControlCharacter(password)) {
             throw invalid("validationAdminPassword", language);
         }

@@ -1,19 +1,18 @@
 package com.zrlog.install.business.service;
 
-import org.junit.Test;
-
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Properties;
-
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Properties;
+import org.junit.Test;
 
 public class InstallStateStoreTest {
 
@@ -24,8 +23,11 @@ public class InstallStateStoreTest {
         Path installLock = root.resolve("install.lock");
         InstallStateStore store = new InstallStateStore();
 
-        try (InstallStateStore.InstallStateTransaction transaction = store.prepare(
-                dbProperties.toFile(), Map.of("jdbcUrl", "jdbc:test:new"), installLock.toFile())) {
+        try (InstallStateStore.InstallStateTransaction transaction =
+                store.prepare(
+                        dbProperties.toFile(),
+                        Map.of("jdbcUrl", "jdbc:test:new"),
+                        installLock.toFile())) {
             assertFalse(Files.exists(dbProperties));
             assertFalse(Files.exists(installLock));
 
@@ -45,12 +47,16 @@ public class InstallStateStoreTest {
         Path root = Files.createTempDirectory("zrlog-install-state-rollback");
         Path dbProperties = root.resolve("db.properties");
         Path installLock = root.resolve("install.lock");
-        byte[] previousProperties = "jdbcUrl=jdbc:test:previous\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] previousProperties =
+                "jdbcUrl=jdbc:test:previous\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         Files.write(dbProperties, previousProperties);
         InstallStateStore store = new InstallStateStore();
 
-        try (InstallStateStore.InstallStateTransaction transaction = store.prepare(
-                dbProperties.toFile(), Map.of("jdbcUrl", "jdbc:test:new"), installLock.toFile())) {
+        try (InstallStateStore.InstallStateTransaction transaction =
+                store.prepare(
+                        dbProperties.toFile(),
+                        Map.of("jdbcUrl", "jdbc:test:new"),
+                        installLock.toFile())) {
             transaction.commitForCallback();
             assertTrue(Files.exists(installLock));
             assertEquals("jdbc:test:new", readProperties(dbProperties).getProperty("jdbcUrl"));
@@ -71,8 +77,14 @@ public class InstallStateStoreTest {
         Files.writeString(dbProperties, "jdbcUrl=jdbc:test:previous\n");
         Files.write(installLock, marker);
 
-        assertThrows(FileAlreadyExistsException.class, () -> new InstallStateStore().prepare(
-                dbProperties.toFile(), Map.of("jdbcUrl", "jdbc:test:new"), installLock.toFile()));
+        assertThrows(
+                FileAlreadyExistsException.class,
+                () ->
+                        new InstallStateStore()
+                                .prepare(
+                                        dbProperties.toFile(),
+                                        Map.of("jdbcUrl", "jdbc:test:new"),
+                                        installLock.toFile()));
 
         assertArrayEquals(marker, Files.readAllBytes(installLock));
         assertEquals("jdbc:test:previous", readProperties(dbProperties).getProperty("jdbcUrl"));
@@ -85,8 +97,12 @@ public class InstallStateStoreTest {
         Path dbProperties = root.resolve("db.properties");
         Path installLock = root.resolve("install.lock");
         Files.writeString(dbProperties, "jdbcUrl=jdbc:test:previous\n");
-        InstallStateStore.InstallStateTransaction transaction = new InstallStateStore().prepare(
-                dbProperties.toFile(), Map.of("jdbcUrl", "jdbc:test:new"), installLock.toFile());
+        InstallStateStore.InstallStateTransaction transaction =
+                new InstallStateStore()
+                        .prepare(
+                                dbProperties.toFile(),
+                                Map.of("jdbcUrl", "jdbc:test:new"),
+                                installLock.toFile());
         transaction.commitForCallback();
         Files.writeString(installLock, "marker-from-another-owner");
 
@@ -108,8 +124,12 @@ public class InstallStateStoreTest {
 
     private static void assertNoTransactionFiles(Path root) throws Exception {
         try (var files = Files.list(root)) {
-            assertFalse(files.map(path -> path.getFileName().toString()).anyMatch(name ->
-                    name.startsWith(".db.properties-") || name.startsWith(".install.lock-")));
+            assertFalse(
+                    files.map(path -> path.getFileName().toString())
+                            .anyMatch(
+                                    name ->
+                                            name.startsWith(".db.properties-")
+                                                    || name.startsWith(".install.lock-")));
         }
     }
 }

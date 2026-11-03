@@ -6,8 +6,7 @@ public class InstallResultResponse extends InstallApiStandardResponse {
 
     private InstallSuccessData data;
 
-    public InstallResultResponse() {
-    }
+    public InstallResultResponse() {}
 
     public InstallResultResponse(InstallSuccessData data) {
         this.data = data;
@@ -20,6 +19,4 @@ public class InstallResultResponse extends InstallApiStandardResponse {
     public void setData(InstallSuccessData data) {
         this.data = data;
     }
-
-
 }

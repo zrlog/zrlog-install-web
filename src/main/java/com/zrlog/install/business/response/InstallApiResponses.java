@@ -2,8 +2,7 @@ package com.zrlog.install.business.response;
 
 public final class InstallApiResponses {
 
-    private InstallApiResponses() {
-    }
+    private InstallApiResponses() {}
 
     public static Message message(String message) {
         return new Message(message);
@@ -27,15 +26,13 @@ public final class InstallApiResponses {
         return response;
     }
 
-    public static class Empty {
-    }
+    public static class Empty {}
 
     public static class Message {
 
         private String message;
 
-        public Message() {
-        }
+        public Message() {}
 
         public Message(String message) {
             this.message = message;

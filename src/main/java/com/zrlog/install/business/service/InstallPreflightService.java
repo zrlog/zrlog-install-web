@@ -1,9 +1,7 @@
 package com.zrlog.install.business.service;
 
 import com.zrlog.install.web.config.InstallConfig;
-
 import jakarta.inject.Inject;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,11 +17,15 @@ public class InstallPreflightService {
     public void assertReady(InstallConfig installConfig) throws IOException {
         assertWritableTarget(installConfig.getDbPropertiesFile(), "db.properties");
         assertWritableTarget(installConfig.getAction().getLockFile(), "install.lock");
-        assertWritableTarget(InstallOperationLock.operationLockFile(
-                installConfig.getAction().getLockFile()).toFile(), "install operation lock");
-        assertWritableTarget(InstallRecoveryStore.recoveryFile(
-                installConfig.getAction().getLockFile()), "install recovery state");
-        try (InputStream inputStream = InstallPreflightService.class.getResourceAsStream("/init-table-structure.sql")) {
+        assertWritableTarget(
+                InstallOperationLock.operationLockFile(installConfig.getAction().getLockFile())
+                        .toFile(),
+                "install operation lock");
+        assertWritableTarget(
+                InstallRecoveryStore.recoveryFile(installConfig.getAction().getLockFile()),
+                "install recovery state");
+        try (InputStream inputStream =
+                InstallPreflightService.class.getResourceAsStream("/init-table-structure.sql")) {
             if (inputStream == null) {
                 throw new IOException("Missing init-table-structure.sql");
             }

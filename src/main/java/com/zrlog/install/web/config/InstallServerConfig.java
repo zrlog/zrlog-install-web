@@ -11,11 +11,11 @@ public class InstallServerConfig extends AbstractServerConfig {
     private final ServerConfig serverConfig = new ServerConfig();
 
     public InstallServerConfig(InstallConfig config) {
-        for (int status : new int[]{400, 403, 500}) {
+        for (int status : new int[] {400, 403, 500}) {
             serverConfig.addErrorHandle(status, config.getErrorHandler());
         }
         InstallWebBindings.configure(serverConfig, config);
-        //默认
+        // 默认
         serverConfig.addInterceptor(MethodInterceptor.class);
         serverConfig.setPort(6080);
     }

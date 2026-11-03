@@ -1,7 +1,6 @@
 package com.zrlog.install.business.vo;
 
 import com.google.gson.annotations.SerializedName;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -10,8 +9,10 @@ import java.util.UUID;
 public class InstallSiteConfig {
 
     private String title;
+
     @SerializedName("second_title")
     private String secondTitle;
+
     private String username;
     private String password;
     private String email;

@@ -20,7 +20,11 @@ public class InstallException extends AbstractInstallException implements Instal
 
     @Override
     public String getMessage() {
-        return "[Error-" + result + "] - " + InstallI18nUtil.getInstallStringFromRes("connectDbError_" + result.getError(), language);
+        return "[Error-"
+                + result
+                + "] - "
+                + InstallI18nUtil.getInstallStringFromRes(
+                        "connectDbError_" + result.getError(), language);
     }
 
     @Override

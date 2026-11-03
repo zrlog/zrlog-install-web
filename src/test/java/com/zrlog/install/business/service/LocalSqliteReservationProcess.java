@@ -9,8 +9,7 @@ import java.nio.file.StandardOpenOption;
 
 public final class LocalSqliteReservationProcess {
 
-    private LocalSqliteReservationProcess() {
-    }
+    private LocalSqliteReservationProcess() {}
 
     public static void main(String[] args) throws Exception {
         FakeInstallConfig config = new FakeInstallConfig(new File(args[0]), new File(args[1]));
@@ -23,12 +22,13 @@ public final class LocalSqliteReservationProcess {
         }
         String result;
         try (LocalSqliteSupport.DatabaseReservation reservation =
-                     LocalSqliteSupport.reserveDatabaseFile(config)) {
+                LocalSqliteSupport.reserveDatabaseFile(config)) {
             reservation.preserve();
             result = "CREATED";
         } catch (FileAlreadyExistsException e) {
             result = "EXISTS";
         }
-        Files.writeString(resultFile, result, StandardCharsets.US_ASCII, StandardOpenOption.CREATE_NEW);
+        Files.writeString(
+                resultFile, result, StandardCharsets.US_ASCII, StandardOpenOption.CREATE_NEW);
     }
 }

@@ -22,13 +22,9 @@ import com.zrlog.install.util.InstallLogUtil;
 import com.zrlog.install.util.StringUtils;
 import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.config.InstallConfig;
-
 import dagger.assisted.Assisted;
 import dagger.assisted.AssistedFactory;
 import dagger.assisted.AssistedInject;
-
-import org.jsoup.Jsoup;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileAlreadyExistsException;
@@ -39,10 +35,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jsoup.Jsoup;
 
-/**
- * 与安装向导相关的业务代码
- */
+/** 与安装向导相关的业务代码 */
 public class InstallService {
 
     private static final Logger LOGGER = LoggerUtil.getLogger(InstallService.class);
@@ -62,13 +57,18 @@ public class InstallService {
         this(installConfig, installConfigVO, InstallProgressListener.NONE);
     }
 
-    public InstallService(InstallConfig installConfig, InstallConfigVO installConfigVO,
-                          InstallProgressListener progressListener) {
+    public InstallService(
+            InstallConfig installConfig,
+            InstallConfigVO installConfigVO,
+            InstallProgressListener progressListener) {
         this(installConfig, installConfigVO, progressListener, installConfig.getAcceptLanguage());
     }
 
-    public InstallService(InstallConfig installConfig, InstallConfigVO installConfigVO,
-                          InstallProgressListener progressListener, String language) {
+    public InstallService(
+            InstallConfig installConfig,
+            InstallConfigVO installConfigVO,
+            InstallProgressListener progressListener,
+            String language) {
         this(
                 installConfig,
                 installConfigVO,
@@ -92,17 +92,22 @@ public class InstallService {
         this.installRecoveryStore = installRecoveryStore;
         this.preflight = preflight;
         this.language = language;
-        InstallDatabaseConfig requestedDbConn = Objects.requireNonNullElseGet(
-                installConfigVO.getDbConfig(), InstallDatabaseConfig::new);
-        this.dbConn = requestedDbConn.isLocalSqlite()
-                ? LocalSqliteSupport.createDatabaseConfig(installConfig)
-                : requestedDbConn;
-        this.configMsg = Objects.requireNonNullElseGet(installConfigVO.getConfigMsg(), InstallSiteConfig::new);
+        InstallDatabaseConfig requestedDbConn =
+                Objects.requireNonNullElseGet(
+                        installConfigVO.getDbConfig(), InstallDatabaseConfig::new);
+        this.dbConn =
+                requestedDbConn.isLocalSqlite()
+                        ? LocalSqliteSupport.createDatabaseConfig(installConfig)
+                        : requestedDbConn;
+        this.configMsg =
+                Objects.requireNonNullElseGet(
+                        installConfigVO.getConfigMsg(), InstallSiteConfig::new);
         this.appendWebsite = installConfigVO.getAppendWebsite();
         this.installAction = installConfig.getAction();
         this.installConfig = installConfig;
         this.contextPath = Objects.requireNonNullElse(installConfigVO.getContextPath(), "");
-        this.progressListener = Objects.requireNonNullElse(progressListener, InstallProgressListener.NONE);
+        this.progressListener =
+                Objects.requireNonNullElse(progressListener, InstallProgressListener.NONE);
     }
 
     @AssistedFactory
@@ -121,7 +126,9 @@ public class InstallService {
             throw new InstalledException(installConfig.isWarMode(), language);
         }
         if (dbConn.isLocalSqlite() && !LocalSqliteSupport.isAvailable(installConfig)) {
-            emitError("database", new IllegalStateException("Local SQLite is not supported by this package"));
+            emitError(
+                    "database",
+                    new IllegalStateException("Local SQLite is not supported by this package"));
             return false;
         }
         return startInstall(dbConn, configMsg);
@@ -138,7 +145,8 @@ public class InstallService {
         return DefaultWebsiteSettings.from(webSite, installConfig, appendWebsite, language);
     }
 
-    static DataSourceWrapperImpl buildDataSource(Properties dbProperties, boolean dev) throws ClassNotFoundException {
+    static DataSourceWrapperImpl buildDataSource(Properties dbProperties, boolean dev)
+            throws ClassNotFoundException {
         DataSourceWrapperImpl dataSource = new DataSourceWrapperImpl(dbProperties, dev);
         if (!dataSource.isWebApi()) {
             String driverClass = dbProperties.getProperty("driverClass");
@@ -155,9 +163,7 @@ public class InstallService {
         return dataSource;
     }
 
-    /**
-     * 尝试使用填写的数据库信息连接数据库
-     */
+    /** 尝试使用填写的数据库信息连接数据库 */
     public TestConnectDbResult testDbConn() {
         if (dbConn.isLocalSqlite() && !LocalSqliteSupport.isAvailable(installConfig)) {
             return TestConnectDbResult.UNSUPPORTED_DATABASE;
@@ -176,43 +182,46 @@ public class InstallService {
                 testedDatabaseConfig = dbConn;
             }
         } catch (IOException e) {
-            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                    InstallLogUtil.FailurePhase.LOCAL_SQLITE_PREPARATION, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.LOCAL_SQLITE_PREPARATION, e);
             return TestConnectDbResult.CREATE_CONNECT_ERROR;
         }
         Properties properties = testedDatabaseConfig.toProperties();
         try (LocalSqliteSupport.ConnectionProbe ignored = connectionProbe;
-             DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
+                DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
             ds.testConnection();
             if (InstallSchemaSafety.containsInstallTable(ds, testedDatabaseConfig)) {
                 return TestConnectDbResult.DATABASE_NOT_EMPTY;
             }
             return TestConnectDbResult.SUCCESS;
         } catch (ClassNotFoundException e) {
-            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
             return TestConnectDbResult.MISSING_JDBC_DRIVER;
         } catch (SQLRecoverableException e) {
-            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
             return TestConnectDbResult.CREATE_CONNECT_ERROR;
         } catch (SQLSyntaxErrorException e) {
-            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
             if ("mysql".equals(dbConn.getDbType()) && messageContainsAll(e, "Unknown database")) {
                 try {
                     if (createDatabase()) {
                         return TestConnectDbResult.SUCCESS;
                     }
                 } catch (Exception createEx) {
-                    InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                            InstallLogUtil.FailurePhase.DATABASE_CREATION, createEx);
+                    InstallLogUtil.logFailure(
+                            LOGGER,
+                            Level.SEVERE,
+                            InstallLogUtil.FailurePhase.DATABASE_CREATION,
+                            createEx);
                 }
             }
             return TestConnectDbResult.DB_NOT_EXISTS;
         } catch (SQLException e) {
-            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
             if (messageContainsAll(e, "Access denied for user", "using password")) {
                 return TestConnectDbResult.USERNAME_OR_PASSWORD_ERROR;
             } else {
@@ -222,8 +231,8 @@ public class InstallService {
                 return TestConnectDbResult.SQL_EXCEPTION_UNKNOWN;
             }
         } catch (Exception e) {
-            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                    InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.DATABASE_CONNECTION_TEST, e);
         }
         return TestConnectDbResult.UNKNOWN;
     }
@@ -246,20 +255,26 @@ public class InstallService {
         String dbHost = dbConn.getDbHost();
         String dbPort = dbConn.getDbPort();
         String dbType = dbConn.getDbType();
-        if (StringUtils.isEmpty(dbName) || StringUtils.isEmpty(dbHost) || StringUtils.isEmpty(dbPort)) return false;
+        if (StringUtils.isEmpty(dbName)
+                || StringUtils.isEmpty(dbHost)
+                || StringUtils.isEmpty(dbPort)) return false;
 
         Properties properties = new Properties();
         properties.putAll(dbConn.toMap());
         String baseJdbcUrl = "jdbc:" + dbType + "://" + dbHost + ":" + dbPort + "/";
         String jdbcUrlQueryStr = installConfig.getJdbcUrlQueryStr(dbType, Collections.emptyMap());
-        properties.put("jdbcUrl", baseJdbcUrl + (StringUtils.isEmpty(jdbcUrlQueryStr) ? "" : "?" + jdbcUrlQueryStr));
+        properties.put(
+                "jdbcUrl",
+                baseJdbcUrl + (StringUtils.isEmpty(jdbcUrlQueryStr) ? "" : "?" + jdbcUrlQueryStr));
 
         try (DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
-             DAO dao = new DAO(ds);
-             return dao.execute("CREATE DATABASE IF NOT EXISTS `" + dbName + "` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            DAO dao = new DAO(ds);
+            return dao.execute(
+                    "CREATE DATABASE IF NOT EXISTS `"
+                            + dbName
+                            + "` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         }
     }
-
 
     /**
      * 保存程序的数据库链接信息
@@ -267,8 +282,11 @@ public class InstallService {
      * @throws IOException
      */
     private void installSuccess(InstallDatabaseConfig databaseConfig) throws IOException {
-        try (InstallStateStore.InstallStateTransaction installState = installStateStore.prepare(
-                installConfig.getDbPropertiesFile(), databaseConfig.toMap(), installAction.getLockFile())) {
+        try (InstallStateStore.InstallStateTransaction installState =
+                installStateStore.prepare(
+                        installConfig.getDbPropertiesFile(),
+                        databaseConfig.toMap(),
+                        installAction.getLockFile())) {
             installState.commitForCallback();
             if (installConfig.isMissingConfig()) {
                 LOGGER.info("Need config, skip call action.installSuccess()");
@@ -285,7 +303,8 @@ public class InstallService {
         try {
             emitRunning(currentStep);
             preflight.assertReady(installConfig);
-            InstallOperationLock operationLock = InstallOperationLock.tryAcquire(installAction.getLockFile());
+            InstallOperationLock operationLock =
+                    InstallOperationLock.tryAcquire(installAction.getLockFile());
             if (operationLock == null) {
                 throw new InstallOperationInProgressException("INSTALL");
             }
@@ -302,20 +321,25 @@ public class InstallService {
                     try {
                         sqliteReservation = LocalSqliteSupport.reserveDatabaseFile(installConfig);
                     } catch (FileAlreadyExistsException e) {
-                        throw new InstallException(TestConnectDbResult.DATABASE_NOT_EMPTY, language);
+                        throw new InstallException(
+                                TestConnectDbResult.DATABASE_NOT_EMPTY, language);
                     }
                 }
                 try (LocalSqliteSupport.DatabaseReservation reservation = sqliteReservation;
-                     DataSourceWrapperImpl ds = buildDataSource(properties, EnvKit.isDevMode())) {
+                        DataSourceWrapperImpl ds =
+                                buildDataSource(properties, EnvKit.isDevMode())) {
                     ds.testConnection();
                     emitComplete(currentStep);
 
                     DAO dao = new DAO(ds);
                     if (InstallSchemaSafety.containsInstallTable(ds, dbConn)) {
-                        throw new InstallException(TestConnectDbResult.DATABASE_NOT_EMPTY, language);
+                        throw new InstallException(
+                                TestConnectDbResult.DATABASE_NOT_EMPTY, language);
                     }
-                    String sql = IOUtil.getStringInputStream(
-                            InstallService.class.getResourceAsStream("/init-table-structure.sql"));
+                    String sql =
+                            IOUtil.getStringInputStream(
+                                    InstallService.class.getResourceAsStream(
+                                            "/init-table-structure.sql"));
                     List<String> sqlList = prepareInstallSql(sql, ds.isWebApi(), dbConn);
                     currentStep = "schema";
                     emitRunning(currentStep);
@@ -360,7 +384,8 @@ public class InstallService {
                     defaultResults.add(insertTag(dao));
                     defaultResults.add(insertFirstArticle(dao));
                     results.addAll(defaultResults);
-                    boolean defaultsResult = defaultResults.stream().allMatch(e -> Objects.equals(e, true));
+                    boolean defaultsResult =
+                            defaultResults.stream().allMatch(e -> Objects.equals(e, true));
                     if (!defaultsResult && failedStep == null) {
                         failedStep = currentStep;
                     }
@@ -370,7 +395,9 @@ public class InstallService {
 
                     if (!results.stream().allMatch(e -> Objects.equals(e, true))) {
                         currentStep = Objects.requireNonNullElse(failedStep, "install");
-                        emitError(currentStep, new IllegalStateException("Install step failed: " + currentStep));
+                        emitError(
+                                currentStep,
+                                new IllegalStateException("Install step failed: " + currentStep));
                         return false;
                     }
 
@@ -398,7 +425,8 @@ public class InstallService {
         try {
             emitRunning(currentStep);
             preflight.assertReady(installConfig);
-            InstallOperationLock operationLock = InstallOperationLock.tryAcquire(installAction.getLockFile());
+            InstallOperationLock operationLock =
+                    InstallOperationLock.tryAcquire(installAction.getLockFile());
             if (operationLock == null) {
                 throw new InstallOperationInProgressException("INSTALL");
             }
@@ -416,10 +444,11 @@ public class InstallService {
                 currentStep = "database";
                 emitRunning(currentStep);
                 InstallDatabaseConfig recoveredDatabase = recoveryConfig.get();
-                try (DataSourceWrapperImpl dataSource = buildDataSource(
-                        recoveredDatabase.toProperties(), EnvKit.isDevMode())) {
+                try (DataSourceWrapperImpl dataSource =
+                        buildDataSource(recoveredDatabase.toProperties(), EnvKit.isDevMode())) {
                     dataSource.testConnection();
-                    if (!InstallSchemaSafety.containsCompleteInstallState(dataSource, recoveredDatabase)) {
+                    if (!InstallSchemaSafety.containsCompleteInstallState(
+                            dataSource, recoveredDatabase)) {
                         return false;
                     }
                 }
@@ -437,8 +466,8 @@ public class InstallService {
             throw e;
         } catch (Exception e) {
             emitError(currentStep, e);
-            InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                    InstallLogUtil.FailurePhase.INSTALL_RECOVERY, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.INSTALL_RECOVERY, e);
             return false;
         }
     }
@@ -447,8 +476,8 @@ public class InstallService {
         try {
             installRecoveryStore.clear(installAction.getLockFile());
         } catch (IOException e) {
-            InstallLogUtil.logFailure(LOGGER, Level.WARNING,
-                    InstallLogUtil.FailurePhase.RECOVERY_STATE_CLEANUP, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.WARNING, InstallLogUtil.FailurePhase.RECOVERY_STATE_CLEANUP, e);
         }
     }
 
@@ -461,16 +490,20 @@ public class InstallService {
     }
 
     private void emitError(String code, Exception e) {
-        emitProgress(InstallProgressEvent.error(code,
-                InstallI18nUtil.getInstallStringFromRes("streamFailed", language)));
+        emitProgress(
+                InstallProgressEvent.error(
+                        code, InstallI18nUtil.getInstallStringFromRes("streamFailed", language)));
     }
 
     private void emitProgress(InstallProgressEvent event) {
         try {
             progressListener.onProgress(event);
         } catch (Exception listenerFailure) {
-            InstallLogUtil.logFailure(LOGGER, Level.FINE,
-                    InstallLogUtil.FailurePhase.PROGRESS_DELIVERY, listenerFailure);
+            InstallLogUtil.logFailure(
+                    LOGGER,
+                    Level.FINE,
+                    InstallLogUtil.FailurePhase.PROGRESS_DELIVERY,
+                    listenerFailure);
         }
     }
 
@@ -481,7 +514,8 @@ public class InstallService {
         return Jsoup.parse(content).body().text();
     }
 
-    static List<String> prepareInstallSql(String sql, boolean webApi, InstallDatabaseConfig dbConn) {
+    static List<String> prepareInstallSql(
+            String sql, boolean webApi, InstallDatabaseConfig dbConn) {
         if (webApi || dbConn.isLocalSqlite()) {
             return SqlConvertUtils.doMySQLToSqliteBySqlText(sql);
         }
@@ -498,14 +532,24 @@ public class InstallService {
 
     boolean insertFirstArticle(DAO dao) throws Exception {
         int logId = 1;
-        String insetLog = "INSERT INTO `log`(`logId`,`canComment`,`keywords`,`alias`,`typeId`,`userId`,`title`,`content`,`plain_content`,`markdown`,`digest`,`releaseTime`,`last_update_date`,`rubbish`,`privacy`,`createdAt`) VALUES (" + logId + ",?,?,?,1,1,?,?,?,?,?,?,?,?,?,?)";
+        String insetLog =
+                "INSERT INTO `log`(`logId`,`canComment`,`keywords`,`alias`,`typeId`,`userId`,`title`,`content`,`plain_content`,`markdown`,`digest`,`releaseTime`,`last_update_date`,`rubbish`,`privacy`,`createdAt`) VALUES ("
+                        + logId
+                        + ",?,?,?,1,1,?,?,?,?,?,?,?,?,?,?)";
         List<Object> params = new ArrayList<>();
-        try (InputStream in = InstallService.class.getResourceAsStream("/i18n/init-blog/" + language + ".md")) {
-            InitialArticleTemplateData data = new InitialArticleTemplateData(contextPath + "/admin/article-edit?id=" + logId);
-            String markdown = new BasicTemplateRender(data.toTemplateMap(), InstallService.class).render(in);
-            //html read
-            try (InputStream htmlIn = InstallService.class.getResourceAsStream("/i18n/init-blog/" + language + ".html")) {
-                String content = new BasicTemplateRender(data.toTemplateMap(), InstallService.class).render(htmlIn);
+        try (InputStream in =
+                InstallService.class.getResourceAsStream("/i18n/init-blog/" + language + ".md")) {
+            InitialArticleTemplateData data =
+                    new InitialArticleTemplateData(contextPath + "/admin/article-edit?id=" + logId);
+            String markdown =
+                    new BasicTemplateRender(data.toTemplateMap(), InstallService.class).render(in);
+            // html read
+            try (InputStream htmlIn =
+                    InstallService.class.getResourceAsStream(
+                            "/i18n/init-blog/" + language + ".html")) {
+                String content =
+                        new BasicTemplateRender(data.toTemplateMap(), InstallService.class)
+                                .render(htmlIn);
                 params.add(true);
                 params.add(InstallI18nUtil.getInstallStringFromRes("defaultType", language));
                 params.add("hello-world");
@@ -519,7 +563,8 @@ public class InstallService {
                     params.add(new Date());
                     params.add(new Date());
                 } else {
-                    Date parsedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(installDate);
+                    Date parsedDate =
+                            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(installDate);
                     params.add(parsedDate);
                     params.add(parsedDate);
                 }
@@ -534,39 +579,78 @@ public class InstallService {
 
     boolean insertType(DAO dao) throws SQLException {
         String time = metadataTime();
-        return dao.execute("INSERT INTO `type`(`typeId`,`typeName`,`remark`,`alias`,`createdAt`,`updatedAt`) VALUES (1,?,'','note',?,?)",
-                InstallI18nUtil.getInstallStringFromRes("defaultType", language), time, time);
+        return dao.execute(
+                "INSERT INTO `type`(`typeId`,`typeName`,`remark`,`alias`,`createdAt`,`updatedAt`) VALUES (1,?,'','note',?,?)",
+                InstallI18nUtil.getInstallStringFromRes("defaultType", language),
+                time,
+                time);
     }
 
     boolean insertTag(DAO dao) throws SQLException {
         String time = metadataTime();
-        return dao.execute("INSERT INTO `tag`(`tagId`,`text`,`count`,`createdAt`,`updatedAt`) VALUES (1,?,1,?,?)",
-                InstallI18nUtil.getInstallStringFromRes("defaultType", language), time, time);
+        return dao.execute(
+                "INSERT INTO `tag`(`tagId`,`text`,`count`,`createdAt`,`updatedAt`) VALUES (1,?,1,?,?)",
+                InstallI18nUtil.getInstallStringFromRes("defaultType", language),
+                time,
+                time);
     }
 
     boolean initPlugin(DAO dao) throws SQLException {
         String time = metadataTime();
-        return dao.execute("INSERT INTO `plugin`(`pluginId`,`isSystem`,`pTitle`,`pluginName`,`level`,`createdAt`,`updatedAt`)"
+        return dao.execute(
+                "INSERT INTO `plugin`(`pluginId`,`isSystem`,`pTitle`,`pluginName`,`level`,`createdAt`,`updatedAt`)"
                         + " VALUES (1,true,?,'types',3,?,?),(2,true,?,'tags',3,?,?),"
                         + "(3,true,?,'links',2,?,?),(4,true,?,'archives',3,?,?)",
-                InstallI18nUtil.getInstallStringFromRes("category", language), time, time,
-                InstallI18nUtil.getInstallStringFromRes("tag", language), time, time,
-                InstallI18nUtil.getInstallStringFromRes("link", language), time, time,
-                InstallI18nUtil.getInstallStringFromRes("archive", language), time, time);
+                InstallI18nUtil.getInstallStringFromRes("category", language),
+                time,
+                time,
+                InstallI18nUtil.getInstallStringFromRes("tag", language),
+                time,
+                time,
+                InstallI18nUtil.getInstallStringFromRes("link", language),
+                time,
+                time,
+                InstallI18nUtil.getInstallStringFromRes("archive", language),
+                time,
+                time);
     }
 
     boolean insertNav(DAO dao) throws SQLException {
         String time = metadataTime();
-        String insertLogNavSql = "INSERT INTO `lognav`(`navId`,`url`,`navName`,`icon`,`sort`,`createdAt`,`updatedAt`) VALUES (?,?,?,?,?,?,?)";
-        return dao.execute(insertLogNavSql, 1, "/", InstallI18nUtil.getInstallStringFromRes("home", language), "iconfont icon-home-fill", 1, time, time)
-                && dao.execute(insertLogNavSql, 2, "/admin/login", InstallI18nUtil.getInstallStringFromRes("manage", language), "iconfont icon-user-fill", 2, time, time);
+        String insertLogNavSql =
+                "INSERT INTO `lognav`(`navId`,`url`,`navName`,`icon`,`sort`,`createdAt`,`updatedAt`) VALUES (?,?,?,?,?,?,?)";
+        return dao.execute(
+                        insertLogNavSql,
+                        1,
+                        "/",
+                        InstallI18nUtil.getInstallStringFromRes("home", language),
+                        "iconfont icon-home-fill",
+                        1,
+                        time,
+                        time)
+                && dao.execute(
+                        insertLogNavSql,
+                        2,
+                        "/admin/login",
+                        InstallI18nUtil.getInstallStringFromRes("manage", language),
+                        "iconfont icon-user-fill",
+                        2,
+                        time,
+                        time);
     }
 
     boolean initUser(InstallSiteConfig blogMsg, DAO dao) throws SQLException {
         String time = metadataTime();
-        String insertUserSql = "INSERT INTO `user`(`userId`,`userName`,`password`,`email`,`secretKey`,`role`,`createdAt`,`updatedAt`) VALUES (1,?,?,?,?,'owner',?,?)";
-        return dao.execute(insertUserSql, blogMsg.getUsername(), installConfig.encryptPassword(blogMsg.getPassword()),
-                configMsg.getEmail(), configMsg.secretKeyOrNew(), time, time);
+        String insertUserSql =
+                "INSERT INTO `user`(`userId`,`userName`,`password`,`email`,`secretKey`,`role`,`createdAt`,`updatedAt`) VALUES (1,?,?,?,?,'owner',?,?)";
+        return dao.execute(
+                insertUserSql,
+                blogMsg.getUsername(),
+                installConfig.encryptPassword(blogMsg.getPassword()),
+                configMsg.getEmail(),
+                configMsg.secretKeyOrNew(),
+                time,
+                time);
     }
 
     boolean initWebSite(DAO dao) throws SQLException {
@@ -589,7 +673,8 @@ public class InstallService {
     }
 
     private static String metadataTime() {
-        // SQL date/time text also retains milliseconds through SQLite and the legacy WebAPI binding.
+        // SQL date/time text also retains milliseconds through SQLite and the legacy WebAPI
+        // binding.
         return new java.sql.Timestamp(System.currentTimeMillis()).toString();
     }
 

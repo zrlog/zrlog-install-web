@@ -6,8 +6,7 @@ public class InstallProgressEvent {
     private String status;
     private String detail;
 
-    public InstallProgressEvent() {
-    }
+    public InstallProgressEvent() {}
 
     public InstallProgressEvent(String code, String status) {
         this.code = code;

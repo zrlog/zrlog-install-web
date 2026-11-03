@@ -7,8 +7,7 @@ public class InstallProbeItem {
     private String status;
     private String value;
 
-    public InstallProbeItem() {
-    }
+    public InstallProbeItem() {}
 
     public InstallProbeItem(String code, String category, String status, String value) {
         this.code = code;
@@ -48,5 +47,4 @@ public class InstallProbeItem {
     public void setValue(String value) {
         this.value = value;
     }
-
 }

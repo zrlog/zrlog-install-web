@@ -36,9 +36,7 @@ import com.zrlog.install.util.StringUtils;
 import com.zrlog.install.web.InstallRequestSecurity;
 import com.zrlog.install.web.InstallRequestValidator;
 import com.zrlog.install.web.config.InstallConfig;
-
 import jakarta.inject.Inject;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -49,10 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * 与安装向导相关的路由进行控制
- * 注意 install.lock 文件相当重要，如果不是重新安装请不要删除这个自动生成的文件
- */
+/** 与安装向导相关的路由进行控制 注意 install.lock 文件相当重要，如果不是重新安装请不要删除这个自动生成的文件 */
 public class ApiInstallController extends Controller {
 
     private final InstallOperationState operations;
@@ -78,9 +73,7 @@ public class ApiInstallController extends Controller {
         this.language = installConfig.getAcceptLanguage();
     }
 
-    /**
-     * 检查数据库是否可以正常连接使用，无法连接时给出相应的提示
-     */
+    /** 检查数据库是否可以正常连接使用，无法连接时给出相应的提示 */
     @ResponseBody
     public TestConnectResponse testDbConn() {
         InstallRequestSecurity.assertMutationRequest(request);
@@ -116,19 +109,26 @@ public class ApiInstallController extends Controller {
         dbConn.setDbHost(parameters.getTrimmed("dbHost", ""));
         dbConn.setDbPort(parameters.getTrimmed("dbPort", ""));
         dbConn.setDbName(parameters.getTrimmed("dbName", ""));
-        String jdbcUrl = "jdbc:" + dbType + "://" + dbConn.getDbHost() + ":"
-                + dbConn.getDbPort() + "/" + dbConn.getDbName();
-        String jdbcUrlQueryStr = installConfig.getJdbcUrlQueryStr(dbType, parameters.toJdbcUrlParamMap());
+        String jdbcUrl =
+                "jdbc:"
+                        + dbType
+                        + "://"
+                        + dbConn.getDbHost()
+                        + ":"
+                        + dbConn.getDbPort()
+                        + "/"
+                        + dbConn.getDbName();
+        String jdbcUrlQueryStr =
+                installConfig.getJdbcUrlQueryStr(dbType, parameters.toJdbcUrlParamMap());
         if (Objects.equals(dbType, "mysql")) {
             dbConn.setDriverClass("com.mysql.cj.jdbc.Driver");
         }
-        dbConn.setJdbcUrl(jdbcUrl + (StringUtils.isEmpty(jdbcUrlQueryStr) ? "" : "?" + jdbcUrlQueryStr));
+        dbConn.setJdbcUrl(
+                jdbcUrl + (StringUtils.isEmpty(jdbcUrlQueryStr) ? "" : "?" + jdbcUrlQueryStr));
         return dbConn;
     }
 
-    /**
-     * 数据库检查通过后，根据填写信息，执行数据表，表数据的初始化
-     */
+    /** 数据库检查通过后，根据填写信息，执行数据表，表数据的初始化 */
     @ResponseBody
     public void startInstall() throws IOException {
         InstallRequestSecurity.assertMutationRequest(request);
@@ -199,102 +199,136 @@ public class ApiInstallController extends Controller {
     public InstallResultResponse installCompletion() throws IOException {
         InstallRequestSecurity.assertMutationRequest(request);
         readRequestParameters();
-        InstallOperationLock operationLock = InstallOperationLock.tryAcquire(
-                installConfig.getAction().getLockFile());
+        InstallOperationLock operationLock =
+                InstallOperationLock.tryAcquire(installConfig.getAction().getLockFile());
         if (operationLock == null) {
             throw new InstallOperationInProgressException(Operation.INSTALL.name());
         }
         try (InstallOperationLock ignored = operationLock) {
             File dbPropertiesFile = installConfig.getDbPropertiesFile();
-            if (!installConfig.getAction().isInstalled() || !installConfig.isAskConfig()
-                    || !dbPropertiesFile.isFile() || !dbPropertiesFile.canRead()) {
+            if (!installConfig.getAction().isInstalled()
+                    || !installConfig.isAskConfig()
+                    || !dbPropertiesFile.isFile()
+                    || !dbPropertiesFile.canRead()) {
                 String message =
                         InstallI18nUtil.getInstallStringFromRes(
                                 "installCompletionUnavailable", language);
-                throw new InvalidInstallRequestException(message.isEmpty()
-                        ? "Invalid installation request" : message);
+                throw new InvalidInstallRequestException(
+                        message.isEmpty() ? "Invalid installation request" : message);
             }
             return buildInstallResultResponse();
         }
     }
 
     protected void writeUpgradeStream() throws IOException {
-        InstallSseEmitter.write(response, "install-upgrade", "upgrade-error", language, emitter -> {
-            Operation blockingOperation = operations.tryAcquire(Operation.UPGRADE);
-            if (blockingOperation != null) {
-                sendUpgradeOperationInProgress(emitter, blockingOperation);
-                return;
-            }
-            try {
-                InstallOperationLock operationLock = InstallOperationLock.tryAcquire(
-                        installConfig.getAction().getLockFile());
-                if (operationLock == null) {
-                    sendUpgradeOperationInProgress(emitter, Operation.INSTALL);
-                    return;
-                }
-                try (InstallOperationLock ignored = operationLock) {
-                    if (installConfig.getAction().isInstalled()) {
-                        emitter.send("upgrade-error", new InstallUpgradeResult(
-                                false, "ZrLog is already installed"));
+        InstallSseEmitter.write(
+                response,
+                "install-upgrade",
+                "upgrade-error",
+                language,
+                emitter -> {
+                    Operation blockingOperation = operations.tryAcquire(Operation.UPGRADE);
+                    if (blockingOperation != null) {
+                        sendUpgradeOperationInProgress(emitter, blockingOperation);
                         return;
                     }
-                    InstallUpgradeAction upgradeAction = installConfig.getUpgradeAction();
-                    if (!upgradeAction.isSupported()) {
-                        emitter.send("upgrade-error", new InstallUpgradeResult(false,
-                                "Online upgrade is not supported by this package"));
-                        return;
+                    try {
+                        InstallOperationLock operationLock =
+                                InstallOperationLock.tryAcquire(
+                                        installConfig.getAction().getLockFile());
+                        if (operationLock == null) {
+                            sendUpgradeOperationInProgress(emitter, Operation.INSTALL);
+                            return;
+                        }
+                        try (InstallOperationLock ignored = operationLock) {
+                            if (installConfig.getAction().isInstalled()) {
+                                emitter.send(
+                                        "upgrade-error",
+                                        new InstallUpgradeResult(
+                                                false, "ZrLog is already installed"));
+                                return;
+                            }
+                            InstallUpgradeAction upgradeAction = installConfig.getUpgradeAction();
+                            if (!upgradeAction.isSupported()) {
+                                emitter.send(
+                                        "upgrade-error",
+                                        new InstallUpgradeResult(
+                                                false,
+                                                "Online upgrade is not supported by this package"));
+                                return;
+                            }
+                            InstallUpgradeResult result = upgradeAction.upgrade(emitter::send);
+                            emitter.send(
+                                    result.isFinish() ? "upgrade-complete" : "upgrade-error",
+                                    result);
+                        }
+                    } finally {
+                        operations.release(Operation.UPGRADE);
                     }
-                    InstallUpgradeResult result = upgradeAction.upgrade(emitter::send);
-                    emitter.send(result.isFinish() ? "upgrade-complete" : "upgrade-error", result);
-                }
-            } finally {
-                operations.release(Operation.UPGRADE);
-            }
-        });
+                });
     }
 
-    private static void sendUpgradeOperationInProgress(InstallSseEmitter emitter,
-                                                       Operation blockingOperation) throws IOException {
+    private static void sendUpgradeOperationInProgress(
+            InstallSseEmitter emitter, Operation blockingOperation) throws IOException {
         InstallOperationInProgressException exception =
                 new InstallOperationInProgressException(blockingOperation.name());
-        emitter.send("upgrade-error", new InstallUpgradeResult(
-                false, InstallErrorResponsePolicy.controlledMessage(exception), exception.getCode()));
+        emitter.send(
+                "upgrade-error",
+                new InstallUpgradeResult(
+                        false,
+                        InstallErrorResponsePolicy.controlledMessage(exception),
+                        exception.getCode()));
     }
 
     protected void writeInstallStream(InstallConfigVO configVO) throws IOException {
-        InstallSseEmitter.write(response, "install-start", "install-error", language, emitter -> {
-            AtomicBoolean errorSent = new AtomicBoolean(false);
-            boolean installed;
-            try {
-                installed = executeInstall(configVO, event -> {
-                    if (Objects.equals(event.getStatus(), "error")) {
-                        errorSent.set(true);
-                        emitter.send("install-error", event);
+        InstallSseEmitter.write(
+                response,
+                "install-start",
+                "install-error",
+                language,
+                emitter -> {
+                    AtomicBoolean errorSent = new AtomicBoolean(false);
+                    boolean installed;
+                    try {
+                        installed =
+                                executeInstall(
+                                        configVO,
+                                        event -> {
+                                            if (Objects.equals(event.getStatus(), "error")) {
+                                                errorSent.set(true);
+                                                emitter.send("install-error", event);
+                                                return;
+                                            }
+                                            emitter.send("install-progress", event);
+                                        });
+                    } catch (AbstractInstallException e) {
+                        if (!InstallErrorResponsePolicy.isControlled(e)) {
+                            throw e;
+                        }
+                        String code =
+                                e instanceof InstallErrorCodeProvider
+                                        ? ((InstallErrorCodeProvider) e).getCode()
+                                        : "install";
+                        emitter.send(
+                                "install-error",
+                                InstallProgressEvent.error(
+                                        code, InstallErrorResponsePolicy.controlledMessage(e)));
                         return;
                     }
-                    emitter.send("install-progress", event);
+                    if (!installed) {
+                        if (!errorSent.get()) {
+                            emitter.send(
+                                    "install-error",
+                                    InstallProgressEvent.error("install", "Install failed"));
+                        }
+                        return;
+                    }
+                    emitter.send("install-complete", buildInstallResultResponse());
                 });
-            } catch (AbstractInstallException e) {
-                if (!InstallErrorResponsePolicy.isControlled(e)) {
-                    throw e;
-                }
-                String code = e instanceof InstallErrorCodeProvider
-                        ? ((InstallErrorCodeProvider) e).getCode() : "install";
-                emitter.send("install-error", InstallProgressEvent.error(
-                        code, InstallErrorResponsePolicy.controlledMessage(e)));
-                return;
-            }
-            if (!installed) {
-                if (!errorSent.get()) {
-                    emitter.send("install-error", InstallProgressEvent.error("install", "Install failed"));
-                }
-                return;
-            }
-            emitter.send("install-complete", buildInstallResultResponse());
-        });
     }
 
-    private boolean executeInstall(InstallConfigVO configVO, InstallProgressListener progressListener) {
+    private boolean executeInstall(
+            InstallConfigVO configVO, InstallProgressListener progressListener) {
         Operation blockingOperation = operations.tryAcquire(Operation.INSTALL);
         if (blockingOperation != null) {
             throw new InstallOperationInProgressException(blockingOperation.name());
@@ -310,7 +344,12 @@ public class ApiInstallController extends Controller {
     }
 
     protected InstallResultResponse buildInstallResultResponse() {
-        return new InstallResultResponse(new InstallSuccessData(InstallSuccessContentUtils.getContent(installConfig.getDbPropertiesFile(), installConfig.isAskConfig(), language)));
+        return new InstallResultResponse(
+                new InstallSuccessData(
+                        InstallSuccessContentUtils.getContent(
+                                installConfig.getDbPropertiesFile(),
+                                installConfig.isAskConfig(),
+                                language)));
     }
 
     protected boolean isSseRequest() {
@@ -387,13 +426,13 @@ public class ApiInstallController extends Controller {
 
         Map<String, String[]> toJdbcUrlParamMap() {
             Map<String, String[]> values = new LinkedHashMap<>();
-            jsonValues.forEach((key, value) -> {
-                if (!key.toLowerCase(Locale.ROOT).contains("password")) {
-                    values.put(key, new String[]{Objects.requireNonNullElse(value, "")});
-                }
-            });
+            jsonValues.forEach(
+                    (key, value) -> {
+                        if (!key.toLowerCase(Locale.ROOT).contains("password")) {
+                            values.put(key, new String[] {Objects.requireNonNullElse(value, "")});
+                        }
+                    });
             return values;
         }
     }
-
 }

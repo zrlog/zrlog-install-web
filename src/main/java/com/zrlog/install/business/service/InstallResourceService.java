@@ -8,10 +8,8 @@ import com.zrlog.install.util.InstallLogUtil;
 import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.InstallRequestSecurity;
 import com.zrlog.install.web.config.InstallConfig;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Objects;
@@ -29,13 +27,16 @@ public class InstallResourceService {
     private final InstallRecoveryStore recoveryStore;
 
     @Inject
-    public InstallResourceService(InstallConfig config, InstallProbeService probe,
-                                  InstallRecoveryStore recoveryStore) {
+    public InstallResourceService(
+            InstallConfig config, InstallProbeService probe, InstallRecoveryStore recoveryStore) {
         this(config, probe, recoveryStore, InstallRequestSecurity::isTokenRequired);
     }
 
-    InstallResourceService(InstallConfig config, InstallProbeService probe,
-                           InstallRecoveryStore recoveryStore, BooleanSupplier installTokenRequired) {
+    InstallResourceService(
+            InstallConfig config,
+            InstallProbeService probe,
+            InstallRecoveryStore recoveryStore,
+            BooleanSupplier installTokenRequired) {
         this.config = Objects.requireNonNull(config);
         this.probe = Objects.requireNonNull(probe);
         this.recoveryStore = Objects.requireNonNull(recoveryStore);
@@ -43,8 +44,10 @@ public class InstallResourceService {
     }
 
     private String getFeedbackUrl(HttpRequest request) {
-        return "https://blog.zrlog.com/feedback.html?v=" + Objects.requireNonNullElse(request.getServerConfig().getApplicationVersion(), "3")
-                + "&os=" + System.getProperty("os.name");
+        return "https://blog.zrlog.com/feedback.html?v="
+                + Objects.requireNonNullElse(request.getServerConfig().getApplicationVersion(), "3")
+                + "&os="
+                + System.getProperty("os.name");
     }
 
     public Object installResourceInfo(HttpRequest request) {
@@ -63,7 +66,8 @@ public class InstallResourceService {
         response.setOnlineUpgradable(config.getUpgradeAction().isSupported());
         response.setFeedbackUrl(getFeedbackUrl(request));
         LastVersionInfo lastVersionInfo = config.getLastVersionInfo();
-        if (Objects.nonNull(lastVersionInfo) && Objects.equals(lastVersionInfo.getLatestVersion(), false)) {
+        if (Objects.nonNull(lastVersionInfo)
+                && Objects.equals(lastVersionInfo.getLatestVersion(), false)) {
             response.setUpgradeVersion(lastVersionInfo.getNewVersion());
             response.setUpgradeChangeLog(lastVersionInfo.getChangeLog());
             response.setUpgradeDownloadUrl(lastVersionInfo.getDownloadUrl());
@@ -71,10 +75,12 @@ public class InstallResourceService {
         return response;
     }
 
-    private void readInstallState(InstallRuntimeResourceResponse response,
-                                  InstallRecoveryStore recoveryStore,
-                                  InstallAction installAction) {
-        try (InstallOperationLock operationLock = InstallOperationLock.tryAcquire(installAction.getLockFile())) {
+    private void readInstallState(
+            InstallRuntimeResourceResponse response,
+            InstallRecoveryStore recoveryStore,
+            InstallAction installAction) {
+        try (InstallOperationLock operationLock =
+                InstallOperationLock.tryAcquire(installAction.getLockFile())) {
             if (operationLock == null) {
                 response.setInstalled(false);
                 response.setInstallRecoveryAvailable(false);
@@ -88,12 +94,12 @@ public class InstallResourceService {
                 recoveryStore.clear(installAction.getLockFile());
                 response.setInstallRecoveryAvailable(false);
             } else {
-                response.setInstallRecoveryAvailable(recoveryStore.isAvailable(
-                        installAction.getLockFile()));
+                response.setInstallRecoveryAvailable(
+                        recoveryStore.isAvailable(installAction.getLockFile()));
             }
         } catch (IOException e) {
-            InstallLogUtil.logFailure(LOGGER, Level.WARNING,
-                    InstallLogUtil.FailurePhase.INSTALL_STATE_READ, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.WARNING, InstallLogUtil.FailurePhase.INSTALL_STATE_READ, e);
             boolean installed = installAction.isInstalled();
             response.setInstalled(installed);
             response.setInstallRecoveryAvailable(false);

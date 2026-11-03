@@ -22,6 +22,7 @@ public class InstallOperationInProgressException extends AbstractInstallExceptio
     @Override
     public String getMessage() {
         return "UPGRADE".equals(activeOperation)
-                ? "An upgrade is already running" : "An installation is already running";
+                ? "An upgrade is already running"
+                : "An installation is already running";
     }
 }

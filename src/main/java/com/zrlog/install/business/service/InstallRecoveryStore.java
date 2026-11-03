@@ -1,9 +1,7 @@
 package com.zrlog.install.business.service;
 
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
-
 import jakarta.inject.Inject;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,7 +57,8 @@ final class InstallRecoveryStore {
             return Optional.empty();
         }
         Properties properties = new Properties();
-        try (InputStream inputStream = Files.newInputStream(recoveryFile, LinkOption.NOFOLLOW_LINKS)) {
+        try (InputStream inputStream =
+                Files.newInputStream(recoveryFile, LinkOption.NOFOLLOW_LINKS)) {
             try {
                 properties.load(inputStream);
             } catch (IllegalArgumentException malformedProperties) {
@@ -93,8 +92,11 @@ final class InstallRecoveryStore {
                 outputStream.getFD().sync();
             }
             try {
-                Files.move(temporaryFile, recoveryFile,
-                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                Files.move(
+                        temporaryFile,
+                        recoveryFile,
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
             } catch (AtomicMoveNotSupportedException e) {
                 throw new IOException("Atomic move is not supported for install recovery state", e);
             }
@@ -130,13 +132,14 @@ final class InstallRecoveryStore {
         }
         return "webapi".equals(normalizedType)
                 || (databaseConfig.getDriverClass() != null
-                && !databaseConfig.getDriverClass().trim().isEmpty());
+                        && !databaseConfig.getDriverClass().trim().isEmpty());
     }
 
     private static void restrictPermissions(Path file) throws IOException {
         try {
-            Files.setPosixFilePermissions(file, EnumSet.of(
-                    PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+            Files.setPosixFilePermissions(
+                    file,
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
         } catch (UnsupportedOperationException ignored) {
             // createTempFile still uses the platform's private temporary-file defaults.
         }

@@ -1,17 +1,20 @@
 package com.zrlog.install.business.service;
 
-import com.zrlog.install.support.InstallApplications;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.google.gson.Gson;
 import com.hibegin.http.server.api.HttpRequest;
 import com.hibegin.http.server.config.ServerConfig;
 import com.zrlog.install.business.response.InstallRuntimeResourceResponse;
 import com.zrlog.install.business.response.LastVersionInfo;
-import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallConfigVO;
+import com.zrlog.install.business.vo.InstallDatabaseConfig;
+import com.zrlog.install.support.InstallApplications;
 import com.zrlog.install.web.InstallAction;
-import org.junit.Test;
-
 import java.io.File;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
@@ -23,24 +26,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 public class InstallResourceServiceTest {
-    private final InstallApplications applications =
-            new InstallApplications();
-
+    private final InstallApplications applications = new InstallApplications();
 
     @Test
     public void shouldBuildRuntimeResourceInfoFromInstallConfig() throws Exception {
         File root = Files.createTempDirectory("zrlog-install-resource").toFile();
-        FakeInstallConfig config = new FakeInstallConfig(
-                new File(root, "db.properties"),
-                new File(root, "install.lock"));
+        FakeInstallConfig config =
+                new FakeInstallConfig(
+                        new File(root, "db.properties"), new File(root, "install.lock"));
         config.setAcceptLanguage("en_US");
         config.setBuildVersion("3.6.1-SNAPSHOT");
         config.setAskConfig(true);
@@ -48,8 +44,12 @@ public class InstallResourceServiceTest {
         config.setWarMode(true);
         config.setLastVersionInfo(upgradableVersion());
 
-        InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                applications.component(config).resources().installResourceInfo(request("3.6.1-SNAPSHOT"));
+        InstallRuntimeResourceResponse response =
+                (InstallRuntimeResourceResponse)
+                        applications
+                                .component(config)
+                                .resources()
+                                .installResourceInfo(request("3.6.1-SNAPSHOT"));
 
         assertEquals("en_US", response.getLang());
         assertEquals(false, response.getInstalled());
@@ -77,11 +77,18 @@ public class InstallResourceServiceTest {
     @Test
     public void shouldExposeOnlyWhetherInstallTokenIsRequired() throws Exception {
         File root = Files.createTempDirectory("zrlog-install-token-resource").toFile();
-        FakeInstallConfig config = new FakeInstallConfig(
-                new File(root, "db.properties"), new File(root, "install.lock"));
+        FakeInstallConfig config =
+                new FakeInstallConfig(
+                        new File(root, "db.properties"), new File(root, "install.lock"));
 
-        InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                new InstallResourceService(config, new InstallProbeService(), new InstallRecoveryStore(), () -> true).installResourceInfo(request("3.6.1"));
+        InstallRuntimeResourceResponse response =
+                (InstallRuntimeResourceResponse)
+                        new InstallResourceService(
+                                        config,
+                                        new InstallProbeService(),
+                                        new InstallRecoveryStore(),
+                                        () -> true)
+                                .installResourceInfo(request("3.6.1"));
         String json = new Gson().toJson(response);
 
         assertEquals(true, response.getInstallTokenRequired());
@@ -92,20 +99,35 @@ public class InstallResourceServiceTest {
     public void shouldHideSetupSecretsAndPathsAfterInstallation() throws Exception {
         File root = Files.createTempDirectory("zrlog-installed-resource").toFile();
         File dbProperties = new File(root, "db.properties");
-        Files.write(dbProperties.toPath(), Arrays.asList(
-                "jdbcUrl=jdbc:mysql://localhost:3306/zrlog",
-                "user=zrlog",
-                "password=plain-text-secret"), StandardCharsets.UTF_8);
-        FakeInstallConfig config = new FakeInstallConfig(dbProperties, new File(root, "install.lock"));
+        Files.write(
+                dbProperties.toPath(),
+                Arrays.asList(
+                        "jdbcUrl=jdbc:mysql://localhost:3306/zrlog",
+                        "user=zrlog",
+                        "password=plain-text-secret"),
+                StandardCharsets.UTF_8);
+        FakeInstallConfig config =
+                new FakeInstallConfig(dbProperties, new File(root, "install.lock"));
         config.setInstalled(true);
         config.setAskConfig(true);
-        new InstallRecoveryStore().save(config.getAction().getLockFile(), InstallDatabaseConfig.from(Map.of(
-                "dbType", "sqlite",
-                "jdbcUrl", "jdbc:sqlite:" + new File(root, "zrlog.db").getAbsolutePath(),
-                "driverClass", "org.sqlite.JDBC")));
+        new InstallRecoveryStore()
+                .save(
+                        config.getAction().getLockFile(),
+                        InstallDatabaseConfig.from(
+                                Map.of(
+                                        "dbType", "sqlite",
+                                        "jdbcUrl",
+                                                "jdbc:sqlite:"
+                                                        + new File(root, "zrlog.db")
+                                                                .getAbsolutePath(),
+                                        "driverClass", "org.sqlite.JDBC")));
 
-        InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                applications.component(config).resources().installResourceInfo(request("3.6.1"));
+        InstallRuntimeResourceResponse response =
+                (InstallRuntimeResourceResponse)
+                        applications
+                                .component(config)
+                                .resources()
+                                .installResourceInfo(request("3.6.1"));
 
         assertEquals(true, response.getInstalled());
         assertNull(response.getInstallSuccessContent());
@@ -117,15 +139,27 @@ public class InstallResourceServiceTest {
     @Test
     public void shouldExposeOnlyThePresenceOfRecoverableInstallState() throws Exception {
         File root = Files.createTempDirectory("zrlog-recoverable-resource").toFile();
-        FakeInstallConfig config = new FakeInstallConfig(
-                new File(root, "db.properties"), new File(root, "install.lock"));
-        new InstallRecoveryStore().save(config.getAction().getLockFile(), InstallDatabaseConfig.from(Map.of(
-                "dbType", "sqlite",
-                "jdbcUrl", "jdbc:sqlite:" + new File(root, "zrlog.db").getAbsolutePath(),
-                "driverClass", "org.sqlite.JDBC")));
+        FakeInstallConfig config =
+                new FakeInstallConfig(
+                        new File(root, "db.properties"), new File(root, "install.lock"));
+        new InstallRecoveryStore()
+                .save(
+                        config.getAction().getLockFile(),
+                        InstallDatabaseConfig.from(
+                                Map.of(
+                                        "dbType", "sqlite",
+                                        "jdbcUrl",
+                                                "jdbc:sqlite:"
+                                                        + new File(root, "zrlog.db")
+                                                                .getAbsolutePath(),
+                                        "driverClass", "org.sqlite.JDBC")));
 
-        InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                applications.component(config).resources().installResourceInfo(request("3.6.1"));
+        InstallRuntimeResourceResponse response =
+                (InstallRuntimeResourceResponse)
+                        applications
+                                .component(config)
+                                .resources()
+                                .installResourceInfo(request("3.6.1"));
 
         assertEquals(true, response.getInstallRecoveryAvailable());
         assertEquals(false, response.getInstallOperationInProgress());
@@ -135,13 +169,19 @@ public class InstallResourceServiceTest {
     @Test
     public void shouldNotExposeMalformedRecoveryState() throws Exception {
         File root = Files.createTempDirectory("zrlog-malformed-recovery-resource").toFile();
-        FakeInstallConfig config = new FakeInstallConfig(
-                new File(root, "db.properties"), new File(root, "install.lock"));
-        Files.writeString(InstallRecoveryStore.recoveryFile(
-                config.getAction().getLockFile()).toPath(), "recoveryVersion=unsupported\n");
+        FakeInstallConfig config =
+                new FakeInstallConfig(
+                        new File(root, "db.properties"), new File(root, "install.lock"));
+        Files.writeString(
+                InstallRecoveryStore.recoveryFile(config.getAction().getLockFile()).toPath(),
+                "recoveryVersion=unsupported\n");
 
-        InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                applications.component(config).resources().installResourceInfo(request("3.6.1"));
+        InstallRuntimeResourceResponse response =
+                (InstallRuntimeResourceResponse)
+                        applications
+                                .component(config)
+                                .resources()
+                                .installResourceInfo(request("3.6.1"));
 
         assertEquals(false, response.getInstallRecoveryAvailable());
     }
@@ -151,12 +191,17 @@ public class InstallResourceServiceTest {
         Path root = Files.createTempDirectory("zrlog-install-resource-invalid-lock-parent");
         Path invalidParent = root.resolve("not-a-directory");
         Files.writeString(invalidParent, "regular file", StandardCharsets.UTF_8);
-        FakeInstallConfig config = new FakeInstallConfig(
-                root.resolve("db.properties").toFile(),
-                invalidParent.resolve("install.lock").toFile());
+        FakeInstallConfig config =
+                new FakeInstallConfig(
+                        root.resolve("db.properties").toFile(),
+                        invalidParent.resolve("install.lock").toFile());
 
-        InstallRuntimeResourceResponse response = (InstallRuntimeResourceResponse)
-                applications.component(config).resources().installResourceInfo(request("3.6.1"));
+        InstallRuntimeResourceResponse response =
+                (InstallRuntimeResourceResponse)
+                        applications
+                                .component(config)
+                                .resources()
+                                .installResourceInfo(request("3.6.1"));
 
         assertEquals(false, response.getInstalled());
         assertEquals(false, response.getInstallRecoveryAvailable());
@@ -165,7 +210,8 @@ public class InstallResourceServiceTest {
     }
 
     @Test
-    public void shouldPreserveRecoveryStateWhenInstallResourceIsReadDuringFailingCallback() throws Exception {
+    public void shouldPreserveRecoveryStateWhenInstallResourceIsReadDuringFailingCallback()
+            throws Exception {
         File root = Files.createTempDirectory("zrlog-install-resource-callback-race").toFile();
         File dbProperties = new File(root, "conf/db.properties");
         File installLock = new File(root, "conf/install.lock");
@@ -174,60 +220,73 @@ public class InstallResourceServiceTest {
         AtomicInteger callbackCalls = new AtomicInteger();
         AtomicReference<Boolean> firstInstallResult = new AtomicReference<>();
         AtomicReference<Throwable> installThreadFailure = new AtomicReference<>();
-        InstallAction action = new InstallAction() {
-            @Override
-            public void installSuccess() {
-                if (callbackCalls.incrementAndGet() != 1) {
-                    return;
-                }
-                callbackEntered.countDown();
-                try {
-                    if (!finishCallback.await(10, TimeUnit.SECONDS)) {
-                        throw new IllegalStateException("Timed out waiting to fail the install callback");
+        InstallAction action =
+                new InstallAction() {
+                    @Override
+                    public void installSuccess() {
+                        if (callbackCalls.incrementAndGet() != 1) {
+                            return;
+                        }
+                        callbackEntered.countDown();
+                        try {
+                            if (!finishCallback.await(10, TimeUnit.SECONDS)) {
+                                throw new IllegalStateException(
+                                        "Timed out waiting to fail the install callback");
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException("Install callback was interrupted", e);
+                        }
+                        throw new IllegalStateException("simulated callback failure");
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Install callback was interrupted", e);
-                }
-                throw new IllegalStateException("simulated callback failure");
-            }
 
-            @Override
-            public File getLockFile() {
-                return installLock;
-            }
-        };
-        FakeInstallConfig config = new FakeInstallConfig(dbProperties, installLock) {
-            @Override
-            public InstallAction getAction() {
-                return action;
-            }
-        };
+                    @Override
+                    public File getLockFile() {
+                        return installLock;
+                    }
+                };
+        FakeInstallConfig config =
+                new FakeInstallConfig(dbProperties, installLock) {
+                    @Override
+                    public InstallAction getAction() {
+                        return action;
+                    }
+                };
         InstallConfigVO installRequest = new InstallConfigVO();
         installRequest.setDbConfig(Map.of("dbType", "sqlite"));
-        installRequest.setConfigMsg(Map.of(
-                "title", "Recovery Blog",
-                "second_title", "Callback recovery",
-                "username", "admin",
-                "password", "password",
-                "email", "admin@example.com"));
-        Thread installThread = new Thread(() -> {
-            try {
-                firstInstallResult.set(applications.service(config, installRequest).install());
-            } catch (Throwable e) {
-                installThreadFailure.set(e);
-            }
-        }, "install-resource-callback-race");
+        installRequest.setConfigMsg(
+                Map.of(
+                        "title", "Recovery Blog",
+                        "second_title", "Callback recovery",
+                        "username", "admin",
+                        "password", "password",
+                        "email", "admin@example.com"));
+        Thread installThread =
+                new Thread(
+                        () -> {
+                            try {
+                                firstInstallResult.set(
+                                        applications.service(config, installRequest).install());
+                            } catch (Throwable e) {
+                                installThreadFailure.set(e);
+                            }
+                        },
+                        "install-resource-callback-race");
 
         try {
             installThread.start();
-            assertTrue("Installation did not reach the host callback",
+            assertTrue(
+                    "Installation did not reach the host callback",
                     callbackEntered.await(10, TimeUnit.SECONDS));
             assertTrue(installLock.exists());
             assertTrue(new InstallRecoveryStore().isAvailable(installLock));
 
-            InstallRuntimeResourceResponse installingResponse = (InstallRuntimeResourceResponse)
-                    applications.component(config).resources().installResourceInfo(request("3.6.1"));
+            InstallRuntimeResourceResponse installingResponse =
+                    (InstallRuntimeResourceResponse)
+                            applications
+                                    .component(config)
+                                    .resources()
+                                    .installResourceInfo(request("3.6.1"));
 
             assertEquals(false, installingResponse.getInstalled());
             assertEquals(false, installingResponse.getInstallRecoveryAvailable());
@@ -244,8 +303,12 @@ public class InstallResourceServiceTest {
         assertFalse(installLock.exists());
         assertTrue(new InstallRecoveryStore().isAvailable(installLock));
 
-        InstallRuntimeResourceResponse recoveryResponse = (InstallRuntimeResourceResponse)
-                applications.component(config).resources().installResourceInfo(request("3.6.1"));
+        InstallRuntimeResourceResponse recoveryResponse =
+                (InstallRuntimeResourceResponse)
+                        applications
+                                .component(config)
+                                .resources()
+                                .installResourceInfo(request("3.6.1"));
         assertEquals(false, recoveryResponse.getInstalled());
         assertEquals(true, recoveryResponse.getInstallRecoveryAvailable());
         assertEquals(false, recoveryResponse.getInstallOperationInProgress());
@@ -266,18 +329,18 @@ public class InstallResourceServiceTest {
 
     private static HttpRequest request(String applicationVersion) {
         ServerConfig serverConfig = new ServerConfig().setApplicationVersion(applicationVersion);
-        return (HttpRequest) Proxy.newProxyInstance(
-                InstallResourceServiceTest.class.getClassLoader(),
-                new Class[]{HttpRequest.class},
-                (proxy, method, args) -> {
-                    if ("getServerConfig".equals(method.getName())) {
-                        return serverConfig;
-                    }
-                    if ("toString".equals(method.getName())) {
-                        return "HttpRequestProxy";
-                    }
-                    return null;
-                });
+        return (HttpRequest)
+                Proxy.newProxyInstance(
+                        InstallResourceServiceTest.class.getClassLoader(),
+                        new Class[] {HttpRequest.class},
+                        (proxy, method, args) -> {
+                            if ("getServerConfig".equals(method.getName())) {
+                                return serverConfig;
+                            }
+                            if ("toString".equals(method.getName())) {
+                                return "HttpRequestProxy";
+                            }
+                            return null;
+                        });
     }
-
 }

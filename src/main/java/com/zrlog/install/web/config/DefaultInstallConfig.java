@@ -1,5 +1,6 @@
 package com.zrlog.install.web.config;
 
+import com.hibegin.common.util.LoggerUtil;
 import com.hibegin.common.util.PasswordHashUtils;
 import com.hibegin.http.server.api.HttpErrorHandle;
 import com.hibegin.http.server.util.PathUtil;
@@ -11,8 +12,6 @@ import com.zrlog.install.util.InstallErrorResponsePolicy;
 import com.zrlog.install.util.InstallI18nUtil;
 import com.zrlog.install.util.InstallLogUtil;
 import com.zrlog.install.web.InstallAction;
-import com.hibegin.common.util.LoggerUtil;
-
 import java.io.File;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -109,14 +108,20 @@ public class DefaultInstallConfig implements InstallConfig {
                 if (ee instanceof InstallErrorCodeProvider) {
                     code = ((InstallErrorCodeProvider) ee).getCode();
                 }
-                response.renderJson(InstallApiResponses.error(ee.getError(),
-                        InstallErrorResponsePolicy.controlledMessage(ee), code));
+                response.renderJson(
+                        InstallApiResponses.error(
+                                ee.getError(),
+                                InstallErrorResponsePolicy.controlledMessage(ee),
+                                code));
             } else {
-                InstallLogUtil.logFailure(LOGGER, Level.SEVERE,
-                        InstallLogUtil.FailurePhase.INSTALL_REQUEST, e);
-                response.renderJson(InstallApiResponses.error(9999,
-                        InstallI18nUtil.getInstallStringFromRes("requestFailed", getAcceptLanguage()),
-                        "INSTALL_REQUEST_FAILED"));
+                InstallLogUtil.logFailure(
+                        LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.INSTALL_REQUEST, e);
+                response.renderJson(
+                        InstallApiResponses.error(
+                                9999,
+                                InstallI18nUtil.getInstallStringFromRes(
+                                        "requestFailed", getAcceptLanguage()),
+                                "INSTALL_REQUEST_FAILED"));
             }
         };
     }

@@ -5,10 +5,8 @@ import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.controller.api.*;
 import com.zrlog.install.web.controller.page.InstallController;
 import com.zrlog.install.web.interceptor.BlogInstallInterceptor;
-
 import dagger.BindsInstance;
 import dagger.Component;
-
 import jakarta.inject.Singleton;
 
 @Singleton

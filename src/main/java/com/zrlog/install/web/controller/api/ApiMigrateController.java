@@ -17,9 +17,7 @@ import com.zrlog.install.exception.InstallOperationInProgressException;
 import com.zrlog.install.exception.InvalidInstallRequestException;
 import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.InstallRequestSecurity;
-
 import jakarta.inject.Inject;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -54,7 +52,8 @@ public class ApiMigrateController extends Controller {
     private static final String MIGRATION_ID = "legacy-mysql-to-sqlite";
     private static final String MIGRATION_FIELD = "migration";
     private static final int MAX_REQUEST_BODY_BYTES = 1024;
-    private static final Pattern SAFE_FILE_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,63}");
+    private static final Pattern SAFE_FILE_NAME =
+            Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,63}");
 
     public void convertToSqliteSqlFile() throws IOException {
         assertAuthorizedMigrationRequest();
@@ -96,8 +95,7 @@ public class ApiMigrateController extends Controller {
     private InstallOperationLock acquireOperationLock(String phase) throws IOException {
         InstallOperationLock operationLock;
         try {
-            operationLock = InstallOperationLock.tryAcquire(
-                    installAction.getLockFile());
+            operationLock = InstallOperationLock.tryAcquire(installAction.getLockFile());
         } catch (IOException e) {
             throw migrationFailure(phase, e);
         }
@@ -119,7 +117,8 @@ public class ApiMigrateController extends Controller {
         }
 
         ByteBuffer requestBody = request.getRequestBodyByteBuffer();
-        if (requestBody == null || !requestBody.hasRemaining()
+        if (requestBody == null
+                || !requestBody.hasRemaining()
                 || requestBody.remaining() > MAX_REQUEST_BODY_BYTES) {
             throw invalidRequest();
         }
@@ -137,7 +136,9 @@ public class ApiMigrateController extends Controller {
             }
             JsonObject object = root.getAsJsonObject();
             JsonElement migration = object.get(MIGRATION_FIELD);
-            if (object.size() != 1 || migration == null || !migration.isJsonPrimitive()
+            if (object.size() != 1
+                    || migration == null
+                    || !migration.isJsonPrimitive()
                     || !migration.getAsJsonPrimitive().isString()
                     || !MIGRATION_ID.equals(migration.getAsString())) {
                 throw invalidRequest();
@@ -158,8 +159,9 @@ public class ApiMigrateController extends Controller {
     private void convertMigrationFiles() throws IOException {
         Path mysqlSource = resolveMigrationFile(MigrationFile.MYSQL_SOURCE, true);
         Path sqliteScript = resolveMigrationFile(MigrationFile.SQLITE_SCRIPT, false);
-        List<String> converted = SqlConvertUtils.doMySQLToSqliteBySqlText(
-                Files.readString(mysqlSource, StandardCharsets.UTF_8));
+        List<String> converted =
+                SqlConvertUtils.doMySQLToSqliteBySqlText(
+                        Files.readString(mysqlSource, StandardCharsets.UTF_8));
         StringJoiner script = new StringJoiner(";\n");
         converted.stream().filter(sql -> !isDropSql(sql)).forEach(script::add);
         writeAtomically(sqliteScript, script.toString());
@@ -178,8 +180,7 @@ public class ApiMigrateController extends Controller {
                 boolean initialAutoCommit = connection.getAutoCommit();
                 connection.setAutoCommit(false);
                 try (InputStream sqlInput = Files.newInputStream(sqliteScript)) {
-                    for (String sql : SqlConvertUtils.extractExecutableSqlByInputStream(
-                            sqlInput)) {
+                    for (String sql : SqlConvertUtils.extractExecutableSqlByInputStream(sqlInput)) {
                         if (!isDropSql(sql)) {
                             executeStatement(connection, sql);
                         }
@@ -201,7 +202,8 @@ public class ApiMigrateController extends Controller {
         }
     }
 
-    private static void configureDataSource(DataSourceWrapper dataSourceWrapper, Properties properties) {
+    private static void configureDataSource(
+            DataSourceWrapper dataSourceWrapper, Properties properties) {
         if (dataSourceWrapper instanceof DataSourceWrapperImpl && !dataSourceWrapper.isWebApi()) {
             DataSourceWrapperImpl dataSource = (DataSourceWrapperImpl) dataSourceWrapper;
             dataSource.setDriverClassName(properties.getProperty("driverClass"));
@@ -214,14 +216,17 @@ public class ApiMigrateController extends Controller {
     private static void executeStatement(Connection connection, String sql) throws Exception {
         if (sql.trim().toUpperCase(Locale.ROOT).startsWith("INSERT INTO")) {
             List<Object> values = SqlConvertUtils.extractValues(sql);
-            String placeholders = values.stream().map(value -> "?")
-                    .reduce((left, right) -> left + ", " + right).orElse("");
+            String placeholders =
+                    values.stream()
+                            .map(value -> "?")
+                            .reduce((left, right) -> left + ", " + right)
+                            .orElse("");
             int valuesIndex = sql.toUpperCase(Locale.ROOT).indexOf("VALUES");
             if (valuesIndex < 0) {
                 throw new IllegalArgumentException("Invalid insert statement");
             }
-            String preparedSql = sql.substring(0, valuesIndex + "VALUES".length())
-                    + " (" + placeholders + ")";
+            String preparedSql =
+                    sql.substring(0, valuesIndex + "VALUES".length()) + " (" + placeholders + ")";
             try (PreparedStatement statement = connection.prepareStatement(preparedSql)) {
                 for (int i = 0; i < values.size(); i++) {
                     statement.setObject(i + 1, values.get(i));
@@ -235,8 +240,8 @@ public class ApiMigrateController extends Controller {
         }
     }
 
-    private static Path resolveMigrationFile(MigrationFile migrationFile, boolean requireRegularFile)
-            throws IOException {
+    private static Path resolveMigrationFile(
+            MigrationFile migrationFile, boolean requireRegularFile) throws IOException {
         String fileName = migrationFile.fileName;
         if (!SAFE_FILE_NAME.matcher(fileName).matches() || fileName.contains("..")) {
             throw new IOException("Invalid server migration file mapping");
@@ -259,8 +264,11 @@ public class ApiMigrateController extends Controller {
         try {
             Files.writeString(temporaryFile, content, StandardCharsets.UTF_8);
             try {
-                Files.move(temporaryFile, target,
-                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                Files.move(
+                        temporaryFile,
+                        target,
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
             } catch (AtomicMoveNotSupportedException e) {
                 throw new IOException("Atomic migration file update is unavailable");
             }
@@ -273,8 +281,12 @@ public class ApiMigrateController extends Controller {
     }
 
     private static IOException migrationFailure(String phase, Exception failure) {
-        LOGGER.warning("Legacy migration " + phase + " failed ["
-                + failure.getClass().getSimpleName() + "]");
+        LOGGER.warning(
+                "Legacy migration "
+                        + phase
+                        + " failed ["
+                        + failure.getClass().getSimpleName()
+                        + "]");
         return new IOException("Legacy migration " + phase + " failed");
     }
 
@@ -308,7 +320,8 @@ public class ApiMigrateController extends Controller {
                 if (commentEnd < 0) {
                     return false;
                 }
-                if (offset + 2 < sql.length() && sql.charAt(offset + 2) == '!'
+                if (offset + 2 < sql.length()
+                        && sql.charAt(offset + 2) == '!'
                         && isDropSql(sql.substring(offset + 3, commentEnd))) {
                     return true;
                 }

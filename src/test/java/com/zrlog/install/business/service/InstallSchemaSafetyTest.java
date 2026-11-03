@@ -1,5 +1,8 @@
 package com.zrlog.install.business.service;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.hibegin.common.dao.DAO;
 import com.hibegin.common.dao.DataSourceWrapper;
 import com.zrlog.install.business.vo.InstallConfigVO;
@@ -9,22 +12,19 @@ import com.zrlog.install.support.TestDatabase;
 import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.config.DefaultInstallAction;
 import com.zrlog.install.web.config.DefaultInstallConfig;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.lang.reflect.Proxy;
 import java.util.Map;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class InstallSchemaSafetyTest {
     @Rule public final TemporaryFolder temporary = new TemporaryFolder();
 
     @Test
-    public void webApiProbeMustDetectExistingTablesWithoutRequestingJdbcConnection() throws Exception {
+    public void webApiProbeMustDetectExistingTablesWithoutRequestingJdbcConnection()
+            throws Exception {
         var database = TestDatabase.SQLITE.create(temporary.newFolder(), "probe");
         try (var local = InstallService.buildDataSource(database.asProperties(), false)) {
             DataSourceWrapper webApi = withoutJdbc(local);
@@ -39,23 +39,42 @@ public class InstallSchemaSafetyTest {
     }
 
     @Test
-    public void webApiRecoveryMustVerifyRealInstalledStateWithoutRequestingJdbcConnection() throws Exception {
+    public void webApiRecoveryMustVerifyRealInstalledStateWithoutRequestingJdbcConnection()
+            throws Exception {
         File root = temporary.newFolder();
         File properties = new File(root, "conf/db.properties");
         File lock = new File(root, "conf/install.lock");
-        var config = new DefaultInstallConfig() {
-            @Override public File getDbPropertiesFile() { return properties; }
-            @Override public InstallAction getAction() {
-                return new DefaultInstallAction() {
-                    @Override public File getLockFile() { return lock; }
+        var config =
+                new DefaultInstallConfig() {
+                    @Override
+                    public File getDbPropertiesFile() {
+                        return properties;
+                    }
+
+                    @Override
+                    public InstallAction getAction() {
+                        return new DefaultInstallAction() {
+                            @Override
+                            public File getLockFile() {
+                                return lock;
+                            }
+                        };
+                    }
                 };
-            }
-        };
         InstallConfigVO request = new InstallConfigVO();
         request.setDbConfig(Map.of("dbType", "sqlite"));
-        request.setConfigMsg(Map.of("title", "WebAPI recovery", "username", "admin", "password", "local-test-password"));
+        request.setConfigMsg(
+                Map.of(
+                        "title",
+                        "WebAPI recovery",
+                        "username",
+                        "admin",
+                        "password",
+                        "local-test-password"));
         assertTrue(new InstallApplications().service(config, request).install());
-        try (var local = InstallService.buildDataSource(LocalSqliteSupport.createDatabaseConfig(config).toProperties(), false)) {
+        try (var local =
+                InstallService.buildDataSource(
+                        LocalSqliteSupport.createDatabaseConfig(config).toProperties(), false)) {
             DataSourceWrapper webApi = withoutJdbc(local);
             var configuration = InstallDatabaseConfig.from(Map.of("dbType", "webapi"));
             assertTrue(InstallSchemaSafety.containsCompleteInstallState(webApi, configuration));
@@ -66,15 +85,23 @@ public class InstallSchemaSafetyTest {
     }
 
     private static DataSourceWrapper withoutJdbc(DataSourceWrapper delegate) {
-        return (DataSourceWrapper) Proxy.newProxyInstance(InstallSchemaSafetyTest.class.getClassLoader(),
-                new Class<?>[]{DataSourceWrapper.class}, (proxy, method, args) -> {
-                    switch (method.getName()) {
-                        case "isWebApi": return true;
-                        case "isDev": return false;
-                        case "getQueryRunner": return delegate.getQueryRunner();
-                        default: throw new AssertionError("WebAPI must not use " + method.getName());
-                    }
-                });
+        return (DataSourceWrapper)
+                Proxy.newProxyInstance(
+                        InstallSchemaSafetyTest.class.getClassLoader(),
+                        new Class<?>[] {DataSourceWrapper.class},
+                        (proxy, method, args) -> {
+                            switch (method.getName()) {
+                                case "isWebApi":
+                                    return true;
+                                case "isDev":
+                                    return false;
+                                case "getQueryRunner":
+                                    return delegate.getQueryRunner();
+                                default:
+                                    throw new AssertionError(
+                                            "WebAPI must not use " + method.getName());
+                            }
+                        });
     }
 
     @Test
@@ -96,7 +123,9 @@ public class InstallSchemaSafetyTest {
         assertFalse(InstallSchemaSafety.isDropStatement("DROP_foo TABLE user"));
         assertFalse(InstallSchemaSafety.isDropStatement("/* unterminated DROP TABLE user"));
         assertFalse(InstallSchemaSafety.isDropStatement("-- DROP TABLE user"));
-        assertTrue(InstallSchemaSafety.isDropStatement("\uFEFF# comment\r-- next\n/**/DrOp/**/TABLE user"));
+        assertTrue(
+                InstallSchemaSafety.isDropStatement(
+                        "\uFEFF# comment\r-- next\n/**/DrOp/**/TABLE user"));
         assertTrue(InstallSchemaSafety.isDropStatement("DROP"));
     }
 

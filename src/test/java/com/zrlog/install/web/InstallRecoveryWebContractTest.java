@@ -27,11 +27,6 @@ import com.zrlog.install.support.InstallApplications;
 import com.zrlog.install.web.config.DefaultInstallConfig;
 import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.controller.api.ApiInstallController;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -47,18 +42,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class InstallRecoveryWebContractTest {
-    private final InstallApplications applications =
-            new InstallApplications();
-
+    private final InstallApplications applications = new InstallApplications();
 
     private InstallConfig installConfig = new DefaultInstallConfig();
 
     private static final String RECOVERY_FILE_NAME = ".install-recovery.properties";
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void shouldExposeAndResumeARecoverableSqliteInstallation() throws Exception {
@@ -76,8 +71,7 @@ public class InstallRecoveryWebContractTest {
         assertFalse(config.getDbPropertiesFile().exists());
         assertFalse(config.getAction().getLockFile().exists());
 
-        ApiInstallController resourceController = controller(request(
-                HttpMethod.GET, null, null));
+        ApiInstallController resourceController = controller(request(HttpMethod.GET, null, null));
         InstallResourceResponse resourceResponse = resourceController.installResource();
         assertTrue(resourceResponse.getData() instanceof InstallRuntimeResourceResponse);
         InstallRuntimeResourceResponse resource =
@@ -89,13 +83,11 @@ public class InstallRecoveryWebContractTest {
         assertFalse(resourceJson.contains("org.sqlite.JDBC"));
         assertFalse(resourceJson.contains(databaseConfig.getJdbcUrl().split("\\?", 2)[0]));
 
-        assertInvalidResume(config, request(
-                HttpMethod.GET, null, "{}"));
-        assertInvalidResume(config, request(
-                HttpMethod.POST, null, ""));
+        assertInvalidResume(config, request(HttpMethod.GET, null, "{}"));
+        assertInvalidResume(config, request(HttpMethod.POST, null, ""));
 
-        InstallResultResponse result = controller(request(
-                HttpMethod.POST, "ignored-when-disabled", "{}")).resumeInstall();
+        InstallResultResponse result =
+                controller(request(HttpMethod.POST, "ignored-when-disabled", "{}")).resumeInstall();
 
         assertNotNull(result.getData());
         assertEquals("", result.getData().getContent());
@@ -104,7 +96,8 @@ public class InstallRecoveryWebContractTest {
         assertTrue(config.getAction().getLockFile().isFile());
         assertFalse(Files.exists(recoveryFile));
         Properties storedDatabase = new Properties();
-        try (InputStream inputStream = Files.newInputStream(config.getDbPropertiesFile().toPath())) {
+        try (InputStream inputStream =
+                Files.newInputStream(config.getDbPropertiesFile().toPath())) {
             storedDatabase.load(inputStream);
         }
         assertEquals(databaseConfig.getJdbcUrl(), storedDatabase.getProperty("jdbcUrl"));
@@ -112,7 +105,8 @@ public class InstallRecoveryWebContractTest {
     }
 
     @Test(timeout = 20000)
-    public void shouldRejectCompletionDuringFailingCallbackAndReleaseOperationLock() throws Exception {
+    public void shouldRejectCompletionDuringFailingCallbackAndReleaseOperationLock()
+            throws Exception {
         Path root = temporaryFolder.newFolder("completion-callback-race").toPath();
         RecoveryInstallConfig config = installConfig(root);
         config.enableInstallCompletion();
@@ -123,26 +117,34 @@ public class InstallRecoveryWebContractTest {
         InstallDatabaseConfig databaseConfig = LocalSqliteSupport.createDatabaseConfig(config);
         AtomicReference<Boolean> installResult = new AtomicReference<>();
         AtomicReference<Throwable> installFailure = new AtomicReference<>();
-        Thread installThread = new Thread(() -> {
-            try {
-                installResult.set(applications.service(
-                        config, installConfig(databaseConfig)).install());
-            } catch (Throwable e) {
-                installFailure.set(e);
-            }
-        }, "install-completion-callback-race");
+        Thread installThread =
+                new Thread(
+                        () -> {
+                            try {
+                                installResult.set(
+                                        applications
+                                                .service(config, installConfig(databaseConfig))
+                                                .install());
+                            } catch (Throwable e) {
+                                installFailure.set(e);
+                            }
+                        },
+                        "install-completion-callback-race");
 
         try {
             installThread.start();
-            assertTrue("Installation did not reach the host callback",
+            assertTrue(
+                    "Installation did not reach the host callback",
                     callbackEntered.await(10, TimeUnit.SECONDS));
             assertTrue(config.getDbPropertiesFile().isFile());
             assertTrue(config.getAction().getLockFile().isFile());
 
-            InstallOperationInProgressException inProgress = assertThrows(
-                    InstallOperationInProgressException.class,
-                    () -> controller(request(HttpMethod.POST,
-                            null, "{}")).installCompletion());
+            InstallOperationInProgressException inProgress =
+                    assertThrows(
+                            InstallOperationInProgressException.class,
+                            () ->
+                                    controller(request(HttpMethod.POST, null, "{}"))
+                                            .installCompletion());
             assertEquals(9024, inProgress.getError());
             assertEquals("INSTALL_IN_PROGRESS", inProgress.getCode());
             assertFalse(inProgress.getMessage().contains(root.toAbsolutePath().toString()));
@@ -159,30 +161,32 @@ public class InstallRecoveryWebContractTest {
         assertFalse(config.getAction().getLockFile().exists());
         assertTrue(Files.isRegularFile(recoveryFile(config)));
 
-        InvalidInstallRequestException unavailable = assertThrows(
-                InvalidInstallRequestException.class,
-                () -> controller(request(HttpMethod.POST,
-                        null, "{}")).installCompletion());
+        InvalidInstallRequestException unavailable =
+                assertThrows(
+                        InvalidInstallRequestException.class,
+                        () -> controller(request(HttpMethod.POST, null, "{}")).installCompletion());
         assertEquals(9025, unavailable.getError());
         assertEquals("INVALID_INSTALL_REQUEST", unavailable.getCode());
         assertFalse(unavailable.getMessage().contains(root.toAbsolutePath().toString()));
-        try (InstallOperationLock releasedLock = InstallOperationLock.tryAcquire(
-                config.getAction().getLockFile())) {
+        try (InstallOperationLock releasedLock =
+                InstallOperationLock.tryAcquire(config.getAction().getLockFile())) {
             assertNotNull(releasedLock);
         }
     }
 
     @Test
-    public void shouldReturnStableUnavailableErrorForMissingAndInvalidRecoveryState() throws Exception {
-        RecoveryInstallConfig missingStateConfig = installConfig(
-                temporaryFolder.newFolder("missing-recovery-state").toPath());
+    public void shouldReturnStableUnavailableErrorForMissingAndInvalidRecoveryState()
+            throws Exception {
+        RecoveryInstallConfig missingStateConfig =
+                installConfig(temporaryFolder.newFolder("missing-recovery-state").toPath());
         assertRecoveryUnavailable(missingStateConfig);
 
-        RecoveryInstallConfig invalidStateConfig = installConfig(
-                temporaryFolder.newFolder("invalid-recovery-state").toPath());
+        RecoveryInstallConfig invalidStateConfig =
+                installConfig(temporaryFolder.newFolder("invalid-recovery-state").toPath());
         Path invalidRecoveryFile = recoveryFile(invalidStateConfig);
         Files.createDirectories(invalidRecoveryFile.getParent());
-        Files.writeString(invalidRecoveryFile,
+        Files.writeString(
+                invalidRecoveryFile,
                 "recoveryVersion=unsupported\n"
                         + "dbType=sqlite\n"
                         + "driverClass=org.sqlite.JDBC\n"
@@ -195,9 +199,10 @@ public class InstallRecoveryWebContractTest {
     private void assertInvalidResume(RecoveryInstallConfig config, HttpRequest request)
             throws Exception {
         installConfig = config;
-        InvalidInstallRequestException exception = assertThrows(
-                InvalidInstallRequestException.class,
-                () -> controller(request).resumeInstall());
+        InvalidInstallRequestException exception =
+                assertThrows(
+                        InvalidInstallRequestException.class,
+                        () -> controller(request).resumeInstall());
         assertEquals(9025, exception.getError());
         assertEquals("INVALID_INSTALL_REQUEST", exception.getCode());
         assertTrue(Files.isRegularFile(recoveryFile(config)));
@@ -207,10 +212,10 @@ public class InstallRecoveryWebContractTest {
 
     private void assertRecoveryUnavailable(RecoveryInstallConfig config) throws Exception {
         installConfig = config;
-        InstallRecoveryUnavailableException exception = assertThrows(
-                InstallRecoveryUnavailableException.class,
-                () -> controller(request(
-                        HttpMethod.POST, null, "{}")).resumeInstall());
+        InstallRecoveryUnavailableException exception =
+                assertThrows(
+                        InstallRecoveryUnavailableException.class,
+                        () -> controller(request(HttpMethod.POST, null, "{}")).resumeInstall());
         assertEquals(9026, exception.getError());
         assertEquals("INSTALL_RECOVERY_UNAVAILABLE", exception.getCode());
     }
@@ -242,8 +247,7 @@ public class InstallRecoveryWebContractTest {
     }
 
     private ApiInstallController controller(HttpRequest request) throws Exception {
-        ApiInstallController controller =
-                applications.component(installConfig).installApi();
+        ApiInstallController controller = applications.component(installConfig).installApi();
         Field requestField = Controller.class.getDeclaredField("request");
         requestField.setAccessible(true);
         requestField.set(controller, request);
@@ -254,33 +258,39 @@ public class InstallRecoveryWebContractTest {
         ServerConfig serverConfig = new ServerConfig();
         serverConfig.setApplicationVersion("recovery-contract-test");
         serverConfig.setContextPath("/blog");
-        Map<String, String> headers = token == null
-                ? Map.of("Content-Type", "application/json;charset=UTF-8")
-                : Map.of(
-                        "Content-Type", "application/json;charset=UTF-8",
-                        InstallRequestSecurity.TOKEN_HEADER, token);
-        return (HttpRequest) Proxy.newProxyInstance(
-                InstallRecoveryWebContractTest.class.getClassLoader(),
-                new Class[]{HttpRequest.class},
-                (proxy, reflectedMethod, arguments) -> {
-                    switch (reflectedMethod.getName()) {
-                        case "getMethod":
-                            return method;
-                        case "getHeader":
-                            return headers.get(arguments[0].toString());
-                        case "getRequestBodyByteBuffer":
-                            return ByteBuffer.wrap(body == null
-                                    ? new byte[0] : body.getBytes(StandardCharsets.UTF_8));
-                        case "getContextPath":
-                            return "/blog";
-                        case "getServerConfig":
-                            return serverConfig;
-                        case "toString":
-                            return "InstallRecoveryHttpRequest";
-                        default:
-                            return null;
-                    }
-                });
+        Map<String, String> headers =
+                token == null
+                        ? Map.of("Content-Type", "application/json;charset=UTF-8")
+                        : Map.of(
+                                "Content-Type",
+                                "application/json;charset=UTF-8",
+                                InstallRequestSecurity.TOKEN_HEADER,
+                                token);
+        return (HttpRequest)
+                Proxy.newProxyInstance(
+                        InstallRecoveryWebContractTest.class.getClassLoader(),
+                        new Class[] {HttpRequest.class},
+                        (proxy, reflectedMethod, arguments) -> {
+                            switch (reflectedMethod.getName()) {
+                                case "getMethod":
+                                    return method;
+                                case "getHeader":
+                                    return headers.get(arguments[0].toString());
+                                case "getRequestBodyByteBuffer":
+                                    return ByteBuffer.wrap(
+                                            body == null
+                                                    ? new byte[0]
+                                                    : body.getBytes(StandardCharsets.UTF_8));
+                                case "getContextPath":
+                                    return "/blog";
+                                case "getServerConfig":
+                                    return serverConfig;
+                                case "toString":
+                                    return "InstallRecoveryHttpRequest";
+                                default:
+                                    return null;
+                            }
+                        });
     }
 
     private static final class RecoveryInstallConfig extends DefaultInstallConfig {
@@ -292,41 +302,43 @@ public class InstallRecoveryWebContractTest {
         private volatile CountDownLatch callbackEntered;
         private volatile CountDownLatch finishCallback;
         private boolean askConfig;
-        private final InstallAction installAction = new InstallAction() {
-            @Override
-            public void installSuccess() {
-                installSuccessCalls.incrementAndGet();
-                if (failNextInstallSuccess.compareAndSet(true, false)) {
-                    CountDownLatch entered = callbackEntered;
-                    CountDownLatch finish = finishCallback;
-                    if (entered != null) {
-                        entered.countDown();
-                    }
-                    if (finish != null) {
-                        try {
-                            if (!finish.await(10, TimeUnit.SECONDS)) {
-                                throw new IllegalStateException(
-                                        "Timed out waiting to fail the install callback");
+        private final InstallAction installAction =
+                new InstallAction() {
+                    @Override
+                    public void installSuccess() {
+                        installSuccessCalls.incrementAndGet();
+                        if (failNextInstallSuccess.compareAndSet(true, false)) {
+                            CountDownLatch entered = callbackEntered;
+                            CountDownLatch finish = finishCallback;
+                            if (entered != null) {
+                                entered.countDown();
                             }
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            throw new IllegalStateException("Install callback was interrupted", e);
+                            if (finish != null) {
+                                try {
+                                    if (!finish.await(10, TimeUnit.SECONDS)) {
+                                        throw new IllegalStateException(
+                                                "Timed out waiting to fail the install callback");
+                                    }
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                    throw new IllegalStateException(
+                                            "Install callback was interrupted", e);
+                                }
+                            }
+                            throw new IllegalStateException("simulated host callback failure");
                         }
                     }
-                    throw new IllegalStateException("simulated host callback failure");
-                }
-            }
 
-            @Override
-            public File getLockFile() {
-                return installLockFile;
-            }
+                    @Override
+                    public File getLockFile() {
+                        return installLockFile;
+                    }
 
-            @Override
-            public boolean isInstalled() {
-                return installLockFile.isFile();
-            }
-        };
+                    @Override
+                    public boolean isInstalled() {
+                        return installLockFile.isFile();
+                    }
+                };
 
         private RecoveryInstallConfig(File dbPropertiesFile, File installLockFile) {
             this.dbPropertiesFile = dbPropertiesFile;

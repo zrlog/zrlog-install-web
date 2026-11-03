@@ -1,6 +1,7 @@
 package com.zrlog.install.exception;
 
-public class InvalidInstallRequestException extends AbstractInstallException implements InstallErrorCodeProvider {
+public class InvalidInstallRequestException extends AbstractInstallException
+        implements InstallErrorCodeProvider {
 
     private final String message;
 

@@ -1,14 +1,13 @@
 package com.zrlog.install.util;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 public class InstallSuccessContentUtilsTest {
 
@@ -22,12 +21,13 @@ public class InstallSuccessContentUtilsTest {
     @Test
     public void shouldRenderDockerInstallContentFromDbProperties() throws Exception {
         File dbProperties = Files.createTempFile("zrlog-db", ".properties").toFile();
-        Files.write(dbProperties.toPath(), (
-                "# ignored comment\n" +
-                        "user=zrlog\n" +
-                        "password=secret\n" +
-                        "jdbcUrl=jdbc:mysql://localhost:3307/zrlog?characterEncoding=utf8\n")
-                .getBytes(StandardCharsets.UTF_8));
+        Files.write(
+                dbProperties.toPath(),
+                ("# ignored comment\n"
+                                + "user=zrlog\n"
+                                + "password=secret\n"
+                                + "jdbcUrl=jdbc:mysql://localhost:3307/zrlog?characterEncoding=utf8\n")
+                        .getBytes(StandardCharsets.UTF_8));
 
         String content = InstallSuccessContentUtils.getContent(dbProperties, true, "zh_CN");
 
@@ -42,12 +42,13 @@ public class InstallSuccessContentUtilsTest {
     @Test
     public void shouldRenderSqliteDatabasePathFromDbProperties() throws Exception {
         File dbProperties = Files.createTempFile("zrlog-sqlite-db", ".properties").toFile();
-        Files.write(dbProperties.toPath(), (
-                "user=\n" +
-                        "password=\n" +
-                        "dbType=sqlite\n" +
-                        "jdbcUrl=jdbc:sqlite:/opt/zrlog/conf/zrlog.db?journal_mode=WAL&busy_timeout=10000\n")
-                .getBytes(StandardCharsets.UTF_8));
+        Files.write(
+                dbProperties.toPath(),
+                ("user=\n"
+                                + "password=\n"
+                                + "dbType=sqlite\n"
+                                + "jdbcUrl=jdbc:sqlite:/opt/zrlog/conf/zrlog.db?journal_mode=WAL&busy_timeout=10000\n")
+                        .getBytes(StandardCharsets.UTF_8));
 
         String content = InstallSuccessContentUtils.getContent(dbProperties, true, "zh_CN");
 
@@ -57,13 +58,17 @@ public class InstallSuccessContentUtilsTest {
 
     @Test
     public void shouldSelectLocalizedFaaSTemplatesAndFallbackSafely() {
-        assertEquals("/i18n/installed-faas/zh_CN.md",
+        assertEquals(
+                "/i18n/installed-faas/zh_CN.md",
                 InstallSuccessContentUtils.getMdFilePath(true, "zh_CN"));
-        assertEquals("/i18n/installed-faas/en_US.md",
+        assertEquals(
+                "/i18n/installed-faas/en_US.md",
                 InstallSuccessContentUtils.getMdFilePath(true, "en_US"));
-        assertEquals("/i18n/installed-faas/zh_CN.md",
+        assertEquals(
+                "/i18n/installed-faas/zh_CN.md",
                 InstallSuccessContentUtils.getMdFilePath(true, "unsupported"));
-        assertEquals("/i18n/installed-docker/zh_CN.md",
+        assertEquals(
+                "/i18n/installed-docker/zh_CN.md",
                 InstallSuccessContentUtils.getMdFilePath(false, "en_US"));
     }
 
@@ -86,7 +91,8 @@ public class InstallSuccessContentUtilsTest {
 
     @Test
     public void shouldRenderEnglishFaaSConfiguration() throws Exception {
-        String content = InstallSuccessContentUtils.getContent(faasDbProperties(), true, true, "en_US");
+        String content =
+                InstallSuccessContentUtils.getContent(faasDbProperties(), true, true, "en_US");
 
         assertTrue(content.contains("One more step"));
         assertTrue(content.contains("complete value below"));
@@ -97,12 +103,13 @@ public class InstallSuccessContentUtilsTest {
 
     private static File faasDbProperties() throws Exception {
         File dbProperties = Files.createTempFile("zrlog-faas-db", ".properties").toFile();
-        Files.write(dbProperties.toPath(), (
-                "# generated configuration\n" +
-                        "user=zrlog\n" +
-                        "password=secret\n" +
-                        "jdbcUrl=jdbc:mysql://database.internal:3306/zrlog\n")
-                .getBytes(StandardCharsets.UTF_8));
+        Files.write(
+                dbProperties.toPath(),
+                ("# generated configuration\n"
+                                + "user=zrlog\n"
+                                + "password=secret\n"
+                                + "jdbcUrl=jdbc:mysql://database.internal:3306/zrlog\n")
+                        .getBytes(StandardCharsets.UTF_8));
         return dbProperties;
     }
 }

@@ -1,23 +1,22 @@
 package com.zrlog.install.web.config;
 
-import com.hibegin.http.server.api.HttpResponse;
-import com.zrlog.install.business.response.InstallApiResponses;
-import com.zrlog.install.business.response.LastVersionInfo;
-import com.zrlog.install.exception.AbstractInstallException;
-import com.zrlog.install.exception.InstallException;
-import com.zrlog.install.business.type.TestConnectDbResult;
-import com.zrlog.install.util.LogCaptureSupport;
-import org.junit.Test;
-
-import java.lang.reflect.Proxy;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import com.hibegin.http.server.api.HttpResponse;
+import com.zrlog.install.business.response.InstallApiResponses;
+import com.zrlog.install.business.response.LastVersionInfo;
+import com.zrlog.install.business.type.TestConnectDbResult;
+import com.zrlog.install.exception.AbstractInstallException;
+import com.zrlog.install.exception.InstallException;
+import com.zrlog.install.util.LogCaptureSupport;
+import java.lang.reflect.Proxy;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Test;
 
 public class DefaultInstallConfigTest {
 
@@ -55,7 +54,8 @@ public class DefaultInstallConfigTest {
     public void shouldReturnMysqlJdbcQueryOnlyForMysql() {
         DefaultInstallConfig config = new DefaultInstallConfig();
 
-        assertEquals("characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=GMT",
+        assertEquals(
+                "characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=GMT",
                 config.getJdbcUrlQueryStr("mysql", Collections.emptyMap()));
         assertEquals("", config.getJdbcUrlQueryStr("sqlite", Collections.emptyMap()));
     }
@@ -73,8 +73,12 @@ public class DefaultInstallConfigTest {
         AtomicReference<Object> rendered = new AtomicReference<>();
         HttpResponse response = response(rendered);
 
-        new DefaultInstallConfig().getErrorHandler().doHandle(null, response,
-                new InstallException(TestConnectDbResult.MISSING_JDBC_DRIVER, "zh_CN"));
+        new DefaultInstallConfig()
+                .getErrorHandler()
+                .doHandle(
+                        null,
+                        response,
+                        new InstallException(TestConnectDbResult.MISSING_JDBC_DRIVER, "zh_CN"));
 
         InstallApiResponses.Error error = (InstallApiResponses.Error) rendered.get();
         assertEquals(Integer.valueOf(9000), error.getError());
@@ -88,8 +92,9 @@ public class DefaultInstallConfigTest {
         HttpResponse response = response(rendered);
 
         try (LogCaptureSupport logs = LogCaptureSupport.capture(DefaultInstallConfig.class)) {
-            new DefaultInstallConfig().getErrorHandler().doHandle(null, response,
-                    new IllegalStateException("request-do-not-expose"));
+            new DefaultInstallConfig()
+                    .getErrorHandler()
+                    .doHandle(null, response, new IllegalStateException("request-do-not-expose"));
 
             InstallApiResponses.Error error = (InstallApiResponses.Error) rendered.get();
             assertEquals(Integer.valueOf(9999), error.getError());
@@ -106,17 +111,18 @@ public class DefaultInstallConfigTest {
     public void shouldFailClosedForUncontrolledInstallException() {
         AtomicReference<Object> rendered = new AtomicReference<>();
         HttpResponse response = response(rendered);
-        AbstractInstallException uncontrolled = new AbstractInstallException() {
-            @Override
-            public int getError() {
-                return 7777;
-            }
+        AbstractInstallException uncontrolled =
+                new AbstractInstallException() {
+                    @Override
+                    public int getError() {
+                        return 7777;
+                    }
 
-            @Override
-            public String getMessage() {
-                return "jdbc:mysql://db/zrlog?password=json-do-not-expose";
-            }
-        };
+                    @Override
+                    public String getMessage() {
+                        return "jdbc:mysql://db/zrlog?password=json-do-not-expose";
+                    }
+                };
 
         try (LogCaptureSupport logs = LogCaptureSupport.capture(DefaultInstallConfig.class)) {
             new DefaultInstallConfig().getErrorHandler().doHandle(null, response, uncontrolled);
@@ -132,21 +138,22 @@ public class DefaultInstallConfigTest {
     }
 
     private static HttpResponse response(AtomicReference<Object> rendered) {
-        return (HttpResponse) Proxy.newProxyInstance(
-                DefaultInstallConfigTest.class.getClassLoader(),
-                new Class[]{HttpResponse.class},
-                (proxy, method, args) -> {
-                    if ("renderJson".equals(method.getName())) {
-                        rendered.set(args[0]);
-                        return null;
-                    }
-                    if ("getHeader".equals(method.getName())) {
-                        return Collections.emptyMap();
-                    }
-                    if ("toString".equals(method.getName())) {
-                        return "HttpResponseProxy";
-                    }
-                    return null;
-                });
+        return (HttpResponse)
+                Proxy.newProxyInstance(
+                        DefaultInstallConfigTest.class.getClassLoader(),
+                        new Class[] {HttpResponse.class},
+                        (proxy, method, args) -> {
+                            if ("renderJson".equals(method.getName())) {
+                                rendered.set(args[0]);
+                                return null;
+                            }
+                            if ("getHeader".equals(method.getName())) {
+                                return Collections.emptyMap();
+                            }
+                            if ("toString".equals(method.getName())) {
+                                return "HttpResponseProxy";
+                            }
+                            return null;
+                        });
     }
 }

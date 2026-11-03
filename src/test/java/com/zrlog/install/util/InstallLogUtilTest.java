@@ -1,19 +1,19 @@
 package com.zrlog.install.util;
 
-import org.junit.Test;
-
-import java.util.logging.Level;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import java.util.logging.Level;
+import org.junit.Test;
 
 public class InstallLogUtilTest {
 
     @Test
     public void shouldOnlyLogStablePhaseAndExceptionClass() {
-        String sensitiveMessage = "/private/recovery/do-not-expose.properties "
-                + "jdbc:mysql://db.internal/zrlog?password=do-not-expose "
-                + "SELECT password FROM user";
+        String sensitiveMessage =
+                "/private/recovery/do-not-expose.properties "
+                        + "jdbc:mysql://db.internal/zrlog?password=do-not-expose "
+                        + "SELECT password FROM user";
 
         try (LogCaptureSupport logs = LogCaptureSupport.capture(InstallLogUtilTest.class)) {
             InstallLogUtil.logFailure(

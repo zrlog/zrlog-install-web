@@ -2,7 +2,6 @@ package com.zrlog.install.business.service;
 
 import com.hibegin.common.util.LoggerUtil;
 import com.zrlog.install.util.InstallLogUtil;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -30,8 +29,9 @@ public final class InstallOperationLock implements AutoCloseable {
     public static InstallOperationLock tryAcquire(File installLockFile) throws IOException {
         Path operationLockFile = operationLockFile(installLockFile);
         Files.createDirectories(operationLockFile.getParent());
-        FileChannel channel = FileChannel.open(operationLockFile,
-                StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        FileChannel channel =
+                FileChannel.open(
+                        operationLockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         try {
             FileLock lock = channel.tryLock();
             if (lock == null) {
@@ -62,14 +62,17 @@ public final class InstallOperationLock implements AutoCloseable {
         try {
             lock.release();
         } catch (IOException e) {
-            InstallLogUtil.logFailure(LOGGER, Level.WARNING,
-                    InstallLogUtil.FailurePhase.OPERATION_LOCK_RELEASE, e);
+            InstallLogUtil.logFailure(
+                    LOGGER, Level.WARNING, InstallLogUtil.FailurePhase.OPERATION_LOCK_RELEASE, e);
         } finally {
             try {
                 channel.close();
             } catch (IOException e) {
-                InstallLogUtil.logFailure(LOGGER, Level.WARNING,
-                        InstallLogUtil.FailurePhase.OPERATION_LOCK_CHANNEL_CLOSE, e);
+                InstallLogUtil.logFailure(
+                        LOGGER,
+                        Level.WARNING,
+                        InstallLogUtil.FailurePhase.OPERATION_LOCK_CHANNEL_CLOSE,
+                        e);
             }
         }
         // Keep the file: deleting it can let contenders lock different inodes during handoff.

@@ -2,9 +2,7 @@ package com.zrlog.install.business.service;
 
 import com.hibegin.common.util.LoggerUtil;
 import com.zrlog.install.util.InstallLogUtil;
-
 import jakarta.inject.Inject;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,8 +29,9 @@ final class InstallStateStore {
     private static final Logger LOGGER = LoggerUtil.getLogger(InstallStateStore.class);
     private static final String DB_PROPERTIES_COMMENT = "This is a database configuration dbFile";
 
-    InstallStateTransaction prepare(File dbPropertiesFile, Map<String, String> values,
-                                    File installLockFile) throws IOException {
+    InstallStateTransaction prepare(
+            File dbPropertiesFile, Map<String, String> values, File installLockFile)
+            throws IOException {
         Path dbProperties = dbPropertiesFile.toPath().toAbsolutePath().normalize();
         Path installLock = installLockFile.toPath().toAbsolutePath().normalize();
         Path dbParent = requireParent(dbProperties, "db.properties");
@@ -49,20 +48,30 @@ final class InstallStateStore {
         try {
             stagedProperties = stageProperties(dbParent, values);
             if (Files.exists(dbProperties, LinkOption.NOFOLLOW_LINKS)) {
-                previousProperties = Files.createTempFile(dbParent, ".db.properties-backup-", ".tmp");
-                Files.copy(dbProperties, previousProperties, StandardCopyOption.REPLACE_EXISTING,
+                previousProperties =
+                        Files.createTempFile(dbParent, ".db.properties-backup-", ".tmp");
+                Files.copy(
+                        dbProperties,
+                        previousProperties,
+                        StandardCopyOption.REPLACE_EXISTING,
                         StandardCopyOption.COPY_ATTRIBUTES);
                 force(previousProperties);
             }
-            byte[] installMarker = ("zrlog-install:" + UUID.randomUUID() + "\n")
-                    .getBytes(StandardCharsets.US_ASCII);
+            byte[] installMarker =
+                    ("zrlog-install:" + UUID.randomUUID() + "\n")
+                            .getBytes(StandardCharsets.US_ASCII);
             stagedInstallLock = Files.createTempFile(lockParent, ".install.lock-", ".tmp");
             try (FileOutputStream outputStream = new FileOutputStream(stagedInstallLock.toFile())) {
                 outputStream.write(installMarker);
                 outputStream.getFD().sync();
             }
-            return new InstallStateTransaction(dbProperties, installLock, stagedProperties,
-                    previousProperties, stagedInstallLock, installMarker);
+            return new InstallStateTransaction(
+                    dbProperties,
+                    installLock,
+                    stagedProperties,
+                    previousProperties,
+                    stagedInstallLock,
+                    installMarker);
         } catch (IOException | RuntimeException e) {
             deleteIfExists(stagedProperties, e);
             deleteIfExists(previousProperties, e);
@@ -71,7 +80,8 @@ final class InstallStateStore {
         }
     }
 
-    private static Path stageProperties(Path parent, Map<String, String> values) throws IOException {
+    private static Path stageProperties(Path parent, Map<String, String> values)
+            throws IOException {
         Path temporaryFile = Files.createTempFile(parent, ".db.properties-", ".tmp");
         boolean ready = false;
         try {
@@ -104,10 +114,15 @@ final class InstallStateStore {
         return parent;
     }
 
-    private static void moveAtomically(Path source, Path target, boolean replaceExisting) throws IOException {
+    private static void moveAtomically(Path source, Path target, boolean replaceExisting)
+            throws IOException {
         try {
             if (replaceExisting) {
-                Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                Files.move(
+                        source,
+                        target,
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
             } else {
                 if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
                     throw new FileAlreadyExistsException(target.toString());
@@ -143,8 +158,13 @@ final class InstallStateStore {
         private boolean installLockCommitted;
         private boolean completed;
 
-        private InstallStateTransaction(Path dbProperties, Path installLock, Path stagedProperties,
-                                        Path previousProperties, Path stagedInstallLock, byte[] installMarker) {
+        private InstallStateTransaction(
+                Path dbProperties,
+                Path installLock,
+                Path stagedProperties,
+                Path previousProperties,
+                Path stagedInstallLock,
+                byte[] installMarker) {
             this.dbProperties = dbProperties;
             this.installLock = installLock;
             this.stagedProperties = stagedProperties;
@@ -182,7 +202,8 @@ final class InstallStateStore {
                 if (Files.exists(installLock, LinkOption.NOFOLLOW_LINKS)) {
                     byte[] currentMarker = Files.readAllBytes(installLock);
                     if (!Arrays.equals(installMarker, currentMarker)) {
-                        throw new IOException("Install lock changed during install callback; refusing to remove it");
+                        throw new IOException(
+                                "Install lock changed during install callback; refusing to remove it");
                     }
                     Files.delete(installLock);
                 }
@@ -215,8 +236,11 @@ final class InstallStateStore {
             try {
                 Files.deleteIfExists(path);
             } catch (IOException e) {
-                InstallLogUtil.logFailure(LOGGER, Level.WARNING,
-                        InstallLogUtil.FailurePhase.INSTALL_STATE_CLEANUP, e);
+                InstallLogUtil.logFailure(
+                        LOGGER,
+                        Level.WARNING,
+                        InstallLogUtil.FailurePhase.INSTALL_STATE_CLEANUP,
+                        e);
             }
         }
 

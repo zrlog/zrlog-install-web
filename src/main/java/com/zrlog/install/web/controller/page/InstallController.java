@@ -6,21 +6,15 @@ import com.hibegin.http.server.api.HttpRequest;
 import com.hibegin.http.server.web.Controller;
 import com.zrlog.install.business.service.InstallResourceService;
 import com.zrlog.install.util.InstallI18nUtil;
-
 import jakarta.inject.Inject;
-
+import java.io.InputStream;
+import java.util.Objects;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.InputStream;
-import java.util.Objects;
-
-/**
- * 与安装向导相关的路由进行控制
- * 注意 install.lock 文件相当重要，如果不是重新安装请不要删除这个自动生成的文件
- */
+/** 与安装向导相关的路由进行控制 注意 install.lock 文件相当重要，如果不是重新安装请不要删除这个自动生成的文件 */
 public class InstallController extends Controller {
 
     private final InstallResourceService resources;
@@ -37,9 +31,7 @@ public class InstallController extends Controller {
         link.attr("href", newUrl);
     }
 
-    /**
-     * 加载安装向导第一个页面数据
-     */
+    /** 加载安装向导第一个页面数据 */
     public void index() {
         InputStream file = InstallController.class.getResourceAsStream("/install/index.html");
         if (Objects.isNull(file)) {
@@ -47,12 +39,14 @@ public class InstallController extends Controller {
             return;
         }
         Document document = Jsoup.parse(IOUtil.getStringInputStream(file));
-        //clean history
+        // clean history
         document.body().removeClass("dark");
         document.body().removeClass("light");
-        Objects.requireNonNull(document.selectFirst("base")).attr("href", request.getContextPath() + "/");
+        Objects.requireNonNull(document.selectFirst("base"))
+                .attr("href", request.getContextPath() + "/");
         Object stringObjectMap = resources.installResourceInfo(getRequest());
-        Objects.requireNonNull(document.getElementById("resourceInfo")).text(new Gson().toJson(stringObjectMap));
+        Objects.requireNonNull(document.getElementById("resourceInfo"))
+                .text(new Gson().toJson(stringObjectMap));
         String pageTitle = InstallI18nUtil.getInstallStringFromRes("installPageTitle", language);
         if (!pageTitle.isEmpty()) {
             document.title(pageTitle);
@@ -69,5 +63,4 @@ public class InstallController extends Controller {
         String html = document.html();
         response.renderHtmlStr(html);
     }
-
 }

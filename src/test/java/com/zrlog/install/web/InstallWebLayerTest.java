@@ -52,12 +52,6 @@ import com.zrlog.install.web.controller.api.ApiMigrateController;
 import com.zrlog.install.web.controller.page.InstallController;
 import com.zrlog.install.web.di.InstallComponent;
 import com.zrlog.install.web.interceptor.BlogInstallInterceptor;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -77,12 +71,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.Test;
 
 public class InstallWebLayerTest {
 
     private InstallConfig installConfig = new DefaultInstallConfig();
-    private final InstallApplications applications =
-            new InstallApplications();
+    private final InstallApplications applications = new InstallApplications();
 
     private InstallComponent installer(InstallConfig config) {
         return applications.component(config);
@@ -97,8 +94,16 @@ public class InstallWebLayerTest {
 
         assertTrue(serverConfig.getStaticResourceMapper().containsKey("/install/static/"));
         assertEquals(Integer.valueOf(6080), installServerConfig.getServerConfig().getPort());
-        assertTrue(installServerConfig.getServerConfig().getInterceptors().contains(BlogInstallInterceptor.class));
-        assertTrue(installServerConfig.getServerConfig().getInterceptors().contains(MethodInterceptor.class));
+        assertTrue(
+                installServerConfig
+                        .getServerConfig()
+                        .getInterceptors()
+                        .contains(BlogInstallInterceptor.class));
+        assertTrue(
+                installServerConfig
+                        .getServerConfig()
+                        .getInterceptors()
+                        .contains(MethodInterceptor.class));
         assertNotNull(installServerConfig.getRequestConfig());
         assertNotNull(installServerConfig.getResponseConfig());
     }
@@ -107,11 +112,16 @@ public class InstallWebLayerTest {
     public void shouldWriteSsePayloadsAndHeaders() throws Exception {
         CapturedResponse capturedResponse = new CapturedResponse();
 
-        InstallSseEmitter.write(capturedResponse.response(), "install-test", "install-error", "zh_CN",
+        InstallSseEmitter.write(
+                capturedResponse.response(),
+                "install-test",
+                "install-error",
+                "zh_CN",
                 emitter -> emitter.send("install-progress", Map.of("status", "running")));
 
         String body = new String(capturedResponse.written.readAllBytes());
-        assertEquals("text/event-stream;charset=UTF-8", capturedResponse.headers.get("Content-Type"));
+        assertEquals(
+                "text/event-stream;charset=UTF-8", capturedResponse.headers.get("Content-Type"));
         assertEquals("no-cache", capturedResponse.addedHeaders.get("Cache-Control"));
         assertEquals("keep-alive", capturedResponse.addedHeaders.get("Connection"));
         assertEquals("no", capturedResponse.addedHeaders.get("X-Accel-Buffering"));
@@ -124,7 +134,11 @@ public class InstallWebLayerTest {
         CapturedResponse capturedResponse = new CapturedResponse();
 
         try (LogCaptureSupport logs = LogCaptureSupport.capture(InstallSseEmitter.class)) {
-            InstallSseEmitter.write(capturedResponse.response(), "install-test", "install-error", "zh_CN",
+            InstallSseEmitter.write(
+                    capturedResponse.response(),
+                    "install-test",
+                    "install-error",
+                    "zh_CN",
                     emitter -> {
                         throw new IllegalStateException("sse-do-not-expose");
                     });
@@ -145,44 +159,46 @@ public class InstallWebLayerTest {
     @Test
     public void shouldFailClosedForUncontrolledInstallExceptionInStream() throws Exception {
         String sensitiveMarker = "jdbc:mysql://db/zrlog?password=sse-do-not-expose";
-        installConfig = new DefaultInstallConfig() {
-            @Override
-            public InstallAction getAction() {
-                return new InstallAction() {
+        installConfig =
+                new DefaultInstallConfig() {
                     @Override
-                    public void installSuccess() {
-                    }
-
-                    @Override
-                    public java.io.File getLockFile() {
-                        return new java.io.File("install.lock");
-                    }
-
-                    @Override
-                    public boolean isInstalled() {
-                        throw new AbstractInstallException() {
+                    public InstallAction getAction() {
+                        return new InstallAction() {
                             @Override
-                            public int getError() {
-                                return 7777;
+                            public void installSuccess() {}
+
+                            @Override
+                            public java.io.File getLockFile() {
+                                return new java.io.File("install.lock");
                             }
 
                             @Override
-                            public String getMessage() {
-                                return sensitiveMarker;
+                            public boolean isInstalled() {
+                                throw new AbstractInstallException() {
+                                    @Override
+                                    public int getError() {
+                                        return 7777;
+                                    }
+
+                                    @Override
+                                    public String getMessage() {
+                                        return sensitiveMarker;
+                                    }
+                                };
                             }
                         };
                     }
                 };
-            }
-        };
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
         CapturedResponse capturedResponse = new CapturedResponse();
         setControllerResponse(controller, capturedResponse.response());
 
         try (LogCaptureSupport logs = LogCaptureSupport.capture(InstallSseEmitter.class)) {
             controller.installStream(new InstallConfigVO());
 
-            String body = new String(capturedResponse.written.readAllBytes(), StandardCharsets.UTF_8);
+            String body =
+                    new String(capturedResponse.written.readAllBytes(), StandardCharsets.UTF_8);
             assertTrue(body, body.contains("event: install-error"));
             assertTrue(body, body.contains("\"code\":\"INSTALL_STREAM_FAILED\""));
             assertFalse(body, body.contains("do-not-expose"));
@@ -194,15 +210,19 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldBuildDatabaseConnectionMapFromControllerRequest() throws Exception {
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
-        setControllerRequest(controller, jsonRequest("/api/install/testDbConn", Map.of(
-                "dbHost", "localhost",
-                "dbPort", "3306",
-                "dbUserName", "root",
-                "dbPassword", "password",
-                "dbName", "zrlog",
-                "dbType", "mysql"
-        )));
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
+        setControllerRequest(
+                controller,
+                jsonRequest(
+                        "/api/install/testDbConn",
+                        Map.of(
+                                "dbHost", "localhost",
+                                "dbPort", "3306",
+                                "dbUserName", "root",
+                                "dbPassword", "password",
+                                "dbName", "zrlog",
+                                "dbType", "mysql")));
 
         InstallDatabaseConfig dbConn = controller.dbConn();
 
@@ -217,16 +237,21 @@ public class InstallWebLayerTest {
     }
 
     @Test
-    public void shouldBuildDatabaseConnectionFromJsonBodyWithoutQueryCredentials() throws Exception {
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
-        setControllerRequest(controller, jsonRequest("/api/install/testDbConn", Map.of(
-                "dbHost", "database.internal",
-                "dbPort", "3307",
-                "dbUserName", "zrlog-user",
-                "dbPassword", "body-only-secret",
-                "dbName", "zrlog",
-                "dbType", "mysql"
-        )));
+    public void shouldBuildDatabaseConnectionFromJsonBodyWithoutQueryCredentials()
+            throws Exception {
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
+        setControllerRequest(
+                controller,
+                jsonRequest(
+                        "/api/install/testDbConn",
+                        Map.of(
+                                "dbHost", "database.internal",
+                                "dbPort", "3307",
+                                "dbUserName", "zrlog-user",
+                                "dbPassword", "body-only-secret",
+                                "dbName", "zrlog",
+                                "dbType", "mysql")));
 
         InstallDatabaseConfig dbConn = controller.dbConn();
 
@@ -241,13 +266,15 @@ public class InstallWebLayerTest {
     @Test
     public void shouldExcludeEveryPasswordFieldFromJdbcUrlQueryParameters() throws Exception {
         AtomicReference<Map<String, String[]>> capturedParameters = new AtomicReference<>();
-        installConfig = new DefaultInstallConfig() {
-            @Override
-            public String getJdbcUrlQueryStr(String dbType, Map<String, String[]> paramMap) {
-                capturedParameters.set(new LinkedHashMap<>(paramMap));
-                return "safeOption=" + paramMap.get("safeOption")[0];
-            }
-        };
+        installConfig =
+                new DefaultInstallConfig() {
+                    @Override
+                    public String getJdbcUrlQueryStr(
+                            String dbType, Map<String, String[]> paramMap) {
+                        capturedParameters.set(new LinkedHashMap<>(paramMap));
+                        return "safeOption=" + paramMap.get("safeOption")[0];
+                    }
+                };
         Map<String, String> parameters = installParams("mysql");
         parameters.put("dbPassword", "database-secret-value");
         parameters.put("password", "admin-secret-value");
@@ -255,7 +282,8 @@ public class InstallWebLayerTest {
         parameters.put("proxyPassword", "proxy-secret-value");
         parameters.put("PASSWORD", "uppercase-secret-value");
         parameters.put("safeOption", "enabled");
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
         setControllerRequest(controller, jsonRequest("/api/install/testDbConn", parameters));
 
         InstallDatabaseConfig dbConn = controller.dbConn();
@@ -275,31 +303,38 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldReadJsonBodyDecodedBySimpleWebServer() throws Exception {
-        String body = new Gson().toJson(Map.of(
-                "dbHost", "database.internal",
-                "dbPort", "3306",
-                "dbUserName", "zrlog-user",
-                "dbPassword", "decoder-secret",
-                "dbName", "zrlog",
-                "dbType", "mysql"
-        ));
+        String body =
+                new Gson()
+                        .toJson(
+                                Map.of(
+                                        "dbHost", "database.internal",
+                                        "dbPort", "3306",
+                                        "dbUserName", "zrlog-user",
+                                        "dbPassword", "decoder-secret",
+                                        "dbName", "zrlog",
+                                        "dbType", "mysql"));
         byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
-        String head = "POST /api/install/testDbConn HTTP/1.1\r\n"
-                + "Host: localhost\r\n"
-                + "Content-Type: application/json;charset=UTF-8\r\n"
-                + "Content-Length: " + bodyBytes.length + "\r\n\r\n";
+        String head =
+                "POST /api/install/testDbConn HTTP/1.1\r\n"
+                        + "Host: localhost\r\n"
+                        + "Content-Type: application/json;charset=UTF-8\r\n"
+                        + "Content-Length: "
+                        + bodyBytes.length
+                        + "\r\n\r\n";
         byte[] headBytes = head.getBytes(StandardCharsets.UTF_8);
         ByteBuffer rawRequest = ByteBuffer.allocate(headBytes.length + bodyBytes.length);
         rawRequest.put(headBytes).put(bodyBytes).flip();
         ServerConfig serverConfig = new ServerConfig().setPort(6080);
         RequestConfig requestConfig = new RequestConfig();
         requestConfig.setMaxRequestBodySize(1024 * 1024);
-        HttpRequestDecoderImpl decoder = new HttpRequestDecoderImpl(
-                requestConfig, new ApplicationContext(serverConfig), null);
+        HttpRequestDecoderImpl decoder =
+                new HttpRequestDecoderImpl(
+                        requestConfig, new ApplicationContext(serverConfig), null);
         decoder.doDecode(rawRequest);
         HttpRequest decodedRequest = decoder.getRequest();
         try {
-            TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
+            TestApiInstallController controller =
+                    new TestApiInstallController(installConfig, installer(installConfig));
             setControllerRequest(controller, decodedRequest);
 
             InstallDatabaseConfig dbConn = controller.dbConn();
@@ -315,11 +350,12 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectMalformedJsonWithStableErrorCode() throws Exception {
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
         setControllerRequest(controller, jsonRequest("/api/install/testDbConn", "{invalid"));
 
-        InvalidInstallRequestException exception = assertThrows(
-                InvalidInstallRequestException.class, controller::dbConn);
+        InvalidInstallRequestException exception =
+                assertThrows(InvalidInstallRequestException.class, controller::dbConn);
 
         assertEquals(9025, exception.getError());
         assertEquals("INVALID_INSTALL_REQUEST", exception.getCode());
@@ -327,45 +363,57 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectMutationEndpointsWithoutSecurePostJsonContract() throws Exception {
-        ApiInstallController testController =
-                installer(installConfig).installApi();
-        setControllerRequest(testController, request(
-                "/api/install/testDbConn", Map.of("dbType", "sqlite")));
-        InvalidInstallRequestException testException = assertThrows(
-                InvalidInstallRequestException.class, testController::testDbConn);
+        ApiInstallController testController = installer(installConfig).installApi();
+        setControllerRequest(
+                testController, request("/api/install/testDbConn", Map.of("dbType", "sqlite")));
+        InvalidInstallRequestException testException =
+                assertThrows(InvalidInstallRequestException.class, testController::testDbConn);
         assertEquals("INVALID_INSTALL_REQUEST", testException.getCode());
 
-        ApiInstallController installController =
-                installer(installConfig).installApi();
-        setControllerRequest(installController, request(
-                "/api/install/startInstall", sqliteInstallParams(), Map.of(
-                        "Content-Type", "application/x-www-form-urlencoded"),
-                false, HttpMethod.POST, null));
-        InvalidInstallRequestException installException = assertThrows(
-                InvalidInstallRequestException.class, installController::startInstall);
+        ApiInstallController installController = installer(installConfig).installApi();
+        setControllerRequest(
+                installController,
+                request(
+                        "/api/install/startInstall",
+                        sqliteInstallParams(),
+                        Map.of("Content-Type", "application/x-www-form-urlencoded"),
+                        false,
+                        HttpMethod.POST,
+                        null));
+        InvalidInstallRequestException installException =
+                assertThrows(InvalidInstallRequestException.class, installController::startInstall);
         assertEquals("INVALID_INSTALL_REQUEST", installException.getCode());
 
-        ApiInstallController upgradeController =
-                installer(installConfig).installApi();
-        setControllerRequest(upgradeController, request(
-                "/api/install/startUpgrade", Map.of(), Map.of(
-                        "Content-Type", "application/jsonp"), false, HttpMethod.POST, "{}"));
-        InvalidInstallRequestException upgradeException = assertThrows(
-                InvalidInstallRequestException.class, upgradeController::startUpgrade);
+        ApiInstallController upgradeController = installer(installConfig).installApi();
+        setControllerRequest(
+                upgradeController,
+                request(
+                        "/api/install/startUpgrade",
+                        Map.of(),
+                        Map.of("Content-Type", "application/jsonp"),
+                        false,
+                        HttpMethod.POST,
+                        "{}"));
+        InvalidInstallRequestException upgradeException =
+                assertThrows(InvalidInstallRequestException.class, upgradeController::startUpgrade);
         assertEquals("INVALID_INSTALL_REQUEST", upgradeException.getCode());
     }
 
     @Test
     public void shouldNeverReadCredentialsFromQueryWhenJsonBodyIsEmpty() throws Exception {
-        ApiInstallController controller =
-                installer(installConfig).installApi();
-        setControllerRequest(controller, request(
-                "/api/install/startInstall", installParams("mysql"), Map.of(
-                        "Content-Type", "application/json"),
-                false, HttpMethod.POST, ""));
+        ApiInstallController controller = installer(installConfig).installApi();
+        setControllerRequest(
+                controller,
+                request(
+                        "/api/install/startInstall",
+                        installParams("mysql"),
+                        Map.of("Content-Type", "application/json"),
+                        false,
+                        HttpMethod.POST,
+                        ""));
 
-        InvalidInstallRequestException exception = assertThrows(
-                InvalidInstallRequestException.class, controller::startInstall);
+        InvalidInstallRequestException exception =
+                assertThrows(InvalidInstallRequestException.class, controller::startInstall);
 
         assertEquals("INVALID_INSTALL_REQUEST", exception.getCode());
     }
@@ -374,10 +422,12 @@ public class InstallWebLayerTest {
     public void shouldBuildServerOwnedSqliteConnectionWithoutNetworkParams() throws Exception {
         Path root = Files.createTempDirectory("zrlog-install-sqlite-config");
         try {
-            installConfig = installConfigWithDbProperties(root.resolve("conf/db.properties"), false);
-            TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
-            setControllerRequest(controller, jsonRequest(
-                    "/api/install/testDbConn", Map.of("dbType", "sqlite")));
+            installConfig =
+                    installConfigWithDbProperties(root.resolve("conf/db.properties"), false);
+            TestApiInstallController controller =
+                    new TestApiInstallController(installConfig, installer(installConfig));
+            setControllerRequest(
+                    controller, jsonRequest("/api/install/testDbConn", Map.of("dbType", "sqlite")));
 
             InstallDatabaseConfig dbConn = controller.dbConn();
 
@@ -389,7 +439,9 @@ public class InstallWebLayerTest {
             assertEquals(null, dbConn.getDbHost());
             assertEquals(null, dbConn.getDbPort());
             assertTrue(dbConn.getJdbcUrl().startsWith("jdbc:sqlite:"));
-            assertTrue(dbConn.getJdbcUrl().contains(root.resolve("conf/zrlog.db").toAbsolutePath().toString()));
+            assertTrue(
+                    dbConn.getJdbcUrl()
+                            .contains(root.resolve("conf/zrlog.db").toAbsolutePath().toString()));
             assertTrue(dbConn.getJdbcUrl().contains("journal_mode=WAL"));
             assertTrue(dbConn.getJdbcUrl().contains("busy_timeout=10000"));
             assertTrue(dbConn.getJdbcUrl().contains("foreign_keys=on"));
@@ -404,10 +456,12 @@ public class InstallWebLayerTest {
     public void shouldRejectSqliteConnectionInWarMode() throws Exception {
         Path root = Files.createTempDirectory("zrlog-install-war-sqlite");
         try {
-            installConfig = installConfigWithDbProperties(root.resolve("WEB-INF/db.properties"), true);
-            TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
-            setControllerRequest(controller, jsonRequest(
-                    "/api/install/testDbConn", Map.of("dbType", "sqlite")));
+            installConfig =
+                    installConfigWithDbProperties(root.resolve("WEB-INF/db.properties"), true);
+            TestApiInstallController controller =
+                    new TestApiInstallController(installConfig, installer(installConfig));
+            setControllerRequest(
+                    controller, jsonRequest("/api/install/testDbConn", Map.of("dbType", "sqlite")));
 
             InstallException exception = assertThrows(InstallException.class, controller::dbConn);
 
@@ -423,12 +477,13 @@ public class InstallWebLayerTest {
         try {
             Path dbProperties = root.resolve("conf/db.properties");
             installConfig = installConfigWithDbProperties(dbProperties, false);
-            ApiInstallController controller =
-                    installer(installConfig).installApi();
+            ApiInstallController controller = installer(installConfig).installApi();
             CapturedResponse capturedResponse = new CapturedResponse();
             Map<String, String> params = installParams("sqlite");
-            params.keySet().removeAll(java.util.Set.of(
-                    "dbHost", "dbPort", "dbUserName", "dbPassword", "dbName"));
+            params.keySet()
+                    .removeAll(
+                            java.util.Set.of(
+                                    "dbHost", "dbPort", "dbUserName", "dbPassword", "dbName"));
             setControllerRequest(controller, jsonRequest("/api/install/startInstall", params));
             setControllerResponse(controller, capturedResponse.response());
 
@@ -449,10 +504,9 @@ public class InstallWebLayerTest {
         Path dbProperties = root.resolve("missing/conf/db.properties");
         try {
             installConfig = installConfigWithDbProperties(dbProperties, false);
-            ApiInstallController controller =
-                    installer(installConfig).installApi();
-            setControllerRequest(controller, jsonRequest(
-                    "/api/install/testDbConn", Map.of("dbType", "sqlite")));
+            ApiInstallController controller = installer(installConfig).installApi();
+            setControllerRequest(
+                    controller, jsonRequest("/api/install/testDbConn", Map.of("dbType", "sqlite")));
 
             assertFalse(Files.exists(dbProperties.getParent()));
             assertEquals("pass", controller.probe().getData().getStatus());
@@ -462,18 +516,20 @@ public class InstallWebLayerTest {
             Path databaseFile = dbProperties.resolveSibling("zrlog.db");
             assertFalse(Files.exists(databaseFile));
             try (Stream<Path> files = Files.list(dbProperties.getParent())) {
-                assertFalse(files.anyMatch(path -> {
-                    String name = path.getFileName().toString();
-                    return name.startsWith(".zrlog-sqlite-probe-")
-                            || name.startsWith("zrlog.db-");
-                }));
+                assertFalse(
+                        files.anyMatch(
+                                path -> {
+                                    String name = path.getFileName().toString();
+                                    return name.startsWith(".zrlog-sqlite-probe-")
+                                            || name.startsWith("zrlog.db-");
+                                }));
             }
 
-            ApiInstallController installController =
-                    installer(installConfig).installApi();
+            ApiInstallController installController = installer(installConfig).installApi();
             CapturedResponse capturedResponse = new CapturedResponse();
             Map<String, String> params = sqliteInstallParams();
-            setControllerRequest(installController, jsonRequest("/api/install/startInstall", params));
+            setControllerRequest(
+                    installController, jsonRequest("/api/install/startInstall", params));
             setControllerResponse(installController, capturedResponse.response());
             installController.startInstall();
 
@@ -496,90 +552,100 @@ public class InstallWebLayerTest {
         AtomicReference<Throwable> firstFailure = new AtomicReference<>();
         Thread firstInstall = null;
         try {
-            InstallAction action = new InstallAction() {
-                @Override
-                public void installSuccess() {
-                    installActionEntered.countDown();
-                    try {
-                        finishInstall.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-
-                @Override
-                public java.io.File getLockFile() {
-                    return dbProperties.resolveSibling("install.lock").toFile();
-                }
-
-                @Override
-                public boolean isInstalled() {
-                    return false;
-                }
-            };
-            installConfig = new DefaultInstallConfig() {
-                @Override
-                public InstallAction getAction() {
-                    return action;
-                }
-
-                @Override
-                public java.io.File getDbPropertiesFile() {
-                    return dbProperties.toFile();
-                }
-
-                @Override
-                public boolean isAskConfig() {
-                    return false;
-                }
-
-                @Override
-                public InstallUpgradeAction getUpgradeAction() {
-                    return new InstallUpgradeAction() {
+            InstallAction action =
+                    new InstallAction() {
                         @Override
-                        public boolean isSupported() {
-                            return true;
+                        public void installSuccess() {
+                            installActionEntered.countDown();
+                            try {
+                                finishInstall.await();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
                         }
 
                         @Override
-                        public InstallUpgradeResult upgrade(ProgressListener progressListener) {
-                            upgradeInvoked.set(true);
-                            return new InstallUpgradeResult(true, "Updated");
+                        public java.io.File getLockFile() {
+                            return dbProperties.resolveSibling("install.lock").toFile();
+                        }
+
+                        @Override
+                        public boolean isInstalled() {
+                            return false;
                         }
                     };
-                }
-            };
+            installConfig =
+                    new DefaultInstallConfig() {
+                        @Override
+                        public InstallAction getAction() {
+                            return action;
+                        }
+
+                        @Override
+                        public java.io.File getDbPropertiesFile() {
+                            return dbProperties.toFile();
+                        }
+
+                        @Override
+                        public boolean isAskConfig() {
+                            return false;
+                        }
+
+                        @Override
+                        public InstallUpgradeAction getUpgradeAction() {
+                            return new InstallUpgradeAction() {
+                                @Override
+                                public boolean isSupported() {
+                                    return true;
+                                }
+
+                                @Override
+                                public InstallUpgradeResult upgrade(
+                                        ProgressListener progressListener) {
+                                    upgradeInvoked.set(true);
+                                    return new InstallUpgradeResult(true, "Updated");
+                                }
+                            };
+                        }
+                    };
             Map<String, String> params = sqliteInstallParams();
-            ApiInstallController firstController =
-                    installer(installConfig).installApi();
+            ApiInstallController firstController = installer(installConfig).installApi();
             CapturedResponse firstResponse = new CapturedResponse();
             setControllerRequest(firstController, jsonRequest("/api/install/startInstall", params));
             setControllerResponse(firstController, firstResponse.response());
-            firstInstall = new Thread(() -> {
-                try {
-                    firstController.startInstall();
-                } catch (Throwable e) {
-                    firstFailure.set(e);
-                }
-            }, "first-install-test");
+            firstInstall =
+                    new Thread(
+                            () -> {
+                                try {
+                                    firstController.startInstall();
+                                } catch (Throwable e) {
+                                    firstFailure.set(e);
+                                }
+                            },
+                            "first-install-test");
             firstInstall.start();
-            assertTrue("First installation did not reach install action",
+            assertTrue(
+                    "First installation did not reach install action",
                     installActionEntered.await(10, TimeUnit.SECONDS));
 
-            ApiInstallController jsonController =
-                    installer(installConfig).installApi();
+            ApiInstallController jsonController = installer(installConfig).installApi();
             setControllerRequest(jsonController, jsonRequest("/api/install/startInstall", params));
             setControllerResponse(jsonController, new CapturedResponse().response());
-            InstallOperationInProgressException exception = assertThrows(
-                    InstallOperationInProgressException.class, jsonController::startInstall);
+            InstallOperationInProgressException exception =
+                    assertThrows(
+                            InstallOperationInProgressException.class,
+                            jsonController::startInstall);
             assertEquals(9024, exception.getError());
             assertEquals("INSTALL_IN_PROGRESS", exception.getCode());
 
-            ApiInstallController sseController =
-                    installer(installConfig).installApi();
+            ApiInstallController sseController = installer(installConfig).installApi();
             CapturedResponse sseResponse = new CapturedResponse();
-            setControllerRequest(sseController, jsonRequest(
-                    "/api/install/startInstall", params, Map.of("Accept", "text/event-stream")));
+            setControllerRequest(
+                    sseController,
+                    jsonRequest(
+                            "/api/install/startInstall",
+                            params,
+                            Map.of("Accept", "text/event-stream")));
             setControllerResponse(sseController, sseResponse.response());
             sseController.startInstall();
             String sseBody = new String(sseResponse.written.readAllBytes(), StandardCharsets.UTF_8);
@@ -587,12 +653,13 @@ public class InstallWebLayerTest {
             assertTrue(sseBody, sseBody.contains("\"code\":\"INSTALL_IN_PROGRESS\""));
             assertTrue(sseBody, sseBody.contains("\"status\":\"error\""));
 
-            TestApiInstallController upgradeController = new TestApiInstallController(installConfig, installer(installConfig));
+            TestApiInstallController upgradeController =
+                    new TestApiInstallController(installConfig, installer(installConfig));
             CapturedResponse upgradeResponse = new CapturedResponse();
             setControllerResponse(upgradeController, upgradeResponse.response());
             upgradeController.upgradeStream();
-            String upgradeBody = new String(
-                    upgradeResponse.written.readAllBytes(), StandardCharsets.UTF_8);
+            String upgradeBody =
+                    new String(upgradeResponse.written.readAllBytes(), StandardCharsets.UTF_8);
             assertTrue(upgradeBody, upgradeBody.contains("event: upgrade-error"));
             assertTrue(upgradeBody, upgradeBody.contains("\"code\":\"INSTALL_IN_PROGRESS\""));
             assertFalse(upgradeInvoked.get());
@@ -622,81 +689,88 @@ public class InstallWebLayerTest {
         try {
             System.setProperty("sws.conf.path", dbProperties.getParent().toString());
             Files.createDirectories(dbProperties.getParent());
-            Files.writeString(dbProperties.getParent().resolve("mysql.sql"),
+            Files.writeString(
+                    dbProperties.getParent().resolve("mysql.sql"),
                     "CREATE TABLE `log` (`id` int(11), `title` varchar(255));\n");
-            installConfig = new DefaultInstallConfig() {
-                @Override
-                public InstallAction getAction() {
-                    return new InstallAction() {
+            installConfig =
+                    new DefaultInstallConfig() {
                         @Override
-                        public void installSuccess() {
+                        public InstallAction getAction() {
+                            return new InstallAction() {
+                                @Override
+                                public void installSuccess() {}
+
+                                @Override
+                                public java.io.File getLockFile() {
+                                    return dbProperties.resolveSibling("install.lock").toFile();
+                                }
+
+                                @Override
+                                public boolean isInstalled() {
+                                    return false;
+                                }
+                            };
                         }
 
                         @Override
-                        public java.io.File getLockFile() {
-                            return dbProperties.resolveSibling("install.lock").toFile();
+                        public java.io.File getDbPropertiesFile() {
+                            return dbProperties.toFile();
                         }
 
                         @Override
-                        public boolean isInstalled() {
+                        public boolean isAskConfig() {
                             return false;
                         }
-                    };
-                }
-
-                @Override
-                public java.io.File getDbPropertiesFile() {
-                    return dbProperties.toFile();
-                }
-
-                @Override
-                public boolean isAskConfig() {
-                    return false;
-                }
-
-                @Override
-                public InstallUpgradeAction getUpgradeAction() {
-                    return new InstallUpgradeAction() {
-                        @Override
-                        public boolean isSupported() {
-                            return true;
-                        }
 
                         @Override
-                        public InstallUpgradeResult upgrade(ProgressListener progressListener) throws Exception {
-                            upgradeEntered.countDown();
-                            finishUpgrade.await();
-                            return new InstallUpgradeResult(true, "Updated");
+                        public InstallUpgradeAction getUpgradeAction() {
+                            return new InstallUpgradeAction() {
+                                @Override
+                                public boolean isSupported() {
+                                    return true;
+                                }
+
+                                @Override
+                                public InstallUpgradeResult upgrade(
+                                        ProgressListener progressListener) throws Exception {
+                                    upgradeEntered.countDown();
+                                    finishUpgrade.await();
+                                    return new InstallUpgradeResult(true, "Updated");
+                                }
+                            };
                         }
                     };
-                }
-            };
-            TestApiInstallController upgradeController = new TestApiInstallController(installConfig, installer(installConfig));
+            TestApiInstallController upgradeController =
+                    new TestApiInstallController(installConfig, installer(installConfig));
             setControllerResponse(upgradeController, upgradeResponse.response());
             upgradeController.upgradeStream();
-            assertTrue("Upgrade did not acquire operation lock",
+            assertTrue(
+                    "Upgrade did not acquire operation lock",
                     upgradeEntered.await(10, TimeUnit.SECONDS));
 
-            ApiInstallController installController =
-                    installer(installConfig).installApi();
-            setControllerRequest(installController, jsonRequest(
-                    "/api/install/startInstall", sqliteInstallParams()));
+            ApiInstallController installController = installer(installConfig).installApi();
+            setControllerRequest(
+                    installController,
+                    jsonRequest("/api/install/startInstall", sqliteInstallParams()));
             setControllerResponse(installController, new CapturedResponse().response());
-            InstallOperationInProgressException exception = assertThrows(
-                    InstallOperationInProgressException.class, installController::startInstall);
+            InstallOperationInProgressException exception =
+                    assertThrows(
+                            InstallOperationInProgressException.class,
+                            installController::startInstall);
             assertEquals("UPGRADE_IN_PROGRESS", exception.getCode());
 
             ApiMigrateController migrateController = installer(installConfig).migrateApi();
             setControllerRequest(migrateController, migrationRequest("/api/migrate/convert"));
-            InstallOperationInProgressException migrateException = assertThrows(
-                    InstallOperationInProgressException.class,
-                    migrateController::convertToSqliteSqlFile);
+            InstallOperationInProgressException migrateException =
+                    assertThrows(
+                            InstallOperationInProgressException.class,
+                            migrateController::convertToSqliteSqlFile);
             assertEquals("INSTALL_IN_PROGRESS", migrateException.getCode());
             assertFalse(Files.exists(dbProperties.getParent().resolve("sqlite.sql")));
 
             finishUpgrade.countDown();
-            String upgradeBody = new String(
-                    upgradeResponse.written.readAllBytes(), StandardCharsets.UTF_8);
+            String upgradeBody =
+                    new String(upgradeResponse.written.readAllBytes(), StandardCharsets.UTF_8);
             assertTrue(upgradeBody, upgradeBody.contains("event: upgrade-complete"));
 
             ApiMigrateController retryMigrateController = installer(installConfig).migrateApi();
@@ -707,11 +781,11 @@ public class InstallWebLayerTest {
             assertNotNull(migrateResponse.json);
             assertTrue(Files.exists(dbProperties.getParent().resolve("sqlite.sql")));
 
-            ApiInstallController retryController =
-                    installer(installConfig).installApi();
+            ApiInstallController retryController = installer(installConfig).installApi();
             CapturedResponse retryResponse = new CapturedResponse();
-            setControllerRequest(retryController, jsonRequest(
-                    "/api/install/startInstall", sqliteInstallParams()));
+            setControllerRequest(
+                    retryController,
+                    jsonRequest("/api/install/startInstall", sqliteInstallParams()));
             setControllerResponse(retryController, retryResponse.response());
             retryController.startInstall();
             assertTrue(retryResponse.json instanceof InstallResultResponse);
@@ -726,7 +800,8 @@ public class InstallWebLayerTest {
     }
 
     @Test(timeout = 20000)
-    public void shouldRejectUpgradeDuringExternalOperationWithoutLeakingPathAndReleaseState() throws Exception {
+    public void shouldRejectUpgradeDuringExternalOperationWithoutLeakingPathAndReleaseState()
+            throws Exception {
         Path root = Files.createTempDirectory("zrlog-upgrade-external-operation");
         Path dbProperties = root.resolve("conf/db.properties");
         Path installLock = dbProperties.resolveSibling("install.lock");
@@ -735,53 +810,55 @@ public class InstallWebLayerTest {
         AtomicBoolean upgradeInvoked = new AtomicBoolean(false);
         Process externalLockHolder = null;
         try {
-            installConfig = new DefaultInstallConfig() {
-                @Override
-                public InstallAction getAction() {
-                    return new InstallAction() {
+            installConfig =
+                    new DefaultInstallConfig() {
                         @Override
-                        public void installSuccess() {
+                        public InstallAction getAction() {
+                            return new InstallAction() {
+                                @Override
+                                public void installSuccess() {}
+
+                                @Override
+                                public java.io.File getLockFile() {
+                                    return installLock.toFile();
+                                }
+
+                                @Override
+                                public boolean isInstalled() {
+                                    return false;
+                                }
+                            };
                         }
 
                         @Override
-                        public java.io.File getLockFile() {
-                            return installLock.toFile();
-                        }
+                        public InstallUpgradeAction getUpgradeAction() {
+                            return new InstallUpgradeAction() {
+                                @Override
+                                public boolean isSupported() {
+                                    return true;
+                                }
 
-                        @Override
-                        public boolean isInstalled() {
-                            return false;
+                                @Override
+                                public InstallUpgradeResult upgrade(
+                                        ProgressListener progressListener) {
+                                    upgradeInvoked.set(true);
+                                    return new InstallUpgradeResult(true, "Updated");
+                                }
+                            };
                         }
                     };
-                }
-
-                @Override
-                public InstallUpgradeAction getUpgradeAction() {
-                    return new InstallUpgradeAction() {
-                        @Override
-                        public boolean isSupported() {
-                            return true;
-                        }
-
-                        @Override
-                        public InstallUpgradeResult upgrade(ProgressListener progressListener) {
-                            upgradeInvoked.set(true);
-                            return new InstallUpgradeResult(true, "Updated");
-                        }
-                    };
-                }
-            };
-            externalLockHolder = startOperationLockHolder(
-                    installLock.toFile(), readyFile, releaseFile);
+            externalLockHolder =
+                    startOperationLockHolder(installLock.toFile(), readyFile, releaseFile);
             waitForOperationLock(externalLockHolder, readyFile);
 
-            TestApiInstallController blockedController = new TestApiInstallController(installConfig, installer(installConfig));
+            TestApiInstallController blockedController =
+                    new TestApiInstallController(installConfig, installer(installConfig));
             CapturedResponse blockedResponse = new CapturedResponse();
             setControllerResponse(blockedController, blockedResponse.response());
             blockedController.upgradeStream();
 
-            String blockedBody = new String(
-                    blockedResponse.written.readAllBytes(), StandardCharsets.UTF_8);
+            String blockedBody =
+                    new String(blockedResponse.written.readAllBytes(), StandardCharsets.UTF_8);
             assertTrue(blockedBody, blockedBody.contains("event: upgrade-error"));
             assertTrue(blockedBody, blockedBody.contains("\"code\":\"INSTALL_IN_PROGRESS\""));
             assertFalse(blockedBody, blockedBody.contains("INSTALL_STREAM_FAILED"));
@@ -790,20 +867,23 @@ public class InstallWebLayerTest {
             assertFalse(upgradeInvoked.get());
 
             Files.createFile(releaseFile);
-            assertTrue("External lock holder did not exit",
+            assertTrue(
+                    "External lock holder did not exit",
                     externalLockHolder.waitFor(10, TimeUnit.SECONDS));
             assertEquals(0, externalLockHolder.exitValue());
 
-            TestApiInstallController retryController = new TestApiInstallController(installConfig, installer(installConfig));
+            TestApiInstallController retryController =
+                    new TestApiInstallController(installConfig, installer(installConfig));
             CapturedResponse retryResponse = new CapturedResponse();
             setControllerResponse(retryController, retryResponse.response());
             retryController.upgradeStream();
-            String retryBody = new String(
-                    retryResponse.written.readAllBytes(), StandardCharsets.UTF_8);
+            String retryBody =
+                    new String(retryResponse.written.readAllBytes(), StandardCharsets.UTF_8);
             assertTrue(retryBody, retryBody.contains("event: upgrade-complete"));
             assertTrue(upgradeInvoked.get());
 
-            try (InstallOperationLock releasedLock = InstallOperationLock.tryAcquire(installLock.toFile())) {
+            try (InstallOperationLock releasedLock =
+                    InstallOperationLock.tryAcquire(installLock.toFile())) {
                 assertNotNull(releasedLock);
             }
         } finally {
@@ -818,61 +898,66 @@ public class InstallWebLayerTest {
     @Test
     public void shouldRejectRepeatedInstallWithCompletedCode() throws Exception {
         installConfig = installConfig(true, false);
-        ApiInstallController controller =
-                installer(installConfig).installApi();
-        setControllerRequest(controller, jsonRequest(
-                "/api/install/startInstall", sqliteInstallParams()));
+        ApiInstallController controller = installer(installConfig).installApi();
+        setControllerRequest(
+                controller, jsonRequest("/api/install/startInstall", sqliteInstallParams()));
         setControllerResponse(controller, new CapturedResponse().response());
 
-        InstalledException exception = assertThrows(InstalledException.class, controller::startInstall);
+        InstalledException exception =
+                assertThrows(InstalledException.class, controller::startInstall);
 
         assertEquals(9020, exception.getError());
         assertEquals("INSTALL_ALREADY_COMPLETED", exception.getCode());
     }
 
     @Test
-    public void shouldStreamCompletedCodeWhenAnotherProcessFinishesBeforeTheLockCheck() throws Exception {
+    public void shouldStreamCompletedCodeWhenAnotherProcessFinishesBeforeTheLockCheck()
+            throws Exception {
         Path root = Files.createTempDirectory("zrlog-install-completed-lock-race");
         Path installLock = root.resolve("install.lock");
         AtomicInteger installedChecks = new AtomicInteger();
-        InstallAction action = new InstallAction() {
-            @Override
-            public void installSuccess() {
-            }
+        InstallAction action =
+                new InstallAction() {
+                    @Override
+                    public void installSuccess() {}
 
-            @Override
-            public java.io.File getLockFile() {
-                return installLock.toFile();
-            }
+                    @Override
+                    public java.io.File getLockFile() {
+                        return installLock.toFile();
+                    }
 
-            @Override
-            public boolean isInstalled() {
-                return installedChecks.incrementAndGet() >= 3;
-            }
-        };
+                    @Override
+                    public boolean isInstalled() {
+                        return installedChecks.incrementAndGet() >= 3;
+                    }
+                };
         try {
-            installConfig = new DefaultInstallConfig() {
-                @Override
-                public InstallAction getAction() {
-                    return action;
-                }
+            installConfig =
+                    new DefaultInstallConfig() {
+                        @Override
+                        public InstallAction getAction() {
+                            return action;
+                        }
 
-                @Override
-                public java.io.File getDbPropertiesFile() {
-                    return root.resolve("db.properties").toFile();
-                }
-            };
-            ApiInstallController controller =
-                    installer(installConfig).installApi();
+                        @Override
+                        public java.io.File getDbPropertiesFile() {
+                            return root.resolve("db.properties").toFile();
+                        }
+                    };
+            ApiInstallController controller = installer(installConfig).installApi();
             CapturedResponse capturedResponse = new CapturedResponse();
-            setControllerRequest(controller, jsonRequest(
-                    "/api/install/startInstall", installParams("mysql"),
-                    Map.of("Accept", "text/event-stream")));
+            setControllerRequest(
+                    controller,
+                    jsonRequest(
+                            "/api/install/startInstall",
+                            installParams("mysql"),
+                            Map.of("Accept", "text/event-stream")));
             setControllerResponse(controller, capturedResponse.response());
 
             controller.startInstall();
 
-            String body = new String(capturedResponse.written.readAllBytes(), StandardCharsets.UTF_8);
+            String body =
+                    new String(capturedResponse.written.readAllBytes(), StandardCharsets.UTF_8);
             assertTrue(body, body.contains("event: install-error"));
             assertTrue(body, body.contains("\"code\":\"INSTALL_ALREADY_COMPLETED\""));
             assertFalse(body, body.contains("Install failed"));
@@ -884,8 +969,7 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRenderInstallIndexWithRuntimeResourceInfo() throws Exception {
-        InstallController controller =
-                installer(installConfig).page();
+        InstallController controller = installer(installConfig).page();
         CapturedResponse capturedResponse = new CapturedResponse();
         setControllerRequest(controller, request("/install", new HashMap<>()));
         setControllerResponse(controller, capturedResponse.response());
@@ -902,19 +986,23 @@ public class InstallWebLayerTest {
         assertTrue(document.getElementById("resourceInfo").text().contains("\"feedbackUrl\""));
         assertTrue(document.getElementById("resourceInfo").text().contains("blog.zrlog.com"));
         assertTrue(document.getElementById("resourceInfo").text().contains("feedback.html"));
-        assertTrue(document.head().select("link[rel=shortcut icon]").attr("href").startsWith("/blog/"));
+        assertTrue(
+                document.head()
+                        .select("link[rel=shortcut icon]")
+                        .attr("href")
+                        .startsWith("/blog/"));
     }
 
     @Test
     public void shouldRenderEnglishInstallIndexMetadata() throws Exception {
-        installConfig = new DefaultInstallConfig() {
-            @Override
-            public String getAcceptLanguage() {
-                return "en_US";
-            }
-        };
-        InstallController controller =
-                installer(installConfig).page();
+        installConfig =
+                new DefaultInstallConfig() {
+                    @Override
+                    public String getAcceptLanguage() {
+                        return "en_US";
+                    }
+                };
+        InstallController controller = installer(installConfig).page();
         CapturedResponse capturedResponse = new CapturedResponse();
         setControllerRequest(controller, request("/install", new HashMap<>()));
         setControllerResponse(controller, capturedResponse.response());
@@ -928,16 +1016,17 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldExposeInstallResourceAndProbeResponses() throws Exception {
-        ApiInstallController controller =
-                installer(installConfig).installApi();
+        ApiInstallController controller = installer(installConfig).installApi();
         setControllerRequest(controller, request("/api/install/resource", new HashMap<>()));
 
         InstallResourceResponse resourceResponse = controller.installResource();
         assertTrue(resourceResponse.getData() instanceof InstallRuntimeResourceResponse);
-        InstallRuntimeResourceResponse resourceData = (InstallRuntimeResourceResponse) resourceResponse.getData();
+        InstallRuntimeResourceResponse resourceData =
+                (InstallRuntimeResourceResponse) resourceResponse.getData();
         assertEquals(installConfig.getAcceptLanguage(), resourceData.getLang());
         assertNotNull(resourceData.getRuntimeMode());
-        assertTrue(resourceData.getFeedbackUrl().contains("https://blog.zrlog.com/feedback.html?v="));
+        assertTrue(
+                resourceData.getFeedbackUrl().contains("https://blog.zrlog.com/feedback.html?v="));
 
         InstallProbeResponse probeResponse = controller.probe();
         assertNotNull(probeResponse.getData());
@@ -951,28 +1040,34 @@ public class InstallWebLayerTest {
         Path root = Files.createTempDirectory("zrlog-install-completion");
         Path dbProperties = root.resolve("conf/db.properties");
         Files.createDirectories(dbProperties.getParent());
-        Files.writeString(dbProperties, ""
-                + "jdbcUrl=jdbc:mysql://database.internal:3306/zrlog\n"
-                + "driverClass=com.mysql.cj.jdbc.Driver\n"
-                + "user=zrlog_user\n"
-                + "password=example-password\n", StandardCharsets.UTF_8);
+        Files.writeString(
+                dbProperties,
+                ""
+                        + "jdbcUrl=jdbc:mysql://database.internal:3306/zrlog\n"
+                        + "driverClass=com.mysql.cj.jdbc.Driver\n"
+                        + "user=zrlog_user\n"
+                        + "password=example-password\n",
+                StandardCharsets.UTF_8);
         try {
             installConfig = completionConfig(dbProperties, true, true);
 
-            ApiInstallController controller =
-                    installer(installConfig).installApi();
-            setControllerRequest(controller, jsonRequest(
-                    "/api/install/installCompletion", "{}", Map.of(
-                            InstallRequestSecurity.TOKEN_HEADER, "ignored-when-disabled")));
+            ApiInstallController controller = installer(installConfig).installApi();
+            setControllerRequest(
+                    controller,
+                    jsonRequest(
+                            "/api/install/installCompletion",
+                            "{}",
+                            Map.of(InstallRequestSecurity.TOKEN_HEADER, "ignored-when-disabled")));
             InstallResultResponse result = controller.installCompletion();
             assertNotNull(result.getData());
             assertFalse(result.getData().getContent().isEmpty());
 
             BlogInstallInterceptor interceptor = installer(installConfig).interceptor();
             CapturedResponse routedResponse = new CapturedResponse();
-            assertFalse(interceptor.doInterceptor(
-                    routedJsonRequest("/api/install/installCompletion", Map.of()),
-                    routedResponse.response()));
+            assertFalse(
+                    interceptor.doInterceptor(
+                            routedJsonRequest("/api/install/installCompletion", Map.of()),
+                            routedResponse.response()));
             assertTrue(routedResponse.json instanceof InstallResultResponse);
             assertEquals("no-store", routedResponse.headers.get("Cache-Control"));
             assertEquals("no-cache", routedResponse.headers.get("Pragma"));
@@ -985,38 +1080,49 @@ public class InstallWebLayerTest {
     public void shouldRejectUnauthorizedOrInapplicableCompletionRecovery() throws Exception {
         Path root = Files.createTempDirectory("zrlog-install-completion-rejected");
         Path dbProperties = root.resolve("db.properties");
-        Files.writeString(dbProperties, "jdbcUrl=jdbc:mysql://localhost:3306/zrlog\n",
+        Files.writeString(
+                dbProperties,
+                "jdbcUrl=jdbc:mysql://localhost:3306/zrlog\n",
                 StandardCharsets.UTF_8);
         try {
             installConfig = completionConfig(dbProperties, true, true);
-            ApiInstallController getController =
-                    installer(installConfig).installApi();
-            setControllerRequest(getController, request(
-                    "/api/install/installCompletion", Map.of(), Map.of(
-                            "Content-Type", "application/json"),
-                    false, HttpMethod.GET, "{}"));
+            ApiInstallController getController = installer(installConfig).installApi();
+            setControllerRequest(
+                    getController,
+                    request(
+                            "/api/install/installCompletion",
+                            Map.of(),
+                            Map.of("Content-Type", "application/json"),
+                            false,
+                            HttpMethod.GET,
+                            "{}"));
             assertThrows(InvalidInstallRequestException.class, getController::installCompletion);
 
             installConfig = completionConfig(dbProperties, true, false);
-            ApiInstallController nonAskConfigController =
-                    installer(installConfig).installApi();
-            setControllerRequest(nonAskConfigController, jsonRequest(
-                    "/api/install/installCompletion", "{}"));
-            assertThrows(InvalidInstallRequestException.class, nonAskConfigController::installCompletion);
+            ApiInstallController nonAskConfigController = installer(installConfig).installApi();
+            setControllerRequest(
+                    nonAskConfigController, jsonRequest("/api/install/installCompletion", "{}"));
+            assertThrows(
+                    InvalidInstallRequestException.class,
+                    nonAskConfigController::installCompletion);
 
             installConfig = completionConfig(dbProperties, false, true);
             ApiInstallController incompleteInstallController =
                     installer(installConfig).installApi();
-            setControllerRequest(incompleteInstallController, jsonRequest(
-                    "/api/install/installCompletion", "{}"));
-            assertThrows(InvalidInstallRequestException.class, incompleteInstallController::installCompletion);
+            setControllerRequest(
+                    incompleteInstallController,
+                    jsonRequest("/api/install/installCompletion", "{}"));
+            assertThrows(
+                    InvalidInstallRequestException.class,
+                    incompleteInstallController::installCompletion);
 
             installConfig = completionConfig(root.resolve("missing.properties"), true, true);
-            ApiInstallController missingConfigController =
-                    installer(installConfig).installApi();
-            setControllerRequest(missingConfigController, jsonRequest(
-                    "/api/install/installCompletion", "{}"));
-            assertThrows(InvalidInstallRequestException.class, missingConfigController::installCompletion);
+            ApiInstallController missingConfigController = installer(installConfig).installApi();
+            setControllerRequest(
+                    missingConfigController, jsonRequest("/api/install/installCompletion", "{}"));
+            assertThrows(
+                    InvalidInstallRequestException.class,
+                    missingConfigController::installCompletion);
         } finally {
             delete(root);
         }
@@ -1024,13 +1130,22 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldDetectSseRequestsByAcceptHeader() throws Exception {
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
-        setControllerRequest(controller, request("/api/install/start", new HashMap<>(),
-                Map.of("Accept", "application/json, text/event-stream")));
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
+        setControllerRequest(
+                controller,
+                request(
+                        "/api/install/start",
+                        new HashMap<>(),
+                        Map.of("Accept", "application/json, text/event-stream")));
         assertTrue(controller.sseRequest());
 
-        setControllerRequest(controller, request("/api/install/start", new HashMap<>(),
-                Map.of("Accept", "application/json")));
+        setControllerRequest(
+                controller,
+                request(
+                        "/api/install/start",
+                        new HashMap<>(),
+                        Map.of("Accept", "application/json")));
         assertFalse(controller.sseRequest());
     }
 
@@ -1038,22 +1153,24 @@ public class InstallWebLayerTest {
     public void shouldRejectMissingDatabaseConnectionParams() throws Exception {
         assertInvocationCause(MissingDbHostException.class, Map.of());
         assertInvocationCause(MissingDbPortException.class, Map.of("dbHost", "localhost"));
-        assertInvocationCause(MissingDbUserNameException.class, Map.of("dbHost", "localhost", "dbPort", "3306"));
-        assertInvocationCause(MissingDbNameException.class,
+        assertInvocationCause(
+                MissingDbUserNameException.class, Map.of("dbHost", "localhost", "dbPort", "3306"));
+        assertInvocationCause(
+                MissingDbNameException.class,
                 Map.of("dbHost", "localhost", "dbPort", "3306", "dbUserName", "root"));
     }
 
     @Test
     public void shouldRejectInstallApiEntrypointsWhenDatabaseParamsAreMissing() throws Exception {
-        ApiInstallController testController =
-                installer(installConfig).installApi();
-        setControllerRequest(testController, jsonRequest("/api/install/testDbConn", new HashMap<>()));
+        ApiInstallController testController = installer(installConfig).installApi();
+        setControllerRequest(
+                testController, jsonRequest("/api/install/testDbConn", new HashMap<>()));
 
         assertThrows(MissingDbHostException.class, testController::testDbConn);
 
-        ApiInstallController installController =
-                installer(installConfig).installApi();
-        setControllerRequest(installController, jsonRequest("/api/install/startInstall", new HashMap<>()));
+        ApiInstallController installController = installer(installConfig).installApi();
+        setControllerRequest(
+                installController, jsonRequest("/api/install/startInstall", new HashMap<>()));
         setControllerResponse(installController, new CapturedResponse().response());
 
         assertThrows(MissingDbHostException.class, installController::startInstall);
@@ -1061,34 +1178,32 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectQueryStringsOnEveryInstallMutation() throws Exception {
-        ApiInstallController testController =
-                installer(installConfig).installApi();
-        setControllerRequest(testController, jsonRequest(
-                "/api/install/testDbConn?dbPassword=visible", installParams("mysql")));
+        ApiInstallController testController = installer(installConfig).installApi();
+        setControllerRequest(
+                testController,
+                jsonRequest("/api/install/testDbConn?dbPassword=visible", installParams("mysql")));
         assertThrows(InvalidInstallRequestException.class, testController::testDbConn);
 
-        ApiInstallController installController =
-                installer(installConfig).installApi();
-        setControllerRequest(installController, jsonRequest(
-                "/api/install/startInstall?password=visible", installParams("mysql")));
+        ApiInstallController installController = installer(installConfig).installApi();
+        setControllerRequest(
+                installController,
+                jsonRequest("/api/install/startInstall?password=visible", installParams("mysql")));
         assertThrows(InvalidInstallRequestException.class, installController::startInstall);
 
-        ApiInstallController recoveryController =
-                installer(installConfig).installApi();
-        setControllerRequest(recoveryController, jsonRequest(
-                "/api/install/resumeInstall?token=visible", "{}"));
+        ApiInstallController recoveryController = installer(installConfig).installApi();
+        setControllerRequest(
+                recoveryController, jsonRequest("/api/install/resumeInstall?token=visible", "{}"));
         assertThrows(InvalidInstallRequestException.class, recoveryController::resumeInstall);
 
-        ApiInstallController upgradeController =
-                installer(installConfig).installApi();
-        setControllerRequest(upgradeController, jsonRequest(
-                "/api/install/startUpgrade?token=visible", "{}"));
+        ApiInstallController upgradeController = installer(installConfig).installApi();
+        setControllerRequest(
+                upgradeController, jsonRequest("/api/install/startUpgrade?token=visible", "{}"));
         assertThrows(InvalidInstallRequestException.class, upgradeController::startUpgrade);
 
-        ApiInstallController completionController =
-                installer(installConfig).installApi();
-        setControllerRequest(completionController, jsonRequest(
-                "/api/install/installCompletion?token=visible", "{}"));
+        ApiInstallController completionController = installer(installConfig).installApi();
+        setControllerRequest(
+                completionController,
+                jsonRequest("/api/install/installCompletion?token=visible", "{}"));
         assertThrows(InvalidInstallRequestException.class, completionController::installCompletion);
     }
 
@@ -1096,30 +1211,29 @@ public class InstallWebLayerTest {
     public void shouldEnforceDatabaseAndSiteSemanticsAtControllerBoundary() throws Exception {
         Map<String, String> unsafeDatabase = installParams("mysql");
         unsafeDatabase.put("dbPort", "3306?allowMultiQueries=true");
-        TestApiInstallController databaseController = new TestApiInstallController(installConfig, installer(installConfig));
-        setControllerRequest(databaseController, jsonRequest(
-                "/api/install/testDbConn", unsafeDatabase));
+        TestApiInstallController databaseController =
+                new TestApiInstallController(installConfig, installer(installConfig));
+        setControllerRequest(
+                databaseController, jsonRequest("/api/install/testDbConn", unsafeDatabase));
         assertThrows(InvalidInstallRequestException.class, databaseController::dbConn);
 
         Map<String, String> weakAdmin = installParams("mysql");
         weakAdmin.put("password", "short");
-        ApiInstallController installController =
-                installer(installConfig).installApi();
-        setControllerRequest(installController, jsonRequest(
-                "/api/install/startInstall", weakAdmin));
+        ApiInstallController installController = installer(installConfig).installApi();
+        setControllerRequest(
+                installController, jsonRequest("/api/install/startInstall", weakAdmin));
         setControllerResponse(installController, new CapturedResponse().response());
         assertThrows(InvalidInstallRequestException.class, installController::startInstall);
     }
 
     @Test
     public void shouldRejectUnsupportedDatabaseTypeBeforeConnectionTest() throws Exception {
-        ApiInstallController controller =
-                installer(installConfig).installApi();
-        setControllerRequest(controller, jsonRequest(
-                "/api/install/testDbConn", installParams("unsupported")));
+        ApiInstallController controller = installer(installConfig).installApi();
+        setControllerRequest(
+                controller, jsonRequest("/api/install/testDbConn", installParams("unsupported")));
 
-        InvalidInstallRequestException exception = assertThrows(
-                InvalidInstallRequestException.class, controller::testDbConn);
+        InvalidInstallRequestException exception =
+                assertThrows(InvalidInstallRequestException.class, controller::testDbConn);
 
         assertEquals(9025, exception.getError());
         assertEquals("INVALID_INSTALL_REQUEST", exception.getCode());
@@ -1127,25 +1241,27 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRejectUnsupportedDatabaseTypeBeforeNormalInstall() throws Exception {
-        ApiInstallController controller =
-                installer(installConfig).installApi();
-        setControllerRequest(controller, jsonRequest(
-                "/api/install/startInstall", installParams("unsupported")));
+        ApiInstallController controller = installer(installConfig).installApi();
+        setControllerRequest(
+                controller, jsonRequest("/api/install/startInstall", installParams("unsupported")));
         setControllerResponse(controller, new CapturedResponse().response());
 
-        InvalidInstallRequestException exception = assertThrows(
-                InvalidInstallRequestException.class, controller::startInstall);
+        InvalidInstallRequestException exception =
+                assertThrows(InvalidInstallRequestException.class, controller::startInstall);
 
         assertEquals("INVALID_INSTALL_REQUEST", exception.getCode());
     }
 
     @Test
     public void shouldRejectUnsupportedDatabaseTypeBeforeSseInstallStarts() throws Exception {
-        ApiInstallController controller =
-                installer(installConfig).installApi();
+        ApiInstallController controller = installer(installConfig).installApi();
         CapturedResponse capturedResponse = new CapturedResponse();
-        setControllerRequest(controller, jsonRequest("/api/install/startInstall", installParams("unsupported"),
-                Map.of("Accept", "text/event-stream")));
+        setControllerRequest(
+                controller,
+                jsonRequest(
+                        "/api/install/startInstall",
+                        installParams("unsupported"),
+                        Map.of("Accept", "text/event-stream")));
         setControllerResponse(controller, capturedResponse.response());
 
         assertThrows(InvalidInstallRequestException.class, controller::startInstall);
@@ -1154,25 +1270,35 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldWriteUpgradeProgressAndCompleteEventsBeforeInstallation() throws Exception {
-        installConfig = new DefaultInstallConfig() {
-            @Override
-            public InstallUpgradeAction getUpgradeAction() {
-                return new InstallUpgradeAction() {
+        installConfig =
+                new DefaultInstallConfig() {
                     @Override
-                    public boolean isSupported() {
-                        return true;
-                    }
+                    public InstallUpgradeAction getUpgradeAction() {
+                        return new InstallUpgradeAction() {
+                            @Override
+                            public boolean isSupported() {
+                                return true;
+                            }
 
-                    @Override
-                    public InstallUpgradeResult upgrade(ProgressListener progressListener) throws Exception {
-                        progressListener.onProgress("upgrade-progress", Map.of(
-                                "stage", "download", "status", "complete", "message", "Downloaded"));
-                        return new InstallUpgradeResult(true, "Updated");
+                            @Override
+                            public InstallUpgradeResult upgrade(ProgressListener progressListener)
+                                    throws Exception {
+                                progressListener.onProgress(
+                                        "upgrade-progress",
+                                        Map.of(
+                                                "stage",
+                                                "download",
+                                                "status",
+                                                "complete",
+                                                "message",
+                                                "Downloaded"));
+                                return new InstallUpgradeResult(true, "Updated");
+                            }
+                        };
                     }
                 };
-            }
-        };
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
         CapturedResponse capturedResponse = new CapturedResponse();
         setControllerResponse(controller, capturedResponse.response());
 
@@ -1188,7 +1314,8 @@ public class InstallWebLayerTest {
     @Test
     public void shouldBuildInstallResultResponseWhenAskConfigIsDisabled() throws Exception {
         installConfig = installConfig(false, false);
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
         setControllerRequest(controller, request("/api/install/start", new HashMap<>()));
 
         InstallResultResponse response = controller.installResult();
@@ -1208,21 +1335,30 @@ public class InstallWebLayerTest {
     public void shouldDetectEveryMigrateDropSqlAfterLeadingTrivia() throws Exception {
         assertTrue(TestApiMigrateController.dropSql("DROP TABLE IF EXISTS `single_table`"));
         assertTrue(TestApiMigrateController.dropSql("  dRoP VIEW `legacy_view`"));
-        assertTrue(TestApiMigrateController.dropSql("-- migration cleanup\nDROP INDEX `legacy_index`"));
-        assertTrue(TestApiMigrateController.dropSql("# migration cleanup\r\nDROP TABLE `legacy_table`"));
-        assertTrue(TestApiMigrateController.dropSql("/* migration cleanup */ DROP TABLE `legacy_table`"));
-        assertTrue(TestApiMigrateController.dropSql("/* first */\n/* second */\nDROP TABLE `legacy_table`"));
-        assertTrue(TestApiMigrateController.dropSql(
-                "CREATE TABLE `staging` (`id` int); DROP TABLE `legacy_table`"));
-        assertTrue(TestApiMigrateController.dropSql(
-                "CREATE TABLE `staging` (`id` int);\r\nDROP TABLE `legacy_table`"));
-        assertTrue(TestApiMigrateController.dropSql(
-                "SELECT 'abc\\'; DROP TABLE `legacy_table`"));
-        assertTrue(TestApiMigrateController.dropSql(
-                "/*!50000 DROP TABLE `legacy_table` */"));
+        assertTrue(
+                TestApiMigrateController.dropSql(
+                        "-- migration cleanup\nDROP INDEX `legacy_index`"));
+        assertTrue(
+                TestApiMigrateController.dropSql(
+                        "# migration cleanup\r\nDROP TABLE `legacy_table`"));
+        assertTrue(
+                TestApiMigrateController.dropSql(
+                        "/* migration cleanup */ DROP TABLE `legacy_table`"));
+        assertTrue(
+                TestApiMigrateController.dropSql(
+                        "/* first */\n/* second */\nDROP TABLE `legacy_table`"));
+        assertTrue(
+                TestApiMigrateController.dropSql(
+                        "CREATE TABLE `staging` (`id` int); DROP TABLE `legacy_table`"));
+        assertTrue(
+                TestApiMigrateController.dropSql(
+                        "CREATE TABLE `staging` (`id` int);\r\nDROP TABLE `legacy_table`"));
+        assertTrue(TestApiMigrateController.dropSql("SELECT 'abc\\'; DROP TABLE `legacy_table`"));
+        assertTrue(TestApiMigrateController.dropSql("/*!50000 DROP TABLE `legacy_table` */"));
         assertFalse(TestApiMigrateController.dropSql("/* keep */ CREATE TABLE `log` (`id` int)"));
-        assertFalse(TestApiMigrateController.dropSql(
-                "INSERT INTO `log` VALUES ('DROP TABLE private_data')"));
+        assertFalse(
+                TestApiMigrateController.dropSql(
+                        "INSERT INTO `log` VALUES ('DROP TABLE private_data')"));
         assertFalse(TestApiMigrateController.dropSql("CREATE TABLE `DROP` (`id` int)"));
         assertFalse(TestApiMigrateController.dropSql("DROPPER TABLE `not_a_keyword`"));
         assertFalse(TestApiMigrateController.dropSql("DROP_foo TABLE `not_a_keyword`"));
@@ -1234,14 +1370,16 @@ public class InstallWebLayerTest {
         String previousConfPath = System.getProperty("sws.conf.path");
         try {
             System.setProperty("sws.conf.path", confPath.toString());
-            Files.writeString(confPath.resolve("mysql.sql"), ""
-                    + "DROP TABLE IF EXISTS `a`, `b`;\n"
-                    + "DROP TABLE IF EXISTS `single_table`;\n"
-                    + "/* migration cleanup */ dRoP TABLE IF EXISTS `commented_table`;\n"
-                    + "CREATE TABLE `same_line` (`id` int); DROP TABLE IF EXISTS `same_line`;\n"
-                    + "CREATE TABLE `crlf_line` (`id` int);\r\nDROP TABLE IF EXISTS `crlf_line`;\n"
-                    + "CREATE TABLE `log` (`id` int(11) NOT NULL AUTO_INCREMENT, `title` varchar(255), PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;\n"
-                    + "INSERT INTO `log` VALUES (1,'hello'),(2,'world');\n");
+            Files.writeString(
+                    confPath.resolve("mysql.sql"),
+                    ""
+                            + "DROP TABLE IF EXISTS `a`, `b`;\n"
+                            + "DROP TABLE IF EXISTS `single_table`;\n"
+                            + "/* migration cleanup */ dRoP TABLE IF EXISTS `commented_table`;\n"
+                            + "CREATE TABLE `same_line` (`id` int); DROP TABLE IF EXISTS `same_line`;\n"
+                            + "CREATE TABLE `crlf_line` (`id` int);\r\nDROP TABLE IF EXISTS `crlf_line`;\n"
+                            + "CREATE TABLE `log` (`id` int(11) NOT NULL AUTO_INCREMENT, `title` varchar(255), PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;\n"
+                            + "INSERT INTO `log` VALUES (1,'hello'),(2,'world');\n");
             ApiMigrateController controller = installer(installConfig).migrateApi();
             CapturedResponse capturedResponse = new CapturedResponse();
             setControllerRequest(controller, migrationRequest("/api/migrate/convert"));
@@ -1270,25 +1408,29 @@ public class InstallWebLayerTest {
         try {
             System.setProperty("sws.conf.path", confPath.toString());
             installConfig = installConfig(false, false);
-            Files.writeString(confPath.resolve("mysql.sql"),
+            Files.writeString(
+                    confPath.resolve("mysql.sql"),
                     "CREATE TABLE `log` (`id` int(11), `title` varchar(255));\n");
 
-            try (InstallOperationLock heldByInstall = InstallOperationLock.tryAcquire(
-                    installConfig.getAction().getLockFile())) {
+            try (InstallOperationLock heldByInstall =
+                    InstallOperationLock.tryAcquire(installConfig.getAction().getLockFile())) {
                 assertNotNull(heldByInstall);
 
                 ApiMigrateController convertController = installer(installConfig).migrateApi();
                 setControllerRequest(convertController, migrationRequest("/api/migrate/convert"));
-                InstallOperationInProgressException convertConflict = assertThrows(
-                        InstallOperationInProgressException.class,
-                        convertController::convertToSqliteSqlFile);
+                InstallOperationInProgressException convertConflict =
+                        assertThrows(
+                                InstallOperationInProgressException.class,
+                                convertController::convertToSqliteSqlFile);
                 assertEquals(9024, convertConflict.getError());
                 assertEquals("INSTALL_IN_PROGRESS", convertConflict.getCode());
 
                 ApiMigrateController importController = installer(installConfig).migrateApi();
                 setControllerRequest(importController, migrationRequest("/api/migrate/import"));
-                InstallOperationInProgressException importConflict = assertThrows(
-                        InstallOperationInProgressException.class, importController::doImportSqlite);
+                InstallOperationInProgressException importConflict =
+                        assertThrows(
+                                InstallOperationInProgressException.class,
+                                importController::doImportSqlite);
                 assertEquals("INSTALL_IN_PROGRESS", importConflict.getCode());
                 assertFalse(Files.exists(confPath.resolve("sqlite.sql")));
             }
@@ -1296,15 +1438,16 @@ public class InstallWebLayerTest {
             Files.delete(confPath.resolve("mysql.sql"));
             ApiMigrateController failedController = installer(installConfig).migrateApi();
             setControllerRequest(failedController, migrationRequest("/api/migrate/convert"));
-            IOException failure = assertThrows(
-                    IOException.class, failedController::convertToSqliteSqlFile);
+            IOException failure =
+                    assertThrows(IOException.class, failedController::convertToSqliteSqlFile);
             assertEquals("Legacy migration conversion failed", failure.getMessage());
-            try (InstallOperationLock releasedAfterFailure = InstallOperationLock.tryAcquire(
-                    installConfig.getAction().getLockFile())) {
+            try (InstallOperationLock releasedAfterFailure =
+                    InstallOperationLock.tryAcquire(installConfig.getAction().getLockFile())) {
                 assertNotNull(releasedAfterFailure);
             }
 
-            Files.writeString(confPath.resolve("mysql.sql"),
+            Files.writeString(
+                    confPath.resolve("mysql.sql"),
                     "CREATE TABLE `log` (`id` int(11), `title` varchar(255));\n");
             ApiMigrateController retryController = installer(installConfig).migrateApi();
             CapturedResponse retryResponse = new CapturedResponse();
@@ -1314,8 +1457,8 @@ public class InstallWebLayerTest {
 
             assertNotNull(retryResponse.json);
             assertTrue(Files.exists(confPath.resolve("sqlite.sql")));
-            try (InstallOperationLock releasedAfterMigration = InstallOperationLock.tryAcquire(
-                    installConfig.getAction().getLockFile())) {
+            try (InstallOperationLock releasedAfterMigration =
+                    InstallOperationLock.tryAcquire(installConfig.getAction().getLockFile())) {
                 assertNotNull(releasedAfterMigration);
             }
         } finally {
@@ -1356,46 +1499,67 @@ public class InstallWebLayerTest {
 
             ApiMigrateController getController = installer(installConfig).migrateApi();
             setControllerRequest(getController, request("/api/migrate/convert", Map.of()));
-            assertThrows(InvalidInstallRequestException.class,
-                    getController::convertToSqliteSqlFile);
+            assertThrows(
+                    InvalidInstallRequestException.class, getController::convertToSqliteSqlFile);
 
             ApiMigrateController importGetController = installer(installConfig).migrateApi();
             setControllerRequest(importGetController, request("/api/migrate/import", Map.of()));
-            assertThrows(InvalidInstallRequestException.class,
-                    importGetController::doImportSqlite);
+            assertThrows(InvalidInstallRequestException.class, importGetController::doImportSqlite);
 
             ApiMigrateController formController = installer(installConfig).migrateApi();
-            setControllerRequest(formController, request("/api/migrate/convert", Map.of(), Map.of(
-                            "Content-Type", "application/x-www-form-urlencoded"),
-                    false, HttpMethod.POST, "migration=legacy-mysql-to-sqlite"));
-            assertThrows(InvalidInstallRequestException.class,
-                    formController::convertToSqliteSqlFile);
+            setControllerRequest(
+                    formController,
+                    request(
+                            "/api/migrate/convert",
+                            Map.of(),
+                            Map.of("Content-Type", "application/x-www-form-urlencoded"),
+                            false,
+                            HttpMethod.POST,
+                            "migration=legacy-mysql-to-sqlite"));
+            assertThrows(
+                    InvalidInstallRequestException.class, formController::convertToSqliteSqlFile);
 
-            ApiMigrateController invalidContentTypeController = installer(installConfig).migrateApi();
-            setControllerRequest(invalidContentTypeController, request("/api/migrate/convert", Map.of(), Map.of(
-                            "Content-Type", "application/json-invalid"), false, HttpMethod.POST,
-                    "{\"migration\":\"legacy-mysql-to-sqlite\"}"));
-            assertThrows(InvalidInstallRequestException.class,
+            ApiMigrateController invalidContentTypeController =
+                    installer(installConfig).migrateApi();
+            setControllerRequest(
+                    invalidContentTypeController,
+                    request(
+                            "/api/migrate/convert",
+                            Map.of(),
+                            Map.of("Content-Type", "application/json-invalid"),
+                            false,
+                            HttpMethod.POST,
+                            "{\"migration\":\"legacy-mysql-to-sqlite\"}"));
+            assertThrows(
+                    InvalidInstallRequestException.class,
                     invalidContentTypeController::convertToSqliteSqlFile);
 
             ApiMigrateController emptyJsonController = installer(installConfig).migrateApi();
             setControllerRequest(emptyJsonController, jsonRequest("/api/migrate/convert", "{}"));
-            assertThrows(InvalidInstallRequestException.class,
+            assertThrows(
+                    InvalidInstallRequestException.class,
                     emptyJsonController::convertToSqliteSqlFile);
 
             ApiMigrateController queryOverrideController = installer(installConfig).migrateApi();
-            setControllerRequest(queryOverrideController, request("/api/migrate/convert",
-                    Map.of("sqlPath", "../outside.sql"), Map.of(
-                            "Content-Type", "application/json"),
-                    false, HttpMethod.POST,
-                    "{\"migration\":\"legacy-mysql-to-sqlite\"}"));
-            assertThrows(InvalidInstallRequestException.class,
+            setControllerRequest(
+                    queryOverrideController,
+                    request(
+                            "/api/migrate/convert",
+                            Map.of("sqlPath", "../outside.sql"),
+                            Map.of("Content-Type", "application/json"),
+                            false,
+                            HttpMethod.POST,
+                            "{\"migration\":\"legacy-mysql-to-sqlite\"}"));
+            assertThrows(
+                    InvalidInstallRequestException.class,
                     queryOverrideController::convertToSqliteSqlFile);
 
             ApiMigrateController unknownMappingController = installer(installConfig).migrateApi();
-            setControllerRequest(unknownMappingController, jsonRequest("/api/migrate/convert",
-                    Map.of("migration", "../../outside.sql")));
-            assertThrows(InvalidInstallRequestException.class,
+            setControllerRequest(
+                    unknownMappingController,
+                    jsonRequest("/api/migrate/convert", Map.of("migration", "../../outside.sql")));
+            assertThrows(
+                    InvalidInstallRequestException.class,
                     unknownMappingController::convertToSqliteSqlFile);
 
             assertFalse(Files.exists(confPath.resolve("sqlite.sql")));
@@ -1407,7 +1571,8 @@ public class InstallWebLayerTest {
 
     @Test
     public void shouldRewriteInstallPageAssetLinksWithContextPath() throws Exception {
-        TestInstallController controller = new TestInstallController(installConfig, installer(installConfig));
+        TestInstallController controller =
+                new TestInstallController(installConfig, installer(installConfig));
         Element link = Jsoup.parse("<a href=\"/favicon.ico\"></a>").selectFirst("a");
 
         controller.fill(request("/blog", new HashMap<>()), link);
@@ -1426,9 +1591,13 @@ public class InstallWebLayerTest {
 
         assertTrue(interceptor.isHandleAble(request("/install", new HashMap<>())));
         assertTrue(interceptor.isHandleAble(request("/api/install/probe", new HashMap<>())));
-        assertTrue(interceptor.isHandleAble(request("/install/static/js/main.js", new HashMap<>())));
-        assertTrue(interceptor.isHandleAble(request("/install/static/css/main.css", new HashMap<>())));
-        assertFalse(interceptor.isHandleAble(request("/install/static-malicious/main.js", new HashMap<>())));
+        assertTrue(
+                interceptor.isHandleAble(request("/install/static/js/main.js", new HashMap<>())));
+        assertTrue(
+                interceptor.isHandleAble(request("/install/static/css/main.css", new HashMap<>())));
+        assertFalse(
+                interceptor.isHandleAble(
+                        request("/install/static-malicious/main.js", new HashMap<>())));
         assertFalse(interceptor.isHandleAble(request("/blog", new HashMap<>())));
     }
 
@@ -1439,12 +1608,17 @@ public class InstallWebLayerTest {
         CapturedResponse probeResponse = new CapturedResponse();
         CapturedResponse resourceResponse = new CapturedResponse();
 
-        assertFalse(interceptor.doInterceptor(
-                routedRequest("/install", new HashMap<>()), pageResponse.response()));
-        assertFalse(interceptor.doInterceptor(
-                routedRequest("/api/install/probe", new HashMap<>()), probeResponse.response()));
-        assertFalse(interceptor.doInterceptor(
-                routedRequest("/api/install/installResource", new HashMap<>()), resourceResponse.response()));
+        assertFalse(
+                interceptor.doInterceptor(
+                        routedRequest("/install", new HashMap<>()), pageResponse.response()));
+        assertFalse(
+                interceptor.doInterceptor(
+                        routedRequest("/api/install/probe", new HashMap<>()),
+                        probeResponse.response()));
+        assertFalse(
+                interceptor.doInterceptor(
+                        routedRequest("/api/install/installResource", new HashMap<>()),
+                        resourceResponse.response()));
 
         assertNotNull(pageResponse.html);
         assertEquals("no-store", pageResponse.headers.get("Cache-Control"));
@@ -1464,17 +1638,23 @@ public class InstallWebLayerTest {
         CapturedResponse capturedResponse = new CapturedResponse();
         installConfig = installConfig(true);
 
-        InstalledException exception = assertThrows(InstalledException.class, () ->
-                interceptor.doInterceptor(
-                        routedRequest("/api/install/probe", new HashMap<>()), capturedResponse.response()));
+        InstalledException exception =
+                assertThrows(
+                        InstalledException.class,
+                        () ->
+                                interceptor.doInterceptor(
+                                        routedRequest("/api/install/probe", new HashMap<>()),
+                                        capturedResponse.response()));
 
         assertEquals(9020, exception.getError());
         assertEquals("no-store", capturedResponse.headers.get("Cache-Control"));
         assertEquals("no-cache", capturedResponse.headers.get("Pragma"));
     }
 
-    private void assertInvocationCause(Class<?> expectedCause, Map<String, String> params) throws Exception {
-        TestApiInstallController controller = new TestApiInstallController(installConfig, installer(installConfig));
+    private void assertInvocationCause(Class<?> expectedCause, Map<String, String> params)
+            throws Exception {
+        TestApiInstallController controller =
+                new TestApiInstallController(installConfig, installer(installConfig));
         setControllerRequest(controller, jsonRequest("/api/install/testDbConn", params));
 
         try {
@@ -1492,7 +1672,8 @@ public class InstallWebLayerTest {
         field.set(controller, request);
     }
 
-    static void setControllerResponse(Controller controller, HttpResponse response) throws Exception {
+    static void setControllerResponse(Controller controller, HttpResponse response)
+            throws Exception {
         Field field = Controller.class.getDeclaredField("response");
         field.setAccessible(true);
         field.set(controller, response);
@@ -1511,24 +1692,34 @@ public class InstallWebLayerTest {
             return;
         }
         try (Stream<Path> paths = Files.walk(path)) {
-            paths.sorted(Comparator.reverseOrder()).forEach(item -> {
-                try {
-                    Files.deleteIfExists(item);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            paths.sorted(Comparator.reverseOrder())
+                    .forEach(
+                            item -> {
+                                try {
+                                    Files.deleteIfExists(item);
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            });
         }
     }
 
-    private static Process startOperationLockHolder(java.io.File installLockFile,
-                                                    Path readyFile, Path releaseFile) throws IOException {
+    private static Process startOperationLockHolder(
+            java.io.File installLockFile, Path readyFile, Path releaseFile) throws IOException {
         String javaExecutable = Path.of(System.getProperty("java.home"), "bin", "java").toString();
-        String classPath = System.getProperty(
-                "surefire.test.class.path", System.getProperty("java.class.path"));
-        return new ProcessBuilder(javaExecutable, "-cp", classPath,
-                InstallOperationLockProcess.class.getName(), installLockFile.getAbsolutePath(),
-                readyFile.toString(), releaseFile.toString()).redirectErrorStream(true).start();
+        String classPath =
+                System.getProperty(
+                        "surefire.test.class.path", System.getProperty("java.class.path"));
+        return new ProcessBuilder(
+                        javaExecutable,
+                        "-cp",
+                        classPath,
+                        InstallOperationLockProcess.class.getName(),
+                        installLockFile.getAbsolutePath(),
+                        readyFile.toString(),
+                        releaseFile.toString())
+                .redirectErrorStream(true)
+                .start();
     }
 
     private static void waitForOperationLock(Process lockHolder, Path readyFile) throws Exception {
@@ -1537,7 +1728,8 @@ public class InstallWebLayerTest {
             Thread.sleep(10);
         }
         assertTrue("External lock holder exited before acquiring the lock", lockHolder.isAlive());
-        assertTrue("External lock holder did not acquire the lock in time", Files.exists(readyFile));
+        assertTrue(
+                "External lock holder did not acquire the lock in time", Files.exists(readyFile));
     }
 
     private static HttpRequest request(Map<String, String> params) {
@@ -1548,7 +1740,8 @@ public class InstallWebLayerTest {
         return request(uri, params, Map.of());
     }
 
-    static HttpRequest request(String uri, Map<String, String> params, Map<String, String> headers) {
+    static HttpRequest request(
+            String uri, Map<String, String> params, Map<String, String> headers) {
         return request(uri, params, headers, false);
     }
 
@@ -1580,8 +1773,9 @@ public class InstallWebLayerTest {
 
     private static Map<String, String> sqliteInstallParams() {
         Map<String, String> params = installParams("sqlite");
-        params.keySet().removeAll(java.util.Set.of(
-                "dbHost", "dbPort", "dbUserName", "dbPassword", "dbName"));
+        params.keySet()
+                .removeAll(
+                        java.util.Set.of("dbHost", "dbPort", "dbUserName", "dbPassword", "dbName"));
         return params;
     }
 
@@ -1597,7 +1791,8 @@ public class InstallWebLayerTest {
         return jsonRequest(uri, body, Map.of());
     }
 
-    private static HttpRequest jsonRequest(String uri, Map<String, String> body, Map<String, String> headers) {
+    private static HttpRequest jsonRequest(
+            String uri, Map<String, String> body, Map<String, String> headers) {
         return jsonRequest(uri, new Gson().toJson(body), headers);
     }
 
@@ -1607,20 +1802,34 @@ public class InstallWebLayerTest {
         return request(uri, Map.of(), requestHeaders, false, HttpMethod.POST, body);
     }
 
-    private static HttpRequest request(String uri, Map<String, String> params, Map<String, String> headers,
-                                       boolean installRoutes) {
+    private static HttpRequest request(
+            String uri,
+            Map<String, String> params,
+            Map<String, String> headers,
+            boolean installRoutes) {
         return request(uri, params, headers, installRoutes, HttpMethod.GET, null);
     }
 
-    private static HttpRequest request(String uri, Map<String, String> params, Map<String, String> headers,
-                                       boolean installRoutes, HttpMethod httpMethod, String body) {
+    private static HttpRequest request(
+            String uri,
+            Map<String, String> params,
+            Map<String, String> headers,
+            boolean installRoutes,
+            HttpMethod httpMethod,
+            String body) {
         return request(uri, params, headers, installRoutes, httpMethod, body, null);
     }
 
-    private static HttpRequest request(String uri, Map<String, String> params, Map<String, String> headers,
-                                       boolean installRoutes, HttpMethod httpMethod, String body, InstallConfig config) {
+    private static HttpRequest request(
+            String uri,
+            Map<String, String> params,
+            Map<String, String> headers,
+            boolean installRoutes,
+            HttpMethod httpMethod,
+            String body,
+            InstallConfig config) {
         Map<String, String[]> paramMap = new LinkedHashMap<>();
-        params.forEach((key, value) -> paramMap.put(key, new String[]{value}));
+        params.forEach((key, value) -> paramMap.put(key, new String[] {value}));
         ServerConfig serverConfig = new ServerConfig();
         serverConfig.setContextPath("/blog");
         if (installRoutes) {
@@ -1628,52 +1837,56 @@ public class InstallWebLayerTest {
         }
         RequestConfig requestConfig = new RequestConfig();
         requestConfig.setRouter(serverConfig.getRouter());
-        return (HttpRequest) Proxy.newProxyInstance(
-                InstallWebLayerTest.class.getClassLoader(),
-                new Class[]{HttpRequest.class},
-                (proxy, method, args) -> {
-                    if ("getUri".equals(method.getName())) {
-                        return uri;
-                    }
-                    if ("getContextPath".equals(method.getName())) {
-                        return "/blog";
-                    }
-                    if ("getQueryStr".equals(method.getName())) {
-                        int queryStart = uri.indexOf('?');
-                        return queryStart < 0 ? null : uri.substring(queryStart + 1);
-                    }
-                    if ("getServerConfig".equals(method.getName())) {
-                        return serverConfig;
-                    }
-                    if ("getRequestConfig".equals(method.getName())) {
-                        return requestConfig;
-                    }
-                    if ("getMethod".equals(method.getName())) {
-                        return httpMethod;
-                    }
-                    if ("getParamMap".equals(method.getName()) || "decodeParamMap".equals(method.getName())) {
-                        return paramMap;
-                    }
-                    if ("getParaToStr".equals(method.getName())) {
-                        String key = args[0].toString();
-                        String value = params.get(key);
-                        if (args.length > 1) {
-                            return value == null ? args[1].toString() : value;
-                        }
-                        return value;
-                    }
-                    if ("getHeader".equals(method.getName())) {
-                        return headers.get(args[0].toString());
-                    }
-                    if ("getRequestBodyByteBuffer".equals(method.getName())) {
-                        return ByteBuffer.wrap(body == null
-                                ? new byte[0] : body.getBytes(StandardCharsets.UTF_8));
-                    }
-                    if ("toString".equals(method.getName())) {
-                        return "HttpRequestProxy";
-                    }
-                    return null;
-                });
+        return (HttpRequest)
+                Proxy.newProxyInstance(
+                        InstallWebLayerTest.class.getClassLoader(),
+                        new Class[] {HttpRequest.class},
+                        (proxy, method, args) -> {
+                            if ("getUri".equals(method.getName())) {
+                                return uri;
+                            }
+                            if ("getContextPath".equals(method.getName())) {
+                                return "/blog";
+                            }
+                            if ("getQueryStr".equals(method.getName())) {
+                                int queryStart = uri.indexOf('?');
+                                return queryStart < 0 ? null : uri.substring(queryStart + 1);
+                            }
+                            if ("getServerConfig".equals(method.getName())) {
+                                return serverConfig;
+                            }
+                            if ("getRequestConfig".equals(method.getName())) {
+                                return requestConfig;
+                            }
+                            if ("getMethod".equals(method.getName())) {
+                                return httpMethod;
+                            }
+                            if ("getParamMap".equals(method.getName())
+                                    || "decodeParamMap".equals(method.getName())) {
+                                return paramMap;
+                            }
+                            if ("getParaToStr".equals(method.getName())) {
+                                String key = args[0].toString();
+                                String value = params.get(key);
+                                if (args.length > 1) {
+                                    return value == null ? args[1].toString() : value;
+                                }
+                                return value;
+                            }
+                            if ("getHeader".equals(method.getName())) {
+                                return headers.get(args[0].toString());
+                            }
+                            if ("getRequestBodyByteBuffer".equals(method.getName())) {
+                                return ByteBuffer.wrap(
+                                        body == null
+                                                ? new byte[0]
+                                                : body.getBytes(StandardCharsets.UTF_8));
+                            }
+                            if ("toString".equals(method.getName())) {
+                                return "HttpRequestProxy";
+                            }
+                            return null;
+                        });
     }
 
     private static DefaultInstallConfig installConfig(boolean installed) {
@@ -1686,8 +1899,7 @@ public class InstallWebLayerTest {
             public InstallAction getAction() {
                 return new InstallAction() {
                     @Override
-                    public void installSuccess() {
-                    }
+                    public void installSuccess() {}
 
                     @Override
                     public boolean isInstalled() {
@@ -1703,14 +1915,14 @@ public class InstallWebLayerTest {
         };
     }
 
-    private static DefaultInstallConfig installConfigWithDbProperties(Path dbProperties, boolean warMode) {
+    private static DefaultInstallConfig installConfigWithDbProperties(
+            Path dbProperties, boolean warMode) {
         return new DefaultInstallConfig() {
             @Override
             public InstallAction getAction() {
                 return new InstallAction() {
                     @Override
-                    public void installSuccess() {
-                    }
+                    public void installSuccess() {}
 
                     @Override
                     public java.io.File getLockFile() {
@@ -1731,14 +1943,14 @@ public class InstallWebLayerTest {
         };
     }
 
-    private static DefaultInstallConfig completionConfig(Path dbProperties, boolean installed, boolean askConfig) {
+    private static DefaultInstallConfig completionConfig(
+            Path dbProperties, boolean installed, boolean askConfig) {
         return new DefaultInstallConfig() {
             @Override
             public InstallAction getAction() {
                 return new InstallAction() {
                     @Override
-                    public void installSuccess() {
-                    }
+                    public void installSuccess() {}
 
                     @Override
                     public boolean isInstalled() {
@@ -1766,9 +1978,14 @@ public class InstallWebLayerTest {
 
     static class TestApiInstallController extends ApiInstallController {
 
-        // These tests exercise protected error/stream branches; ordinary controllers use installApi().
+        // These tests exercise protected error/stream branches; ordinary controllers use
+        // installApi().
         TestApiInstallController(InstallConfig config, InstallComponent component) {
-            super(config, component.resources(), component.operations(), component.installers(),
+            super(
+                    config,
+                    component.resources(),
+                    component.operations(),
+                    component.installers(),
                     new InstallProbeService());
         }
 
@@ -1794,7 +2011,9 @@ public class InstallWebLayerTest {
     }
 
     private static class TestApiMigrateController extends ApiMigrateController {
-        private TestApiMigrateController() { super(new DefaultInstallConfig().getAction()); }
+        private TestApiMigrateController() {
+            super(new DefaultInstallConfig().getAction());
+        }
 
         static boolean batchDropTableSql(String sql) {
             return isBatchDropTableSql(sql);
@@ -1824,38 +2043,39 @@ public class InstallWebLayerTest {
         private Integer code;
 
         HttpResponse response() {
-            return (HttpResponse) Proxy.newProxyInstance(
-                    InstallWebLayerTest.class.getClassLoader(),
-                    new Class[]{HttpResponse.class},
-                    (proxy, method, args) -> {
-                        if ("getHeader".equals(method.getName())) {
-                            return headers;
-                        }
-                        if ("addHeader".equals(method.getName())) {
-                            addedHeaders.put(args[0].toString(), args[1].toString());
-                            return null;
-                        }
-                        if ("renderHtmlStr".equals(method.getName())) {
-                            html = args[0].toString();
-                            return null;
-                        }
-                        if ("renderJson".equals(method.getName())) {
-                            json = args[0];
-                            return null;
-                        }
-                        if ("renderCode".equals(method.getName())) {
-                            code = (Integer) args[0];
-                            return null;
-                        }
-                        if ("write".equals(method.getName())) {
-                            written = (InputStream) args[0];
-                            return null;
-                        }
-                        if ("toString".equals(method.getName())) {
-                            return "HttpResponseProxy";
-                        }
-                        return null;
-                    });
+            return (HttpResponse)
+                    Proxy.newProxyInstance(
+                            InstallWebLayerTest.class.getClassLoader(),
+                            new Class[] {HttpResponse.class},
+                            (proxy, method, args) -> {
+                                if ("getHeader".equals(method.getName())) {
+                                    return headers;
+                                }
+                                if ("addHeader".equals(method.getName())) {
+                                    addedHeaders.put(args[0].toString(), args[1].toString());
+                                    return null;
+                                }
+                                if ("renderHtmlStr".equals(method.getName())) {
+                                    html = args[0].toString();
+                                    return null;
+                                }
+                                if ("renderJson".equals(method.getName())) {
+                                    json = args[0];
+                                    return null;
+                                }
+                                if ("renderCode".equals(method.getName())) {
+                                    code = (Integer) args[0];
+                                    return null;
+                                }
+                                if ("write".equals(method.getName())) {
+                                    written = (InputStream) args[0];
+                                    return null;
+                                }
+                                if ("toString".equals(method.getName())) {
+                                    return "HttpResponseProxy";
+                                }
+                                return null;
+                            });
         }
     }
 }

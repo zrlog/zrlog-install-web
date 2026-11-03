@@ -1,5 +1,13 @@
 package com.zrlog.install.business.service;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
 import com.hibegin.common.dao.DAO;
 import com.hibegin.common.dao.ResultValueConvertUtils;
 import com.zrlog.install.business.response.InstallProgressEvent;
@@ -10,13 +18,6 @@ import com.zrlog.install.exception.InstallException;
 import com.zrlog.install.support.InstallApplications;
 import com.zrlog.install.support.TestDatabase;
 import com.zrlog.install.util.LogCaptureSupport;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -34,20 +35,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import org.junit.Assume;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class InstallServiceDatabaseTest {
-    private final InstallApplications applications =
-            new InstallApplications();
-
+    private final InstallApplications applications = new InstallApplications();
 
     @Parameterized.Parameters(name = "{0}")
     public static TestDatabase[] databases() {
@@ -56,8 +53,7 @@ public class InstallServiceDatabaseTest {
 
     private final TestDatabase database;
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     public InstallServiceDatabaseTest(TestDatabase database) {
         this.database = database;
@@ -96,54 +92,126 @@ public class InstallServiceDatabaseTest {
         assertEquals(database.driverClass(), stored.getProperty("driverClass"));
         assertEquals(databaseConfig.asMap().get("user"), stored.getProperty("user"));
         if (database.isSqlite()) {
-            assertEquals(LocalSqliteSupport.createDatabaseConfig(config).getJdbcUrl(),
+            assertEquals(
+                    LocalSqliteSupport.createDatabaseConfig(config).getJdbcUrl(),
                     stored.getProperty("jdbcUrl"));
         }
         try (var ds = InstallService.buildDataSource(stored, true)) {
             DAO dao = new DAO(ds);
-            for (String table : List.of("link", "lognav", "plugin", "tag", "type", "user", "user_passkey",
-                    "user_passkey_challenge", "user_access_token", "log", "log_extension_index", "comment", "log_version", "website")) {
+            for (String table :
+                    List.of(
+                            "link",
+                            "lognav",
+                            "plugin",
+                            "tag",
+                            "type",
+                            "user",
+                            "user_passkey",
+                            "user_passkey_challenge",
+                            "user_access_token",
+                            "log",
+                            "log_extension_index",
+                            "comment",
+                            "log_version",
+                            "website")) {
                 assertNotNull(table, dao.queryFirstObj("select count(1) from `" + table + "`"));
             }
             for (String table : List.of("website", "user", "plugin", "type", "tag", "lognav")) {
-                assertEquals(table, 0L, ((Number) dao.queryFirstObj("select count(*) from `" + table
-                        + "` where createdAt is null or updatedAt is null or version<>0")).longValue());
-                long created = com.hibegin.common.dao.ResultValueConvertUtils.parseDate(
-                        dao.queryFirstObj("select createdAt from `" + table + "` limit 1"));
+                assertEquals(
+                        table,
+                        0L,
+                        ((Number)
+                                        dao.queryFirstObj(
+                                                "select count(*) from `"
+                                                        + table
+                                                        + "` where createdAt is null or updatedAt is null or version<>0"))
+                                .longValue());
+                long created =
+                        com.hibegin.common.dao.ResultValueConvertUtils.parseDate(
+                                dao.queryFirstObj("select createdAt from `" + table + "` limit 1"));
                 assertTrue(table, created >= installationStarted);
                 assertTrue(table, created <= System.currentTimeMillis());
             }
-            assertEquals(0L, ((Number) dao.queryFirstObj(
-                    "select count(*) from log where createdAt is null or last_update_date is null or version<>0")).longValue());
-            assertEquals(1L, ((Number) dao.queryFirstObj("select count(1) from `user`")).longValue());
-            assertEquals(1L, ((Number) dao.queryFirstObj("select count(1) from `log`")).longValue());
-            assertEquals(2L, ((Number) dao.queryFirstObj("select count(1) from `lognav`")).longValue());
-            assertEquals(4L, ((Number) dao.queryFirstObj("select count(1) from `plugin`")).longValue());
-            assertEquals(0L, ((Number) dao.queryFirstObj(
-                    "select `sticky` from `log` where `logId`=1")).longValue());
-            assertEquals(0L, ((Number) dao.queryFirstObj("select count(`extensions`) from `log`")).longValue());
-            assertEquals(0L, ((Number) dao.queryFirstObj(
-                    "select count(1) from `log_extension_index`")).longValue());
+            assertEquals(
+                    0L,
+                    ((Number)
+                                    dao.queryFirstObj(
+                                            "select count(*) from log where createdAt is null or last_update_date is null or version<>0"))
+                            .longValue());
+            assertEquals(
+                    1L, ((Number) dao.queryFirstObj("select count(1) from `user`")).longValue());
+            assertEquals(
+                    1L, ((Number) dao.queryFirstObj("select count(1) from `log`")).longValue());
+            assertEquals(
+                    2L, ((Number) dao.queryFirstObj("select count(1) from `lognav`")).longValue());
+            assertEquals(
+                    4L, ((Number) dao.queryFirstObj("select count(1) from `plugin`")).longValue());
+            assertEquals(
+                    0L,
+                    ((Number) dao.queryFirstObj("select `sticky` from `log` where `logId`=1"))
+                            .longValue());
+            assertEquals(
+                    0L,
+                    ((Number) dao.queryFirstObj("select count(`extensions`) from `log`"))
+                            .longValue());
+            assertEquals(
+                    0L,
+                    ((Number) dao.queryFirstObj("select count(1) from `log_extension_index`"))
+                            .longValue());
             assertNull(dao.queryFirstObj("select `preferences` from `user` where `userId`=1"));
-            assertNull(dao.queryFirstObj("select `passkeyUserHandle` from `user` where `userId`=1"));
-            assertEquals(0L, ((Number) dao.queryFirstObj("select count(1) from `user_passkey`")).longValue());
-            assertEquals(0L, ((Number) dao.queryFirstObj(
-                    "select count(1) from `user_passkey_challenge`")).longValue());
-            assertEquals("31", dao.queryFirstObj(
-                    "select `value` from `website` where `name`='zrlogSqlVersion'"));
-            assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING, dao.queryFirstObj(
-                    "select `value` from `website` where `name`='" +
-                            DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY + "'"));
-            assertEquals("Database Blog", dao.queryFirstObj("select `value` from `website` where `name`='title'"));
-            assertEquals("https://example.com", dao.queryFirstObj("select `value` from `website` where `name`='host'"));
+            assertNull(
+                    dao.queryFirstObj("select `passkeyUserHandle` from `user` where `userId`=1"));
+            assertEquals(
+                    0L,
+                    ((Number) dao.queryFirstObj("select count(1) from `user_passkey`"))
+                            .longValue());
+            assertEquals(
+                    0L,
+                    ((Number) dao.queryFirstObj("select count(1) from `user_passkey_challenge`"))
+                            .longValue());
+            assertEquals(
+                    "31",
+                    dao.queryFirstObj(
+                            "select `value` from `website` where `name`='zrlogSqlVersion'"));
+            assertEquals(
+                    DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING,
+                    dao.queryFirstObj(
+                            "select `value` from `website` where `name`='"
+                                    + DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY
+                                    + "'"));
+            assertEquals(
+                    "Database Blog",
+                    dao.queryFirstObj("select `value` from `website` where `name`='title'"));
+            assertEquals(
+                    "https://example.com",
+                    dao.queryFirstObj("select `value` from `website` where `name`='host'"));
             String unicode = "桂林🛶、大理🌿，保留𠮷和 JSON 字面转义 \\ud83d\\udef6";
-            assertTrue(dao.execute("insert into website(name,value) values(?,?)", "unicode-value", unicode));
-            assertEquals(unicode, dao.queryFirstObj("select value from website where name=?", "unicode-value"));
-            assertEquals("admin", dao.queryFirstObj("select `userName` from `user` where `userId`=1"));
+            assertTrue(
+                    dao.execute(
+                            "insert into website(name,value) values(?,?)",
+                            "unicode-value",
+                            unicode));
+            assertEquals(
+                    unicode,
+                    dao.queryFirstObj("select value from website where name=?", "unicode-value"));
+            assertEquals(
+                    "admin", dao.queryFirstObj("select `userName` from `user` where `userId`=1"));
             String label = "旅行🛶𠮷";
-            for (Map.Entry<String, String> field : Map.of(
-                    "lognav", "navName", "plugin", "pTitle", "tag", "text", "type", "typeName",
-                    "user", "userName", "log", "title").entrySet()) {
+            for (Map.Entry<String, String> field :
+                    Map.of(
+                                    "lognav",
+                                    "navName",
+                                    "plugin",
+                                    "pTitle",
+                                    "tag",
+                                    "text",
+                                    "type",
+                                    "typeName",
+                                    "user",
+                                    "userName",
+                                    "log",
+                                    "title")
+                            .entrySet()) {
                 String table = "`" + field.getKey() + "`";
                 String column = "`" + field.getValue() + "`";
                 assertTrue(dao.execute("update " + table + " set " + column + "=?", label));
@@ -153,34 +221,57 @@ public class InstallServiceDatabaseTest {
             assertEquals(label, dao.queryFirstObj("select linkName from link"));
             assertTrue(dao.execute("insert into comment(userComment) values(?)", unicode));
             assertEquals(unicode, dao.queryFirstObj("select userComment from comment"));
-            assertThrows(SQLException.class, () -> dao.execute(
-                    "insert into `website` (`name`, `value`) values ('title', 'duplicate')"));
+            assertThrows(
+                    SQLException.class,
+                    () ->
+                            dao.execute(
+                                    "insert into `website` (`name`, `value`) values ('title', 'duplicate')"));
             if (database.isSqlite()) {
-                assertEquals("wal", String.valueOf(dao.queryFirstObj("pragma journal_mode")).toLowerCase());
+                assertEquals(
+                        "wal",
+                        String.valueOf(dao.queryFirstObj("pragma journal_mode")).toLowerCase());
                 assertEquals(1L, ((Number) dao.queryFirstObj("pragma foreign_keys")).longValue());
-                assertEquals(10000L, ((Number) dao.queryFirstObj("pragma busy_timeout")).longValue());
-                assertEquals("text", dao.queryFirstObj(
-                        "select typeof(`releaseTime`) from `log` where `logId`=1"));
-                assertEquals("text", dao.queryFirstObj(
-                        "select typeof(`last_update_date`) from `log` where `logId`=1"));
-                Object releaseTime = dao.queryFirstObj(
-                        "select `releaseTime` from `log` where `logId`=1");
+                assertEquals(
+                        10000L, ((Number) dao.queryFirstObj("pragma busy_timeout")).longValue());
+                assertEquals(
+                        "text",
+                        dao.queryFirstObj(
+                                "select typeof(`releaseTime`) from `log` where `logId`=1"));
+                assertEquals(
+                        "text",
+                        dao.queryFirstObj(
+                                "select typeof(`last_update_date`) from `log` where `logId`=1"));
+                Object releaseTime =
+                        dao.queryFirstObj("select `releaseTime` from `log` where `logId`=1");
                 assertEquals(19, String.valueOf(releaseTime).length());
                 assertNotNull(ResultValueConvertUtils.parseDate(releaseTime));
             }
         }
-        assertEquals(List.of("preflight:running", "preflight:complete", "database:running", "database:complete",
-                "schema:running", "schema:complete", "seed-website:running", "seed-website:complete",
-                "seed-admin:running", "seed-admin:complete", "seed-defaults:running", "seed-defaults:complete",
-                "config:running", "config:complete"), eventTrace(events));
+        assertEquals(
+                List.of(
+                        "preflight:running",
+                        "preflight:complete",
+                        "database:running",
+                        "database:complete",
+                        "schema:running",
+                        "schema:complete",
+                        "seed-website:running",
+                        "seed-website:complete",
+                        "seed-admin:running",
+                        "seed-admin:complete",
+                        "seed-defaults:running",
+                        "seed-defaults:complete",
+                        "config:running",
+                        "config:complete"),
+                eventTrace(events));
     }
 
     @Test
     public void shouldReportSuccessfulConnectionForSupportedDatabase() throws Exception {
         File root = temporaryFolder.newFolder("zrlog-install-service");
-        FakeInstallConfig config = new FakeInstallConfig(
-                new File(root, "db.properties"),
-                new File(root, "install.lock"));
+        FakeInstallConfig config =
+                new FakeInstallConfig(
+                        new File(root, "db.properties"), new File(root, "install.lock"));
         InstallConfigVO installConfigVO = installConfigVO(Collections.emptyMap(), null, null);
         installConfigVO.setDbConfig(database.create(root, "zrlog_connection").asMap());
 
@@ -190,7 +281,8 @@ public class InstallServiceDatabaseTest {
     }
 
     @Test
-    public void shouldProbeLocalSqliteWithoutClaimingTheTargetAndThenInstallSecurely() throws Exception {
+    public void shouldProbeLocalSqliteWithoutClaimingTheTargetAndThenInstallSecurely()
+            throws Exception {
         Assume.assumeTrue(database.isSqlite());
         File root = temporaryFolder.newFolder("zrlog-install-isolated-sqlite-probe");
         File dbFile = new File(root, "conf/db.properties");
@@ -208,21 +300,28 @@ public class InstallServiceDatabaseTest {
 
         assertTrue(service.install());
         assertTrue(Files.isRegularFile(databaseFile, LinkOption.NOFOLLOW_LINKS));
-        if (Files.getFileStore(databaseFile).supportsFileAttributeView(PosixFileAttributeView.class)) {
-            assertEquals(EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
+        if (Files.getFileStore(databaseFile)
+                .supportsFileAttributeView(PosixFileAttributeView.class)) {
+            assertEquals(
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
                     Files.getPosixFilePermissions(databaseFile, LinkOption.NOFOLLOW_LINKS));
         }
     }
 
     @Test
-    public void shouldRejectExistingEmptyAndNonDatabaseSqliteFilesWithoutChangingThem() throws Exception {
+    public void shouldRejectExistingEmptyAndNonDatabaseSqliteFilesWithoutChangingThem()
+            throws Exception {
         Assume.assumeTrue(database.isSqlite());
-        List<byte[]> existingContents = List.of(
-                new byte[0], "unrelated-file-must-not-change".getBytes(StandardCharsets.UTF_8));
+        List<byte[]> existingContents =
+                List.of(
+                        new byte[0],
+                        "unrelated-file-must-not-change".getBytes(StandardCharsets.UTF_8));
         for (int i = 0; i < existingContents.size(); i++) {
             File root = temporaryFolder.newFolder("zrlog-install-existing-sqlite-file-" + i);
-            FakeInstallConfig config = new FakeInstallConfig(
-                    new File(root, "conf/db.properties"), new File(root, "conf/install.lock"));
+            FakeInstallConfig config =
+                    new FakeInstallConfig(
+                            new File(root, "conf/db.properties"),
+                            new File(root, "conf/install.lock"));
             Path databaseFile = LocalSqliteSupport.getDatabaseFile(config).toPath();
             Files.createDirectories(databaseFile.getParent());
             Files.write(databaseFile, existingContents.get(i));
@@ -238,18 +337,21 @@ public class InstallServiceDatabaseTest {
     }
 
     @Test
-    public void shouldRejectSqliteDatabaseContainingOnlyUnrelatedTablesWithoutChangingIt() throws Exception {
+    public void shouldRejectSqliteDatabaseContainingOnlyUnrelatedTablesWithoutChangingIt()
+            throws Exception {
         Assume.assumeTrue(database.isSqlite());
         File root = temporaryFolder.newFolder("zrlog-install-unrelated-sqlite-table");
-        FakeInstallConfig config = new FakeInstallConfig(
-                new File(root, "conf/db.properties"), new File(root, "conf/install.lock"));
+        FakeInstallConfig config =
+                new FakeInstallConfig(
+                        new File(root, "conf/db.properties"), new File(root, "conf/install.lock"));
         Properties properties = LocalSqliteSupport.createDatabaseConfig(config).toProperties();
         String marker = "unrelated-table-data-must-survive";
         LocalSqliteSupport.ensureDatabaseDirectory(config);
         try (var dataSource = InstallService.buildDataSource(properties, true)) {
             DAO dao = new DAO(dataSource);
             dao.execute("CREATE TABLE `unrelated` (`id` int PRIMARY KEY, `value` varchar(255))");
-            assertTrue(dao.execute("INSERT INTO `unrelated` (`id`, `value`) VALUES (1, ?)", marker));
+            assertTrue(
+                    dao.execute("INSERT INTO `unrelated` (`id`, `value`) VALUES (1, ?)", marker));
         }
         Path databaseFile = LocalSqliteSupport.getDatabaseFile(config).toPath();
         byte[] original = Files.readAllBytes(databaseFile);
@@ -259,41 +361,51 @@ public class InstallServiceDatabaseTest {
 
         assertArrayEquals(original, Files.readAllBytes(databaseFile));
         try (var dataSource = InstallService.buildDataSource(properties, true)) {
-            assertEquals(marker, new DAO(dataSource)
-                    .queryFirstObj("SELECT `value` FROM `unrelated` WHERE `id` = 1"));
+            assertEquals(
+                    marker,
+                    new DAO(dataSource)
+                            .queryFirstObj("SELECT `value` FROM `unrelated` WHERE `id` = 1"));
         }
     }
 
     @Test
-    public void shouldRejectRegularAndDanglingSqliteSymlinksWithoutFollowingThem() throws Exception {
+    public void shouldRejectRegularAndDanglingSqliteSymlinksWithoutFollowingThem()
+            throws Exception {
         Assume.assumeTrue(database.isSqlite());
         File regularRoot = temporaryFolder.newFolder("zrlog-install-regular-sqlite-link");
-        FakeInstallConfig regularConfig = new FakeInstallConfig(
-                new File(regularRoot, "conf/db.properties"), new File(regularRoot, "conf/install.lock"));
+        FakeInstallConfig regularConfig =
+                new FakeInstallConfig(
+                        new File(regularRoot, "conf/db.properties"),
+                        new File(regularRoot, "conf/install.lock"));
         Path regularDatabaseFile = LocalSqliteSupport.getDatabaseFile(regularConfig).toPath();
         Path externalTarget = regularRoot.toPath().resolve("external-target.db");
-        byte[] externalContents = "external-target-must-not-change".getBytes(StandardCharsets.UTF_8);
+        byte[] externalContents =
+                "external-target-must-not-change".getBytes(StandardCharsets.UTF_8);
         Files.createDirectories(regularDatabaseFile.getParent());
         Files.write(externalTarget, externalContents);
         createSymbolicLinkOrSkip(regularDatabaseFile, externalTarget);
         Path originalLinkTarget = Files.readSymbolicLink(regularDatabaseFile);
 
-        assertLocalSqliteConflict(localSqliteService(regularRoot, regularConfig, "zrlog_regular_link"));
+        assertLocalSqliteConflict(
+                localSqliteService(regularRoot, regularConfig, "zrlog_regular_link"));
 
         assertTrue(Files.isSymbolicLink(regularDatabaseFile));
         assertEquals(originalLinkTarget, Files.readSymbolicLink(regularDatabaseFile));
         assertArrayEquals(externalContents, Files.readAllBytes(externalTarget));
 
         File danglingRoot = temporaryFolder.newFolder("zrlog-install-dangling-sqlite-link");
-        FakeInstallConfig danglingConfig = new FakeInstallConfig(
-                new File(danglingRoot, "conf/db.properties"), new File(danglingRoot, "conf/install.lock"));
+        FakeInstallConfig danglingConfig =
+                new FakeInstallConfig(
+                        new File(danglingRoot, "conf/db.properties"),
+                        new File(danglingRoot, "conf/install.lock"));
         Path danglingDatabaseFile = LocalSqliteSupport.getDatabaseFile(danglingConfig).toPath();
         Path missingTarget = danglingRoot.toPath().resolve("missing-target.db");
         Files.createDirectories(danglingDatabaseFile.getParent());
         createSymbolicLinkOrSkip(danglingDatabaseFile, missingTarget);
         Path originalDanglingTarget = Files.readSymbolicLink(danglingDatabaseFile);
 
-        assertLocalSqliteConflict(localSqliteService(danglingRoot, danglingConfig, "zrlog_dangling_link"));
+        assertLocalSqliteConflict(
+                localSqliteService(danglingRoot, danglingConfig, "zrlog_dangling_link"));
 
         assertTrue(Files.isSymbolicLink(danglingDatabaseFile));
         assertEquals(originalDanglingTarget, Files.readSymbolicLink(danglingDatabaseFile));
@@ -335,7 +447,8 @@ public class InstallServiceDatabaseTest {
         try (var dataSource = InstallService.buildDataSource(properties, true)) {
             DAO dao = new DAO(dataSource);
             assertEquals(marker, dao.queryFirstObj("SELECT `title` FROM `log` WHERE `logId`=1"));
-            assertEquals(1L, ((Number) dao.queryFirstObj("SELECT count(1) FROM `log`")).longValue());
+            assertEquals(
+                    1L, ((Number) dao.queryFirstObj("SELECT count(1) FROM `log`")).longValue());
         }
     }
 
@@ -353,7 +466,10 @@ public class InstallServiceDatabaseTest {
         List<InstallProgressEvent> firstAttemptEvents = new ArrayList<>();
 
         try (LogCaptureSupport logs = LogCaptureSupport.capture(InstallService.class)) {
-            boolean firstAttempt = applications.service(config, installConfigVO, firstAttemptEvents::add).install();
+            boolean firstAttempt =
+                    applications
+                            .service(config, installConfigVO, firstAttemptEvents::add)
+                            .install();
 
             assertFalse(firstAttempt);
             assertTrue(config.isInstallLockVisibleDuringCallback());
@@ -365,8 +481,10 @@ public class InstallServiceDatabaseTest {
             assertFalse(error.getDetail().contains("do-not-expose"));
             assertTrue(new InstallRecoveryStore().isAvailable(lockFile));
             if (database.isSqlite()) {
-                assertTrue(Files.isRegularFile(LocalSqliteSupport.getDatabaseFile(config).toPath(),
-                        LinkOption.NOFOLLOW_LINKS));
+                assertTrue(
+                        Files.isRegularFile(
+                                LocalSqliteSupport.getDatabaseFile(config).toPath(),
+                                LinkOption.NOFOLLOW_LINKS));
             }
             assertTrue(logs.text().contains("phase=install"));
             assertFalse(logs.text().contains("install-do-not-expose"));
@@ -396,13 +514,14 @@ public class InstallServiceDatabaseTest {
         FakeInstallConfig config = new FakeInstallConfig(dbFile, lockFile);
         config.failNextInstallSuccess(new IllegalStateException("simulated callback failure"));
         InstallConfigVO installConfigVO = installConfigVO(validSiteConfig(), null, null);
-        TestDatabase.Configuration databaseConfig = database.create(root, "zrlog_incomplete_recovery");
+        TestDatabase.Configuration databaseConfig =
+                database.create(root, "zrlog_incomplete_recovery");
         installConfigVO.setDbConfig(databaseConfig.asMap());
 
         assertFalse(applications.service(config, installConfigVO).install());
         assertTrue(new InstallRecoveryStore().isAvailable(lockFile));
-        Properties recovered = new InstallRecoveryStore()
-                .load(lockFile).orElseThrow().toProperties();
+        Properties recovered =
+                new InstallRecoveryStore().load(lockFile).orElseThrow().toProperties();
         try (var dataSource = InstallService.buildDataSource(recovered, true)) {
             assertTrue(new DAO(dataSource).execute("DELETE FROM `user` WHERE `userId` = 1"));
         }
@@ -424,10 +543,16 @@ public class InstallServiceDatabaseTest {
         installConfigVO.setDbConfig(database.create(root, "zrlog_listener_failure").asMap());
         AtomicInteger deliveryAttempts = new AtomicInteger();
 
-        boolean installed = applications.service(config, installConfigVO, event -> {
-            deliveryAttempts.incrementAndGet();
-            throw new java.io.IOException("client disconnected");
-        }).install();
+        boolean installed =
+                applications
+                        .service(
+                                config,
+                                installConfigVO,
+                                event -> {
+                                    deliveryAttempts.incrementAndGet();
+                                    throw new java.io.IOException("client disconnected");
+                                })
+                        .install();
 
         assertTrue(installed);
         assertEquals(14, deliveryAttempts.get());
@@ -446,7 +571,8 @@ public class InstallServiceDatabaseTest {
         return configMsg;
     }
 
-    private InstallService localSqliteService(File root, FakeInstallConfig config, String databaseName) {
+    private InstallService localSqliteService(
+            File root, FakeInstallConfig config, String databaseName) {
         InstallConfigVO installConfigVO = installConfigVO(validSiteConfig(), null, null);
         installConfigVO.setDbConfig(database.create(root, databaseName).asMap());
         return applications.service(config, installConfigVO);
@@ -466,9 +592,8 @@ public class InstallServiceDatabaseTest {
         }
     }
 
-    private static InstallConfigVO installConfigVO(Map<String, String> configMsg,
-                                                   Map<String, String> appendWebsite,
-                                                   String contextPath) {
+    private static InstallConfigVO installConfigVO(
+            Map<String, String> configMsg, Map<String, String> appendWebsite, String contextPath) {
         InstallConfigVO installConfigVO = new InstallConfigVO();
         installConfigVO.setDbConfig(Collections.emptyMap());
         installConfigVO.setConfigMsg(configMsg);

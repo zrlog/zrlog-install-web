@@ -5,13 +5,18 @@ import java.util.logging.Logger;
 
 public final class InstallLogUtil {
 
-    private InstallLogUtil() {
-    }
+    private InstallLogUtil() {}
 
-    public static void logFailure(Logger logger, Level level, FailurePhase phase, Throwable failure) {
+    public static void logFailure(
+            Logger logger, Level level, FailurePhase phase, Throwable failure) {
         String exceptionClass = failure == null ? "unknown" : failure.getClass().getName();
-        logger.log(level, "Install operation failed [phase=" + phase.value + ", exception="
-                + exceptionClass + "]");
+        logger.log(
+                level,
+                "Install operation failed [phase="
+                        + phase.value
+                        + ", exception="
+                        + exceptionClass
+                        + "]");
     }
 
     public enum FailurePhase {

@@ -1,7 +1,6 @@
 package com.zrlog.install.business.vo;
 
 import com.zrlog.install.web.config.InstallConfig;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -22,8 +21,11 @@ public class DefaultWebsiteSettings {
     private String zrlogSqlVersion;
     private Map<String, String> appendedSettings;
 
-    public static DefaultWebsiteSettings from(InstallSiteConfig webSite, InstallConfig installConfig,
-                                              Map<String, String> appendedSettings, String language) {
+    public static DefaultWebsiteSettings from(
+            InstallSiteConfig webSite,
+            InstallConfig installConfig,
+            Map<String, String> appendedSettings,
+            String language) {
         DefaultWebsiteSettings settings = new DefaultWebsiteSettings();
         InstallSiteConfig source = Objects.requireNonNullElseGet(webSite, InstallSiteConfig::new);
         settings.setAppId(UUID.randomUUID().toString());

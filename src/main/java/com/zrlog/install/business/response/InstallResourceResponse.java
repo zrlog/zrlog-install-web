@@ -1,12 +1,10 @@
 package com.zrlog.install.business.response;
 
-
 public class InstallResourceResponse extends InstallApiStandardResponse {
 
     private Object data;
 
-    public InstallResourceResponse() {
-    }
+    public InstallResourceResponse() {}
 
     public InstallResourceResponse(Object data) {
         this.data = data;

@@ -14,7 +14,7 @@ import com.zrlog.install.web.interceptor.BlogInstallInterceptor;
 /** Installer-owned assembly, shared by the standalone entry point and application hosts. */
 public final class InstallWebBindings {
 
-    private InstallWebBindings() { }
+    private InstallWebBindings() {}
 
     public static void configure(ServerConfig server, InstallConfig config) {
         InstallComponent component = DaggerInstallComponent.factory().create(config);
@@ -35,18 +35,21 @@ public final class InstallWebBindings {
         server.addInterceptor(BlogInstallInterceptor.class);
 
         HttpErrorHandle installError = config.getErrorHandler();
-        for (int status : new int[]{400, 403, 500}) {
+        for (int status : new int[] {400, 403, 500}) {
             HttpErrorHandle fallback = server.getErrorHandle(status);
-            server.addErrorHandle(status, (request, response, error) -> {
-                String uri = request == null ? null : request.getUri();
-                if ("/api/install".equals(uri) || uri != null && uri.startsWith("/api/install/")) {
-                    installError.doHandle(request, response, error);
-                } else if (fallback != null) {
-                    fallback.doHandle(request, response, error);
-                } else {
-                    response.renderCode(status);
-                }
-            });
+            server.addErrorHandle(
+                    status,
+                    (request, response, error) -> {
+                        String uri = request == null ? null : request.getUri();
+                        if ("/api/install".equals(uri)
+                                || uri != null && uri.startsWith("/api/install/")) {
+                            installError.doHandle(request, response, error);
+                        } else if (fallback != null) {
+                            fallback.doHandle(request, response, error);
+                        } else {
+                            response.renderCode(status);
+                        }
+                    });
         }
     }
 }

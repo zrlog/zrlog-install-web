@@ -1,7 +1,6 @@
 package com.zrlog.install.support;
 
 import com.hibegin.common.dao.InMemoryDatabase;
-
 import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -34,9 +33,11 @@ public enum TestDatabase {
             jdbcUrl = InMemoryDatabase.h2JdbcUrl(id);
         } else {
             Path databaseFile = root.toPath().resolve(id + ".db").toAbsolutePath().normalize();
-            jdbcUrl = "jdbc:sqlite:" + databaseFile
-                    + "?journal_mode=WAL&busy_timeout=10000&foreign_keys=on&synchronous=NORMAL"
-                    + "&date_class=TEXT&date_string_format=yyyy-MM-dd HH:mm:ss";
+            jdbcUrl =
+                    "jdbc:sqlite:"
+                            + databaseFile
+                            + "?journal_mode=WAL&busy_timeout=10000&foreign_keys=on&synchronous=NORMAL"
+                            + "&date_class=TEXT&date_string_format=yyyy-MM-dd HH:mm:ss";
         }
         Map<String, String> values = new LinkedHashMap<>();
         values.put("driverClass", driverClass);
@@ -80,13 +81,15 @@ public enum TestDatabase {
 
         public Connection openConnection() throws Exception {
             Class.forName(values.get("driverClass"));
-            return DriverManager.getConnection(values.get("jdbcUrl"), values.get("user"), values.get("password"));
+            return DriverManager.getConnection(
+                    values.get("jdbcUrl"), values.get("user"), values.get("password"));
         }
 
         public void writeProperties(File file) throws Exception {
             File parent = file.getParentFile();
             if (parent != null && !parent.exists() && !parent.mkdirs()) {
-                throw new IllegalStateException("Can not create test database configuration directory");
+                throw new IllegalStateException(
+                        "Can not create test database configuration directory");
             }
             try (OutputStream outputStream = Files.newOutputStream(file.toPath())) {
                 asProperties().store(outputStream, "Test database configuration");

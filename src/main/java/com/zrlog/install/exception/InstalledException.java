@@ -2,7 +2,8 @@ package com.zrlog.install.exception;
 
 import com.zrlog.install.util.InstallI18nUtil;
 
-public class InstalledException extends AbstractInstallException implements InstallErrorCodeProvider {
+public class InstalledException extends AbstractInstallException
+        implements InstallErrorCodeProvider {
     private final boolean warMode;
     private final String language;
 
@@ -18,7 +19,8 @@ public class InstalledException extends AbstractInstallException implements Inst
 
     @Override
     public String getMessage() {
-        return InstallI18nUtil.getInstallStringFromRes(warMode ? "installedWarTips" : "installedTips", language);
+        return InstallI18nUtil.getInstallStringFromRes(
+                warMode ? "installedWarTips" : "installedTips", language);
     }
 
     @Override

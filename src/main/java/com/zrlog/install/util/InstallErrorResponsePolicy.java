@@ -10,42 +10,43 @@ import com.zrlog.install.exception.MissingDbHostException;
 import com.zrlog.install.exception.MissingDbNameException;
 import com.zrlog.install.exception.MissingDbPortException;
 import com.zrlog.install.exception.MissingDbUserNameException;
-
 import java.util.List;
 import java.util.Set;
 
 public final class InstallErrorResponsePolicy {
 
-    private static final Set<Class<?>> CONTROLLED_TYPES = Set.of(
-            InstallException.class,
-            InstallOperationInProgressException.class,
-            InstallRecoveryUnavailableException.class,
-            InstalledException.class,
-            MissingDbHostException.class,
-            MissingDbNameException.class,
-            MissingDbPortException.class,
-            MissingDbUserNameException.class);
-    private static final Set<String> CONTROLLED_INVALID_MESSAGES = Set.of(
-            "Invalid installation request",
-            "JSON request body must be an object",
-            "JSON request field must be a primitive value",
-            "Invalid JSON request body");
-    private static final List<String> CONTROLLED_INVALID_MESSAGE_KEYS = List.of(
-            "validationDbType",
-            "validationDbHost",
-            "validationDbPort",
-            "validationDbUserName",
-            "validationDbPassword",
-            "validationDbName",
-            "validationAdminUsername",
-            "validationAdminPassword",
-            "validationSiteTitle",
-            "validationSiteSubtitle",
-            "validationAdminEmail",
-            "installCompletionUnavailable");
+    private static final Set<Class<?>> CONTROLLED_TYPES =
+            Set.of(
+                    InstallException.class,
+                    InstallOperationInProgressException.class,
+                    InstallRecoveryUnavailableException.class,
+                    InstalledException.class,
+                    MissingDbHostException.class,
+                    MissingDbNameException.class,
+                    MissingDbPortException.class,
+                    MissingDbUserNameException.class);
+    private static final Set<String> CONTROLLED_INVALID_MESSAGES =
+            Set.of(
+                    "Invalid installation request",
+                    "JSON request body must be an object",
+                    "JSON request field must be a primitive value",
+                    "Invalid JSON request body");
+    private static final List<String> CONTROLLED_INVALID_MESSAGE_KEYS =
+            List.of(
+                    "validationDbType",
+                    "validationDbHost",
+                    "validationDbPort",
+                    "validationDbUserName",
+                    "validationDbPassword",
+                    "validationDbName",
+                    "validationAdminUsername",
+                    "validationAdminPassword",
+                    "validationSiteTitle",
+                    "validationSiteSubtitle",
+                    "validationAdminEmail",
+                    "installCompletionUnavailable");
 
-    private InstallErrorResponsePolicy() {
-    }
+    private InstallErrorResponsePolicy() {}
 
     public static boolean isControlled(AbstractInstallException exception) {
         if (exception == null) {
@@ -75,7 +76,8 @@ public final class InstallErrorResponsePolicy {
         }
         for (String resourceKey : CONTROLLED_INVALID_MESSAGE_KEYS) {
             for (String language : List.of("zh_CN", "en_US")) {
-                String controlledMessage = InstallI18nUtil.getInstallStringFromRes(resourceKey, language);
+                String controlledMessage =
+                        InstallI18nUtil.getInstallStringFromRes(resourceKey, language);
                 if (!controlledMessage.isEmpty() && controlledMessage.equals(message)) {
                     return true;
                 }

@@ -5,14 +5,13 @@ import com.hibegin.common.util.IOUtil;
 import com.hibegin.common.util.LoggerUtil;
 import com.hibegin.http.server.WebServerBuilder;
 import com.hibegin.http.server.util.PathUtil;
-import com.zrlog.install.business.service.InstallService;
 import com.zrlog.install.business.service.InstallProgressListener;
+import com.zrlog.install.business.service.InstallService;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.web.config.DefaultInstallConfig;
 import com.zrlog.install.web.config.InstallConfig;
 import com.zrlog.install.web.config.InstallServerConfig;
 import com.zrlog.install.web.di.DaggerInstallComponent;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,7 +26,10 @@ public class Application {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
-        System.getProperties().put("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %5$s%6$s%n");
+        System.getProperties()
+                .put(
+                        "java.util.logging.SimpleFormatter.format",
+                        "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %5$s%6$s%n");
         PathUtil.setRootPath(System.getProperty("user.dir"));
         InstallConfig installConfig = new DefaultInstallConfig();
         Integer installExitCode = installFromConfigFile(args, installConfig);
@@ -35,11 +37,15 @@ public class Application {
             System.exit(installExitCode);
             return;
         }
-        WebServerBuilder builder = new WebServerBuilder.Builder().config(new InstallServerConfig(installConfig)).build();
+        WebServerBuilder builder =
+                new WebServerBuilder.Builder()
+                        .config(new InstallServerConfig(installConfig))
+                        .build();
         builder.start();
     }
 
-    static Integer installFromConfigFile(String[] args, InstallConfig installConfig) throws FileNotFoundException {
+    static Integer installFromConfigFile(String[] args, InstallConfig installConfig)
+            throws FileNotFoundException {
         if (args.length >= 1) {
             File configFile = new File(args[0]);
             if (configFile.exists()) {
@@ -48,8 +54,14 @@ public class Application {
                     jsonStr = jsonStr.replace("${github_pat}", args[1]);
                 }
                 InstallConfigVO config = new Gson().fromJson(jsonStr, InstallConfigVO.class);
-                InstallService installService = DaggerInstallComponent.factory().create(installConfig)
-                        .installers().create(config, InstallProgressListener.NONE, installConfig.getAcceptLanguage());
+                InstallService installService =
+                        DaggerInstallComponent.factory()
+                                .create(installConfig)
+                                .installers()
+                                .create(
+                                        config,
+                                        InstallProgressListener.NONE,
+                                        installConfig.getAcceptLanguage());
                 boolean install = installService.install();
                 LOGGER.info("Installed = " + install);
                 return install ? 0 : 1;

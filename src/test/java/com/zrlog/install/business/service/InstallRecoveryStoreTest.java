@@ -1,18 +1,17 @@
 package com.zrlog.install.business.service;
 
-import com.zrlog.install.business.vo.InstallDatabaseConfig;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
+import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.EnumSet;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 public class InstallRecoveryStoreTest {
 
@@ -20,15 +19,17 @@ public class InstallRecoveryStoreTest {
     public void shouldAtomicallyStoreLoadAndClearPrivateRecoveryConfig() throws Exception {
         Path root = Files.createTempDirectory("zrlog-install-recovery");
         Path installLock = root.resolve("install.lock");
-        InstallDatabaseConfig databaseConfig = InstallDatabaseConfig.from(Map.of(
-                "dbType", "mysql",
-                "dbHost", "database.internal",
-                "dbPort", "3306",
-                "dbName", "zrlog",
-                "user", "zrlog",
-                "password", "recovery-secret",
-                "driverClass", "com.mysql.cj.jdbc.Driver",
-                "jdbcUrl", "jdbc:mysql://database.internal:3306/zrlog"));
+        InstallDatabaseConfig databaseConfig =
+                InstallDatabaseConfig.from(
+                        Map.of(
+                                "dbType", "mysql",
+                                "dbHost", "database.internal",
+                                "dbPort", "3306",
+                                "dbName", "zrlog",
+                                "user", "zrlog",
+                                "password", "recovery-secret",
+                                "driverClass", "com.mysql.cj.jdbc.Driver",
+                                "jdbcUrl", "jdbc:mysql://database.internal:3306/zrlog"));
         InstallRecoveryStore store = new InstallRecoveryStore();
 
         store.save(installLock.toFile(), databaseConfig);
@@ -36,11 +37,14 @@ public class InstallRecoveryStoreTest {
         assertTrue(store.isAvailable(installLock.toFile()));
         InstallDatabaseConfig loaded = store.load(installLock.toFile()).orElseThrow();
         assertEquals(databaseConfig.toMap(), loaded.toMap());
-        String recoveryText = Files.readString(
-                InstallRecoveryStore.recoveryFile(installLock.toFile()).toPath(), StandardCharsets.ISO_8859_1);
+        String recoveryText =
+                Files.readString(
+                        InstallRecoveryStore.recoveryFile(installLock.toFile()).toPath(),
+                        StandardCharsets.ISO_8859_1);
         assertFalse(recoveryText.contains("installToken"));
         try {
-            assertEquals(EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
+            assertEquals(
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE),
                     Files.getPosixFilePermissions(
                             InstallRecoveryStore.recoveryFile(installLock.toFile()).toPath()));
         } catch (UnsupportedOperationException ignored) {
@@ -81,8 +85,10 @@ public class InstallRecoveryStoreTest {
         Path recoveryFile = InstallRecoveryStore.recoveryFile(installLock.toFile()).toPath();
         InstallRecoveryStore store = new InstallRecoveryStore();
 
-        Files.writeString(recoveryFile, "recoveryVersion=1\ndbType=mysql\n"
-                + "driverClass=com.mysql.cj.jdbc.Driver\njdbcUrl=jdbc:sqlite:test.db\n");
+        Files.writeString(
+                recoveryFile,
+                "recoveryVersion=1\ndbType=mysql\n"
+                        + "driverClass=com.mysql.cj.jdbc.Driver\njdbcUrl=jdbc:sqlite:test.db\n");
         assertFalse(store.isAvailable(installLock.toFile()));
 
         byte[] oversized = new byte[64 * 1024 + 1];

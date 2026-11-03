@@ -2,7 +2,6 @@ package com.zrlog.install.util;
 
 import com.hibegin.common.util.EnvKit;
 import com.hibegin.template.BasicTemplateRender;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -70,15 +69,18 @@ public class InstallSuccessContentUtils {
         return getContent(dbProperties, askConfig, EnvKit.isFaaSMode(), language);
     }
 
-    static String getContent(File dbProperties, boolean askConfig, boolean faasMode, String language) {
+    static String getContent(
+            File dbProperties, boolean askConfig, boolean faasMode, String language) {
         if (!askConfig) {
             return "";
         }
         try {
-            BasicTemplateRender templateRender = new BasicTemplateRender(
-                    getInstallInfo(dbProperties), InstallSuccessContentUtils.class);
+            BasicTemplateRender templateRender =
+                    new BasicTemplateRender(
+                            getInstallInfo(dbProperties), InstallSuccessContentUtils.class);
             String templatePath = getMdFilePath(faasMode, language);
-            try (InputStream inputStream = InstallSuccessContentUtils.class.getResourceAsStream(templatePath)) {
+            try (InputStream inputStream =
+                    InstallSuccessContentUtils.class.getResourceAsStream(templatePath)) {
                 if (inputStream == null) {
                     throw new IOException("Install success template is unavailable");
                 }

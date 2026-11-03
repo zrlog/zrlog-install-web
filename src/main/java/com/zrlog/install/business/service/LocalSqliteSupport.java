@@ -2,7 +2,6 @@ package com.zrlog.install.business.service;
 
 import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.web.config.InstallConfig;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
@@ -23,13 +22,15 @@ import java.util.Set;
 public final class LocalSqliteSupport {
 
     private static final String PROBE_PREFIX = ".zrlog-sqlite-probe-";
-    private static final Set<OpenOption> EXCLUSIVE_CREATE_OPTIONS = Set.of(
-            StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS);
-    private static final Set<PosixFilePermission> OWNER_ONLY_PERMISSIONS = EnumSet.of(
-            PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
+    private static final Set<OpenOption> EXCLUSIVE_CREATE_OPTIONS =
+            Set.of(
+                    StandardOpenOption.CREATE_NEW,
+                    StandardOpenOption.WRITE,
+                    LinkOption.NOFOLLOW_LINKS);
+    private static final Set<PosixFilePermission> OWNER_ONLY_PERMISSIONS =
+            EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
 
-    private LocalSqliteSupport() {
-    }
+    private LocalSqliteSupport() {}
 
     public static boolean isAvailable(InstallConfig installConfig) {
         return isSupportedRuntimeMode(InstallProbeService.getRuntimeMode(installConfig))
@@ -54,7 +55,8 @@ public final class LocalSqliteSupport {
         File configParent = getConfigParent(installConfig);
         Files.createDirectories(configParent.toPath());
         if (!Files.isDirectory(configParent.toPath()) || !Files.isWritable(configParent.toPath())) {
-            throw new IOException("Local SQLite directory is not writable: " + configParent.getAbsolutePath());
+            throw new IOException(
+                    "Local SQLite directory is not writable: " + configParent.getAbsolutePath());
         }
     }
 
@@ -62,7 +64,8 @@ public final class LocalSqliteSupport {
         Path probeFile = null;
         try {
             ensureDatabaseDirectory(installConfig);
-            Path configFile = installConfig.getDbPropertiesFile().toPath().toAbsolutePath().normalize();
+            Path configFile =
+                    installConfig.getDbPropertiesFile().toPath().toAbsolutePath().normalize();
             Path databaseFile = getDatabaseFile(installConfig).toPath();
             if (!isWritableFileTarget(configFile)) {
                 return false;
@@ -76,7 +79,8 @@ public final class LocalSqliteSupport {
                 try {
                     Files.deleteIfExists(probeFile);
                 } catch (IOException ignored) {
-                    // A failed cleanup also makes the next preflight fail with a stable generic error.
+                    // A failed cleanup also makes the next preflight fail with a stable generic
+                    // error.
                 }
             }
         }
@@ -108,12 +112,16 @@ public final class LocalSqliteSupport {
         Object fileKey = null;
         try {
             if (fileStore.supportsFileAttributeView(PosixFileAttributeView.class)) {
-                try (SeekableByteChannel ignored = Files.newByteChannel(databaseFile, EXCLUSIVE_CREATE_OPTIONS,
-                        PosixFilePermissions.asFileAttribute(OWNER_ONLY_PERMISSIONS))) {
+                try (SeekableByteChannel ignored =
+                        Files.newByteChannel(
+                                databaseFile,
+                                EXCLUSIVE_CREATE_OPTIONS,
+                                PosixFilePermissions.asFileAttribute(OWNER_ONLY_PERMISSIONS))) {
                     fileKey = readFileKey(databaseFile);
                 }
             } else {
-                try (SeekableByteChannel ignored = Files.newByteChannel(databaseFile, EXCLUSIVE_CREATE_OPTIONS)) {
+                try (SeekableByteChannel ignored =
+                        Files.newByteChannel(databaseFile, EXCLUSIVE_CREATE_OPTIONS)) {
                     fileKey = readFileKey(databaseFile);
                     restrictNonPosixPermissions(databaseFile);
                 }
@@ -126,18 +134,22 @@ public final class LocalSqliteSupport {
     }
 
     private static Object readFileKey(Path databaseFile) throws IOException {
-        return Files.readAttributes(databaseFile, BasicFileAttributes.class,
-                LinkOption.NOFOLLOW_LINKS).fileKey();
+        return Files.readAttributes(
+                        databaseFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS)
+                .fileKey();
     }
 
-    private static void deleteIfOwned(Path databaseFile, Object expectedFileKey, Throwable failure) {
+    private static void deleteIfOwned(
+            Path databaseFile, Object expectedFileKey, Throwable failure) {
         if (expectedFileKey == null) {
             return;
         }
         try {
-            BasicFileAttributes attributes = Files.readAttributes(databaseFile, BasicFileAttributes.class,
-                    LinkOption.NOFOLLOW_LINKS);
-            if (isSameReservationTarget(expectedFileKey, attributes.fileKey(), attributes.isRegularFile())) {
+            BasicFileAttributes attributes =
+                    Files.readAttributes(
+                            databaseFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            if (isSameReservationTarget(
+                    expectedFileKey, attributes.fileKey(), attributes.isRegularFile())) {
                 Files.delete(databaseFile);
             }
         } catch (java.nio.file.NoSuchFileException ignored) {
@@ -147,9 +159,11 @@ public final class LocalSqliteSupport {
         }
     }
 
-    static boolean isSameReservationTarget(Object expectedFileKey, Object currentFileKey,
-                                           boolean regularFile) {
-        return expectedFileKey != null && regularFile && Objects.equals(expectedFileKey, currentFileKey);
+    static boolean isSameReservationTarget(
+            Object expectedFileKey, Object currentFileKey, boolean regularFile) {
+        return expectedFileKey != null
+                && regularFile
+                && Objects.equals(expectedFileKey, currentFileKey);
     }
 
     private static void restrictNonPosixPermissions(Path databaseFile) throws IOException {
@@ -171,15 +185,20 @@ public final class LocalSqliteSupport {
         dbConn.setDbType("sqlite");
         dbConn.setDbName("zrlog");
         dbConn.setDriverClass("org.sqlite.JDBC");
-        dbConn.setJdbcUrl("jdbc:sqlite:" + databaseFile.toAbsolutePath().normalize()
-                + "?journal_mode=WAL&busy_timeout=10000&foreign_keys=on&synchronous=NORMAL"
-                + "&date_class=TEXT&date_string_format=yyyy-MM-dd HH:mm:ss");
+        dbConn.setJdbcUrl(
+                "jdbc:sqlite:"
+                        + databaseFile.toAbsolutePath().normalize()
+                        + "?journal_mode=WAL&busy_timeout=10000&foreign_keys=on&synchronous=NORMAL"
+                        + "&date_class=TEXT&date_string_format=yyyy-MM-dd HH:mm:ss");
         return dbConn;
     }
 
     static File getDatabaseFile(InstallConfig installConfig) {
         return new File(getConfigParent(installConfig), "zrlog.db")
-                .toPath().toAbsolutePath().normalize().toFile();
+                .toPath()
+                .toAbsolutePath()
+                .normalize()
+                .toFile();
     }
 
     private static File getConfigParent(InstallConfig installConfig) {
@@ -207,11 +226,10 @@ public final class LocalSqliteSupport {
         @Override
         public void close() throws IOException {
             IOException failure = null;
-            for (Path path : new Path[]{
-                    sidecar("-shm"),
-                    sidecar("-wal"),
-                    sidecar("-journal"),
-                    databaseFile}) {
+            for (Path path :
+                    new Path[] {
+                        sidecar("-shm"), sidecar("-wal"), sidecar("-journal"), databaseFile
+                    }) {
                 try {
                     Files.deleteIfExists(path);
                 } catch (IOException e) {
@@ -254,12 +272,14 @@ public final class LocalSqliteSupport {
             }
             BasicFileAttributes attributes;
             try {
-                attributes = Files.readAttributes(databaseFile, BasicFileAttributes.class,
-                        LinkOption.NOFOLLOW_LINKS);
+                attributes =
+                        Files.readAttributes(
+                                databaseFile, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
             } catch (java.nio.file.NoSuchFileException ignored) {
                 return;
             }
-            if (!isSameReservationTarget(fileKey, attributes.fileKey(), attributes.isRegularFile())) {
+            if (!isSameReservationTarget(
+                    fileKey, attributes.fileKey(), attributes.isRegularFile())) {
                 return;
             }
             Files.delete(databaseFile);

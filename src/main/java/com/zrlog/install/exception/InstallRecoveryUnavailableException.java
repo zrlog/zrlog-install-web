@@ -23,7 +23,8 @@ public class InstallRecoveryUnavailableException extends AbstractInstallExceptio
 
     @Override
     public String getMessage() {
-        String message = InstallI18nUtil.getInstallStringFromRes("installRecoveryUnavailable", language);
+        String message =
+                InstallI18nUtil.getInstallStringFromRes("installRecoveryUnavailable", language);
         return message.isEmpty() ? "Installation recovery is unavailable" : message;
     }
 }

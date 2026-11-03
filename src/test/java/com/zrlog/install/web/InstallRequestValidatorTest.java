@@ -1,12 +1,11 @@
 package com.zrlog.install.web;
 
-import com.zrlog.install.exception.InvalidInstallRequestException;
-import org.junit.Test;
+import static org.junit.Assert.assertThrows;
 
+import com.zrlog.install.exception.InvalidInstallRequestException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import static org.junit.Assert.assertThrows;
+import org.junit.Test;
 
 public class InstallRequestValidatorTest {
 
@@ -58,14 +57,16 @@ public class InstallRequestValidatorTest {
     private static void assertInvalidDatabase(String key, String value) {
         Map<String, String> values = validDatabase("mysql");
         values.put(key, value);
-        assertThrows(InvalidInstallRequestException.class,
+        assertThrows(
+                InvalidInstallRequestException.class,
                 () -> InstallRequestValidator.validateDatabase(values, "zh_CN"));
     }
 
     private static void assertInvalidSite(String key, String value) {
         Map<String, String> values = validSite();
         values.put(key, value);
-        assertThrows(InvalidInstallRequestException.class,
+        assertThrows(
+                InvalidInstallRequestException.class,
                 () -> InstallRequestValidator.validateSite(values, "zh_CN"));
     }
 

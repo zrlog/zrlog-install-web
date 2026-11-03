@@ -3,11 +3,10 @@ package com.zrlog.install.util;
 import com.google.gson.Gson;
 import com.hibegin.http.server.util.NativeImageUtils;
 import com.zrlog.install.business.response.*;
-import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallConfigVO;
+import com.zrlog.install.business.vo.InstallDatabaseConfig;
 import com.zrlog.install.business.vo.InstallSiteConfig;
 import com.zrlog.install.business.vo.InstallSuccessData;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -29,29 +28,51 @@ public class InstallNativeImageResourceUtils {
         resourceNameList.add("/i18n/installed-docker/zh_CN.md");
         resourceNameList.add("/i18n/install_en_US.properties");
         resourceNameList.add("/i18n/install_zh_CN.properties");
-        try (InputStream assetJson = InstallNativeImageResourceUtils.class.getResourceAsStream("/install/asset-manifest.json")) {
-            InstallAssetManifest assetManifest = new Gson().fromJson(new String(assetJson.readAllBytes()), InstallAssetManifest.class);
+        try (InputStream assetJson =
+                InstallNativeImageResourceUtils.class.getResourceAsStream(
+                        "/install/asset-manifest.json")) {
+            InstallAssetManifest assetManifest =
+                    new Gson()
+                            .fromJson(
+                                    new String(assetJson.readAllBytes()),
+                                    InstallAssetManifest.class);
             if (assetManifest != null && Objects.nonNull(assetManifest.getFiles())) {
-                resourceNameList.addAll(assetManifest.getFiles().values().stream().map(e -> {
-                    return e.replaceFirst("\\./", "/");
-                }).collect(Collectors.toList()));
+                resourceNameList.addAll(
+                        assetManifest.getFiles().values().stream()
+                                .map(
+                                        e -> {
+                                            return e.replaceFirst("\\./", "/");
+                                        })
+                                .collect(Collectors.toList()));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         resourceNameList.add("/init-table-structure.sql");
         NativeImageUtils.doResourceLoadByResourceNames(resourceNameList);
-        NativeImageUtils.gsonNativeAgentByClazz(Arrays.asList(InstalledResResponse.class,
-                LastVersionInfo.class, InstallResultResponse.class, InstallUpgradeResult.class,
-                TestConnectResponse.class, InstallResourceResponse.class,
-                InstallRuntimeResourceResponse.class, InstallProbeResponse.class,
-                InstallAssetManifest.class,
-                InstallApiResponses.Empty.class, InstallApiResponses.Message.class, InstallApiResponses.Error.class,
-                InstallApiResponses.StreamError.class,
-                InstallProbeData.class, InstallProbeItem.class, InstallProgressEvent.class,
-                //vo
-                InstallConfigVO.class, InstallDatabaseConfig.class, InstallSiteConfig.class,
-                InstallSuccessData.class));
+        NativeImageUtils.gsonNativeAgentByClazz(
+                Arrays.asList(
+                        InstalledResResponse.class,
+                        LastVersionInfo.class,
+                        InstallResultResponse.class,
+                        InstallUpgradeResult.class,
+                        TestConnectResponse.class,
+                        InstallResourceResponse.class,
+                        InstallRuntimeResourceResponse.class,
+                        InstallProbeResponse.class,
+                        InstallAssetManifest.class,
+                        InstallApiResponses.Empty.class,
+                        InstallApiResponses.Message.class,
+                        InstallApiResponses.Error.class,
+                        InstallApiResponses.StreamError.class,
+                        InstallProbeData.class,
+                        InstallProbeItem.class,
+                        InstallProgressEvent.class,
+                        // vo
+                        InstallConfigVO.class,
+                        InstallDatabaseConfig.class,
+                        InstallSiteConfig.class,
+                        InstallSuccessData.class));
     }
 
     public static void main(String[] args) {

@@ -1,6 +1,7 @@
 package com.zrlog.install.exception;
 
 import com.zrlog.install.util.InstallI18nUtil;
+
 public class MissingDbUserNameException extends AbstractInstallException {
 
     private final String language;

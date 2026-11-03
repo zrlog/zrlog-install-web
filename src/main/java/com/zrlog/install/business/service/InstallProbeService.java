@@ -3,9 +3,7 @@ package com.zrlog.install.business.service;
 import com.zrlog.install.business.response.InstallProbeData;
 import com.zrlog.install.business.response.InstallProbeItem;
 import com.zrlog.install.web.config.InstallConfig;
-
 import jakarta.inject.Inject;
-
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -24,14 +22,21 @@ public class InstallProbeService {
 
         List<InstallProbeItem> items = new ArrayList<>();
         items.add(new InstallProbeItem("runtime.mode", "runtime", "pass", data.getRuntimeMode()));
-        items.add(new InstallProbeItem("runtime.charset", "runtime", isUtfCharset() ? "pass" : "warning", data.getCharset()));
+        items.add(
+                new InstallProbeItem(
+                        "runtime.charset",
+                        "runtime",
+                        isUtfCharset() ? "pass" : "warning",
+                        data.getCharset()));
         items.add(fileProbe("file.dbProperties", installConfig.getDbPropertiesFile()));
         items.add(fileProbe("file.installLock", installConfig.getAction().getLockFile()));
         if (isDockerMode()) {
             items.add(new InstallProbeItem("runtime.dockerMount", "runtime", "warning", "docker"));
         }
         if (Objects.equals(data.getRuntimeMode(), "faas")) {
-            items.add(new InstallProbeItem("runtime.faasAskConfig", "runtime", "warning", "askConfig"));
+            items.add(
+                    new InstallProbeItem(
+                            "runtime.faasAskConfig", "runtime", "warning", "askConfig"));
         }
         data.setItems(items);
         data.setStatus(summaryStatus(items));

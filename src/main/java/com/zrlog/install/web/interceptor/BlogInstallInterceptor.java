@@ -6,9 +6,7 @@ import com.hibegin.http.server.api.HttpResponse;
 import com.hibegin.http.server.web.MethodInterceptor;
 import com.zrlog.install.exception.InstalledException;
 import com.zrlog.install.web.config.InstallConfig;
-
 import jakarta.inject.Inject;
-
 import java.util.Objects;
 
 public class BlogInstallInterceptor implements HandleAbleInterceptor {
@@ -28,8 +26,8 @@ public class BlogInstallInterceptor implements HandleAbleInterceptor {
         if (request.getUri().startsWith(INSTALL_STATIC_PREFIX)) {
             return true;
         }
-        return Objects.equals(request.getUri(), "/install") ||
-                request.getUri().startsWith("/api/install/");
+        return Objects.equals(request.getUri(), "/install")
+                || request.getUri().startsWith("/api/install/");
     }
 
     private boolean isSkipCheck(HttpRequest request) {

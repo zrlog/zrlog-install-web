@@ -1,7 +1,6 @@
 package com.zrlog.install.util;
 
 import com.hibegin.common.util.LoggerUtil;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Handler;
@@ -33,8 +32,7 @@ public final class LogCaptureSupport extends Handler implements AutoCloseable {
     }
 
     @Override
-    public void flush() {
-    }
+    public void flush() {}
 
     @Override
     public void close() {

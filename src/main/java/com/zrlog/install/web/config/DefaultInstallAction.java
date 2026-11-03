@@ -4,7 +4,5 @@ import com.zrlog.install.web.InstallAction;
 
 public class DefaultInstallAction implements InstallAction {
     @Override
-    public void installSuccess() {
-
-    }
+    public void installSuccess() {}
 }

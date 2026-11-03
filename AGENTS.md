@@ -41,11 +41,16 @@
 常用命令：
 
 ```bash
+./mvnw -q spotless:apply
+./mvnw -q spotless:check
 mvn -q test
 cd src/main/frontend && yarn type-check
 cd src/main/frontend && yarn build
 mvn -q -PnodeBuild install
 ```
+
+Java 源码统一使用 Google Java Format AOSP 四空格风格。格式化命令在仓库根目录使用 JDK 21+ 执行；
+`java-format` profile 会自动启用并在 `validate` 阶段检查格式，CI 的 Java Format 工作流使用 JDK 21 独立检查。
 
 修改后端安装行为时至少运行 `mvn -q test`。修改前端向导时至少运行 `cd src/main/frontend && yarn type-check`，影响打包资源时运行 `yarn build` 或 `mvn -q -PnodeBuild install`。
 

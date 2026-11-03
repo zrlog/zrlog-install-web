@@ -1,25 +1,24 @@
 package com.zrlog.install;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.google.gson.Gson;
 import com.zrlog.install.business.service.LocalSqliteSupport;
 import com.zrlog.install.business.vo.InstallConfigVO;
 import com.zrlog.install.support.TestDatabase;
 import com.zrlog.install.web.InstallAction;
 import com.zrlog.install.web.config.DefaultInstallConfig;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class ApplicationDatabaseTest {
@@ -31,8 +30,7 @@ public class ApplicationDatabaseTest {
 
     private final TestDatabase database;
 
-    @Rule
-    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @Rule public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     public ApplicationDatabaseTest(TestDatabase database) {
         this.database = database;
@@ -42,9 +40,9 @@ public class ApplicationDatabaseTest {
     public void shouldInstallFromConfigFileUsingSupportedDatabase() throws Exception {
         File root = temporaryFolder.newFolder("zrlog-application-install");
         File configFile = new File(root, "install.json");
-        TestInstallConfig installConfig = new TestInstallConfig(
-                new File(root, "conf/db.properties"),
-                new File(root, "conf/install.lock"));
+        TestInstallConfig installConfig =
+                new TestInstallConfig(
+                        new File(root, "conf/db.properties"), new File(root, "conf/install.lock"));
         InstallConfigVO configVO = new InstallConfigVO();
         Map<String, String> configMsg = new LinkedHashMap<>();
         configMsg.put("title", "Application Install");
@@ -54,12 +52,15 @@ public class ApplicationDatabaseTest {
         configMsg.put("email", "admin@example.com");
         configMsg.put("installDate", "2026-06-29 10:20:30 +0800");
         configVO.setConfigMsg(configMsg);
-        TestDatabase.Configuration databaseConfig = database.create(root, "zrlog_application_install");
+        TestDatabase.Configuration databaseConfig =
+                database.create(root, "zrlog_application_install");
         configVO.setDbConfig(databaseConfig.asMap());
         configVO.setContextPath("/blog");
         Files.writeString(configFile.toPath(), new Gson().toJson(configVO));
 
-        Integer exitCode = Application.installFromConfigFile(new String[]{configFile.getAbsolutePath(), "password"}, installConfig);
+        Integer exitCode =
+                Application.installFromConfigFile(
+                        new String[] {configFile.getAbsolutePath(), "password"}, installConfig);
 
         assertEquals(Integer.valueOf(0), exitCode);
         assertTrue(installConfig.dbPropertiesFile.exists());
@@ -70,7 +71,8 @@ public class ApplicationDatabaseTest {
             try (var input = Files.newInputStream(installConfig.dbPropertiesFile.toPath())) {
                 stored.load(input);
             }
-            assertEquals(LocalSqliteSupport.createDatabaseConfig(installConfig).getJdbcUrl(),
+            assertEquals(
+                    LocalSqliteSupport.createDatabaseConfig(installConfig).getJdbcUrl(),
                     stored.getProperty("jdbcUrl"));
         }
     }

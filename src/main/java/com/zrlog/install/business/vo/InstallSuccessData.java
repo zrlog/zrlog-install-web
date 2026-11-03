@@ -4,8 +4,7 @@ public class InstallSuccessData {
 
     private String content;
 
-    public InstallSuccessData() {
-    }
+    public InstallSuccessData() {}
 
     public InstallSuccessData(String content) {
         this.content = content;

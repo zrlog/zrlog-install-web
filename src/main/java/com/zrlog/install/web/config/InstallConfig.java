@@ -4,7 +4,6 @@ import com.hibegin.http.server.api.HttpErrorHandle;
 import com.zrlog.install.business.response.LastVersionInfo;
 import com.zrlog.install.business.service.InstallUpgradeAction;
 import com.zrlog.install.web.InstallAction;
-
 import java.io.File;
 import java.util.Map;
 
@@ -39,5 +38,4 @@ public interface InstallConfig {
     boolean isAskConfig();
 
     boolean isMissingConfig();
-
 }

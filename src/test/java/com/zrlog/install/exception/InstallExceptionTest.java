@@ -1,19 +1,20 @@
 package com.zrlog.install.exception;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.zrlog.install.business.type.TestConnectDbResult;
 import com.zrlog.install.util.InstallErrorResponsePolicy;
 import com.zrlog.install.util.InstallI18nUtil;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 public class InstallExceptionTest {
 
     @Test
     public void shouldExposeDatabaseErrorCodeAndMessage() {
-        InstallException exception = new InstallException(TestConnectDbResult.DB_NOT_EXISTS, "zh_CN");
+        InstallException exception =
+                new InstallException(TestConnectDbResult.DB_NOT_EXISTS, "zh_CN");
 
         assertEquals(9000, exception.getError());
         assertEquals("DB_NOT_EXISTS", exception.getCode());
@@ -35,7 +36,9 @@ public class InstallExceptionTest {
         InstalledException exception = new InstalledException(true, "zh_CN");
 
         assertEquals(9020, exception.getError());
-        assertEquals(InstallI18nUtil.getInstallStringFromRes("installedWarTips", "zh_CN"), exception.getMessage());
+        assertEquals(
+                InstallI18nUtil.getInstallStringFromRes("installedWarTips", "zh_CN"),
+                exception.getMessage());
     }
 
     @Test
@@ -76,23 +79,25 @@ public class InstallExceptionTest {
                 new InvalidInstallRequestException("Invalid JSON request body");
         InvalidInstallRequestException uncontrolled =
                 new InvalidInstallRequestException("password=do-not-expose");
-        AbstractInstallException custom = new AbstractInstallException() {
-            @Override
-            public int getError() {
-                return 7777;
-            }
+        AbstractInstallException custom =
+                new AbstractInstallException() {
+                    @Override
+                    public int getError() {
+                        return 7777;
+                    }
 
-            @Override
-            public String getMessage() {
-                return "jdbc:mysql://db/zrlog?password=do-not-expose";
-            }
-        };
+                    @Override
+                    public String getMessage() {
+                        return "jdbc:mysql://db/zrlog?password=do-not-expose";
+                    }
+                };
 
         assertTrue(InstallErrorResponsePolicy.isControlled(controlled));
         assertTrue(InstallErrorResponsePolicy.isControlled(new MissingDbHostException("zh_CN")));
         assertTrue(InstallErrorResponsePolicy.isControlled(new MissingDbPortException("zh_CN")));
         assertTrue(InstallErrorResponsePolicy.isControlled(new MissingDbNameException("zh_CN")));
-        assertTrue(InstallErrorResponsePolicy.isControlled(new MissingDbUserNameException("zh_CN")));
+        assertTrue(
+                InstallErrorResponsePolicy.isControlled(new MissingDbUserNameException("zh_CN")));
         assertFalse(InstallErrorResponsePolicy.isControlled(uncontrolled));
         assertFalse(InstallErrorResponsePolicy.isControlled(custom));
     }

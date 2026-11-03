@@ -1,10 +1,8 @@
 package com.zrlog.install.util;
 
-
 public class StringUtils {
 
-    private StringUtils() {
-    }
+    private StringUtils() {}
 
     public static boolean isEmpty(String str) {
         return str == null || str.isEmpty();

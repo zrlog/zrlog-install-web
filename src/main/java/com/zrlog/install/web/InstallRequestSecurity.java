@@ -3,7 +3,6 @@ package com.zrlog.install.web;
 import com.hibegin.http.HttpMethod;
 import com.hibegin.http.server.api.HttpRequest;
 import com.zrlog.install.exception.InvalidInstallRequestException;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
@@ -12,8 +11,7 @@ public final class InstallRequestSecurity {
     public static final String TOKEN_HEADER = "X-ZrLog-Install-Token";
     private static final String TOKEN_ENVIRONMENT_VARIABLE = "ZRLOG_INSTALL_TOKEN";
 
-    private InstallRequestSecurity() {
-    }
+    private InstallRequestSecurity() {}
 
     private static String getSetupToken() {
         return resolveSetupToken(System.getenv(TOKEN_ENVIRONMENT_VARIABLE));
@@ -44,7 +42,7 @@ public final class InstallRequestSecurity {
                 || (request.getParamMap() != null && !request.getParamMap().isEmpty())
                 || (query != null && !query.trim().isEmpty())
                 || (!normalizedSetupToken.isEmpty()
-                    && !isValidToken(request.getHeader(TOKEN_HEADER), normalizedSetupToken))) {
+                        && !isValidToken(request.getHeader(TOKEN_HEADER), normalizedSetupToken))) {
             throw new InvalidInstallRequestException("Invalid installation request");
         }
     }

@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.hibegin.common.util.LoggerUtil;
 import com.hibegin.http.server.api.HttpResponse;
 import com.zrlog.install.business.response.InstallApiResponses;
-
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -17,8 +16,8 @@ public class InstallSseEmitter {
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LoggerUtil.getLogger(InstallSseEmitter.class);
     private static final String FALLBACK_ERROR_MESSAGE =
-            "The operation could not be completed. Retry, then check the runtime logs for the deployment if the " +
-                    "problem continues. Logs do not contain the setup passcode.";
+            "The operation could not be completed. Retry, then check the runtime logs for the deployment if the "
+                    + "problem continues. Logs do not contain the setup passcode.";
     private final PipedOutputStream outputStream;
     private final String language;
 
@@ -34,21 +33,30 @@ public class InstallSseEmitter {
         response.addHeader("X-Accel-Buffering", "no");
     }
 
-    public static void write(HttpResponse response, String threadName, String errorEvent, String language, SseStreamWriter writer)
+    public static void write(
+            HttpResponse response,
+            String threadName,
+            String errorEvent,
+            String language,
+            SseStreamWriter writer)
             throws IOException {
         setHeaders(response);
         PipedInputStream inputStream = new PipedInputStream();
         PipedOutputStream outputStream = new PipedOutputStream(inputStream);
-        Thread streamThread = new Thread(() -> {
-            InstallSseEmitter emitter = new InstallSseEmitter(outputStream, language);
-            try {
-                writer.write(emitter);
-            } catch (Exception e) {
-                emitter.sendError(errorEvent, e);
-            } finally {
-                emitter.close();
-            }
-        }, threadName);
+        Thread streamThread =
+                new Thread(
+                        () -> {
+                            InstallSseEmitter emitter =
+                                    new InstallSseEmitter(outputStream, language);
+                            try {
+                                writer.write(emitter);
+                            } catch (Exception e) {
+                                emitter.sendError(errorEvent, e);
+                            } finally {
+                                emitter.close();
+                            }
+                        },
+                        threadName);
         streamThread.start();
         response.write(inputStream);
     }
@@ -60,11 +68,16 @@ public class InstallSseEmitter {
     }
 
     public void sendError(String event, Exception e) {
-        InstallLogUtil.logFailure(LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.EVENT_STREAM, e);
+        InstallLogUtil.logFailure(
+                LOGGER, Level.SEVERE, InstallLogUtil.FailurePhase.EVENT_STREAM, e);
         try {
             String message = InstallI18nUtil.getInstallStringFromRes("streamFailed", language);
-            send(event, InstallApiResponses.streamError(
-                    message == null || message.isEmpty() ? FALLBACK_ERROR_MESSAGE : message));
+            send(
+                    event,
+                    InstallApiResponses.streamError(
+                            message == null || message.isEmpty()
+                                    ? FALLBACK_ERROR_MESSAGE
+                                    : message));
         } catch (IOException ignored) {
             // Client connection may already be closed.
         }
