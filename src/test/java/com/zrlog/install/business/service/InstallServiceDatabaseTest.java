@@ -83,6 +83,7 @@ public class InstallServiceDatabaseTest {
         TestDatabase.Configuration databaseConfig = database.create(root, "zrlog_install");
         installConfigVO.setDbConfig(databaseConfig.asMap());
 
+        long installationStarted = System.currentTimeMillis();
         boolean installed = applications.service(config, installConfigVO, events::add).install();
 
         assertTrue(installed);
@@ -104,6 +105,16 @@ public class InstallServiceDatabaseTest {
                     "user_passkey_challenge", "user_access_token", "log", "log_extension_index", "comment", "log_version", "website")) {
                 assertNotNull(table, dao.queryFirstObj("select count(1) from `" + table + "`"));
             }
+            for (String table : List.of("website", "user", "plugin", "type", "tag", "lognav")) {
+                assertEquals(table, 0L, ((Number) dao.queryFirstObj("select count(*) from `" + table
+                        + "` where createdAt is null or updatedAt is null or version<>0")).longValue());
+                long created = com.hibegin.common.dao.ResultValueConvertUtils.parseDate(
+                        dao.queryFirstObj("select createdAt from `" + table + "` limit 1"));
+                assertTrue(table, created >= installationStarted);
+                assertTrue(table, created <= System.currentTimeMillis());
+            }
+            assertEquals(0L, ((Number) dao.queryFirstObj(
+                    "select count(*) from log where createdAt is null or last_update_date is null or version<>0")).longValue());
             assertEquals(1L, ((Number) dao.queryFirstObj("select count(1) from `user`")).longValue());
             assertEquals(1L, ((Number) dao.queryFirstObj("select count(1) from `log`")).longValue());
             assertEquals(2L, ((Number) dao.queryFirstObj("select count(1) from `lognav`")).longValue());
@@ -118,7 +129,7 @@ public class InstallServiceDatabaseTest {
             assertEquals(0L, ((Number) dao.queryFirstObj("select count(1) from `user_passkey`")).longValue());
             assertEquals(0L, ((Number) dao.queryFirstObj(
                     "select count(1) from `user_passkey_challenge`")).longValue());
-            assertEquals("30", dao.queryFirstObj(
+            assertEquals("31", dao.queryFirstObj(
                     "select `value` from `website` where `name`='zrlogSqlVersion'"));
             assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING, dao.queryFirstObj(
                     "select `value` from `website` where `name`='" +
