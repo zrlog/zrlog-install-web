@@ -27,12 +27,15 @@ final class InstallSchemaSafety {
                     "log_extension_index",
                     "comment",
                     "log_version",
-                    "website");
+                    "website",
+                    "assistant_task",
+                    "assistant_task_run",
+                    "assistant_notice_read");
     private static final String SQLITE_TABLE_QUERY =
             "SELECT name FROM sqlite_master "
                     + "WHERE type IN ('table','view') AND lower(name) IN ("
                     + "'link','lognav','plugin','tag','type','user','user_passkey','user_passkey_challenge',"
-                    + "'log','log_extension_index','comment','log_version','website')";
+                    + "'log','log_extension_index','comment','log_version','website','assistant_task','assistant_task_run','assistant_notice_read')";
 
     private InstallSchemaSafety() {}
 
