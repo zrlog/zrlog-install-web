@@ -498,7 +498,7 @@ public class InstallService {
 
     boolean insertFirstArticle(DAO dao) throws Exception {
         int logId = 1;
-        String insetLog = "INSERT INTO `log`(`logId`,`canComment`,`keywords`,`alias`,`typeId`,`userId`,`title`,`content`,`plain_content`,`markdown`,`digest`,`releaseTime`,`last_update_date`,`rubbish`,`privacy`) VALUES (" + logId + ",?,?,?,1,1,?,?,?,?,?,?,?,?,?)";
+        String insetLog = "INSERT INTO `log`(`logId`,`canComment`,`keywords`,`alias`,`typeId`,`userId`,`title`,`content`,`plain_content`,`markdown`,`digest`,`releaseTime`,`last_update_date`,`rubbish`,`privacy`,`createdAt`) VALUES (" + logId + ",?,?,?,1,1,?,?,?,?,?,?,?,?,?,?)";
         List<Object> params = new ArrayList<>();
         try (InputStream in = InstallService.class.getResourceAsStream("/i18n/init-blog/" + language + ".md")) {
             InitialArticleTemplateData data = new InitialArticleTemplateData(contextPath + "/admin/article-edit?id=" + logId);
@@ -526,55 +526,71 @@ public class InstallService {
 
                 params.add(false);
                 params.add(false);
+                params.add(metadataTime());
             }
         }
         return dao.execute(insetLog, params.toArray());
     }
 
     boolean insertType(DAO dao) throws SQLException {
-        String insertLogType = "INSERT INTO `type`(`typeId`, `typeName`, `remark`, `alias`) VALUES (1,'" + InstallI18nUtil.getInstallStringFromRes("defaultType", language) + "','','note')";
-        return dao.execute(insertLogType);
+        String time = metadataTime();
+        return dao.execute("INSERT INTO `type`(`typeId`,`typeName`,`remark`,`alias`,`createdAt`,`updatedAt`) VALUES (1,?,'','note',?,?)",
+                InstallI18nUtil.getInstallStringFromRes("defaultType", language), time, time);
     }
 
     boolean insertTag(DAO dao) throws SQLException {
-        String insertTag = "INSERT INTO `tag`(`tagId`,`text`,`count`) VALUES (1,'" + InstallI18nUtil.getInstallStringFromRes("defaultType", language) + "',1)";
-        return dao.execute(insertTag);
+        String time = metadataTime();
+        return dao.execute("INSERT INTO `tag`(`tagId`,`text`,`count`,`createdAt`,`updatedAt`) VALUES (1,?,1,?,?)",
+                InstallI18nUtil.getInstallStringFromRes("defaultType", language), time, time);
     }
 
     boolean initPlugin(DAO dao) throws SQLException {
-        String insertPluginSql = "INSERT INTO `plugin` VALUES (1,NULL,true,'" + InstallI18nUtil.getInstallStringFromRes("category", language) + "',NULL,'types',3)," +
-                "(2,NULL,true,'" + InstallI18nUtil.getInstallStringFromRes("tag", language) + "',NULL,'tags',3)," +
-                "(3,NULL,true,'" + InstallI18nUtil.getInstallStringFromRes("link", language) + "',NULL,'links',2)," +
-                "(4,NULL,true,'" + InstallI18nUtil.getInstallStringFromRes("archive", language) + "',NULL,'archives',3)";
-        return dao.execute(insertPluginSql);
+        String time = metadataTime();
+        return dao.execute("INSERT INTO `plugin`(`pluginId`,`isSystem`,`pTitle`,`pluginName`,`level`,`createdAt`,`updatedAt`)"
+                        + " VALUES (1,true,?,'types',3,?,?),(2,true,?,'tags',3,?,?),"
+                        + "(3,true,?,'links',2,?,?),(4,true,?,'archives',3,?,?)",
+                InstallI18nUtil.getInstallStringFromRes("category", language), time, time,
+                InstallI18nUtil.getInstallStringFromRes("tag", language), time, time,
+                InstallI18nUtil.getInstallStringFromRes("link", language), time, time,
+                InstallI18nUtil.getInstallStringFromRes("archive", language), time, time);
     }
 
     boolean insertNav(DAO dao) throws SQLException {
-        String insertLogNavSql = "INSERT INTO `lognav`( `navId`,`url`, `navName`,`icon`, `sort`) VALUES (?,?,?,?,?)";
-        return dao.execute(insertLogNavSql, 1, "/", InstallI18nUtil.getInstallStringFromRes("home", language), "iconfont icon-home-fill", 1)
-                && dao.execute(insertLogNavSql, 2, "/admin/login", InstallI18nUtil.getInstallStringFromRes("manage", language), "iconfont icon-user-fill", 2);
+        String time = metadataTime();
+        String insertLogNavSql = "INSERT INTO `lognav`(`navId`,`url`,`navName`,`icon`,`sort`,`createdAt`,`updatedAt`) VALUES (?,?,?,?,?,?,?)";
+        return dao.execute(insertLogNavSql, 1, "/", InstallI18nUtil.getInstallStringFromRes("home", language), "iconfont icon-home-fill", 1, time, time)
+                && dao.execute(insertLogNavSql, 2, "/admin/login", InstallI18nUtil.getInstallStringFromRes("manage", language), "iconfont icon-user-fill", 2, time, time);
     }
 
     boolean initUser(InstallSiteConfig blogMsg, DAO dao) throws SQLException {
-        String insertUserSql = "INSERT INTO `user`( `userId`,`userName`, `password`, `email`,`secretKey`,`role`) VALUES (1,?,?,?,?,'owner')";
+        String time = metadataTime();
+        String insertUserSql = "INSERT INTO `user`(`userId`,`userName`,`password`,`email`,`secretKey`,`role`,`createdAt`,`updatedAt`) VALUES (1,?,?,?,?,'owner',?,?)";
         return dao.execute(insertUserSql, blogMsg.getUsername(), installConfig.encryptPassword(blogMsg.getPassword()),
-                configMsg.getEmail(), configMsg.secretKeyOrNew());
+                configMsg.getEmail(), configMsg.secretKeyOrNew(), time, time);
     }
 
     boolean initWebSite(DAO dao) throws SQLException {
         StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO `website` (`name`, `value`) VALUES ");
+        sb.append("INSERT INTO `website` (`name`,`value`,`createdAt`,`updatedAt`) VALUES ");
         Map<String, Object> defaultMap = getDefaultWebSiteSettings(configMsg).toMap();
         for (int i = 0; i < defaultMap.size(); i++) {
-            sb.append("(").append("?").append(",").append("?").append("),");
+            sb.append("(?,?,?,?),");
         }
         List<Object> params = new ArrayList<>();
+        String time = metadataTime();
         for (Map.Entry<String, Object> e : defaultMap.entrySet()) {
             params.add(e.getKey());
             params.add(e.getValue());
+            params.add(time);
+            params.add(time);
         }
         String insertWebSql = sb.substring(0, sb.toString().length() - 1);
         return dao.execute(insertWebSql, params.toArray());
+    }
+
+    private static String metadataTime() {
+        // SQL date/time text also retains milliseconds through SQLite and the legacy WebAPI binding.
+        return new java.sql.Timestamp(System.currentTimeMillis()).toString();
     }
 
     private static class InitialArticleTemplateData {

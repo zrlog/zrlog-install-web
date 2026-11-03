@@ -17,6 +17,9 @@ CREATE TABLE `link`
     `status`   bit(1)       DEFAULT NULL,
     `url`      varchar(255) DEFAULT NULL,
     `icon`     longtext     DEFAULT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`linkId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -31,6 +34,9 @@ CREATE TABLE `lognav`
     `sort`    int(11) DEFAULT NULL,
     `url`     varchar(255) DEFAULT NULL,
     `icon`    longtext     DEFAULT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`navId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -47,6 +53,9 @@ CREATE TABLE `plugin`
     `sort`       int(11) DEFAULT NULL,
     `pluginName` varchar(255) DEFAULT NULL,
     `level`      int(11) DEFAULT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`pluginId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -59,6 +68,9 @@ CREATE TABLE `tag`
     `tagId` int(11) NOT NULL AUTO_INCREMENT,
     `count` int(11) NOT NULL DEFAULT '0',
     `text`  varchar(64) DEFAULT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`tagId`),
     UNIQUE KEY `text` (`text`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -75,6 +87,9 @@ CREATE TABLE `type`
     `typeName` varchar(128)  DEFAULT NULL,
     `pid`      int(11) DEFAULT NULL,
     `arrange_plugin`  varchar(64)  DEFAULT null COMMENT '文章分类统筹重排插件名称',
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`typeId`),
     UNIQUE KEY `alias` (`alias`),
     KEY        `pid` (`pid`)
@@ -100,6 +115,9 @@ CREATE TABLE `user`
     `enabled`          bit(1)        NOT NULL DEFAULT true,
     `authVersion`      int(11)       NOT NULL DEFAULT 0,
     `preferences`      text          DEFAULT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`userId`),
     UNIQUE KEY `userName` (`userName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -126,8 +144,10 @@ CREATE TABLE `user_passkey`
     `backupState`      bit(1)       NOT NULL DEFAULT b'0',
     `origin`           varchar(512) NOT NULL,
     `rpId`             varchar(255) NOT NULL,
-    `createdAt`        bigint       NOT NULL,
+    `createdAt`        datetime(3) DEFAULT NULL,
     `lastUsedAt`       bigint       DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -147,8 +167,10 @@ CREATE TABLE `user_passkey_challenge`
     `ceremony`    varchar(32) NOT NULL,
     `userId`      int(11) DEFAULT NULL,
     `requestJson` longtext    NOT NULL,
-    `createdAt`   bigint      NOT NULL,
+    `createdAt`   datetime(3) DEFAULT NULL,
     `expiresAt`   bigint      NOT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -189,6 +211,7 @@ CREATE TABLE `log`
     `editor_type`      varchar(256) DEFAULT NULL,
     `arrange_plugin`   varchar(64)  DEFAULT null COMMENT '文章统筹重排插件名称',
     `extensions`       longtext,
+    `createdAt` datetime(3) DEFAULT NULL,
     PRIMARY KEY (`logId`),
     KEY                `typeId` (`typeId`),
     KEY                `userId` (`userId`),
@@ -206,6 +229,9 @@ CREATE TABLE `log_extension_index`
     `namespace`       varchar(64)  NOT NULL,
     `extension_path`  varchar(191) NOT NULL,
     `extension_value` varchar(512) DEFAULT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -236,6 +262,8 @@ CREATE TABLE `comment`
     `header`      varchar(1024) DEFAULT NULL COMMENT '评论者头像',
     `user_agent`  varchar(1024) DEFAULT NULL COMMENT '浏览器信息',
     `reply_id`    int(11) DEFAULT NULL COMMENT '回复评论的ID',
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`commentId`),
     UNIQUE KEY `postId` (`postId`),
     KEY           `logId` (`logId`)
@@ -256,6 +284,8 @@ CREATE TABLE `log_version`
     `title`           varchar(255) DEFAULT NULL,
     `user_id`         int(11) DEFAULT NULL,
     `created_at`      datetime     DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`),
     UNIQUE KEY `log_id_article_version` (`log_id`, `article_version`),
     KEY               `log_id` (`log_id`)
@@ -272,6 +302,9 @@ CREATE TABLE `website`
     `name`   varchar(255)  DEFAULT NULL,
     `value`  longtext      DEFAULT NULL,
     `remark` varchar(2000) DEFAULT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`siteId`),
     UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -281,6 +314,9 @@ CREATE TABLE IF NOT EXISTS `oauth_client` (
     `name` varchar(128) NOT NULL,
     `redirectUris` longtext NOT NULL,
     `enabled` bit(1) NOT NULL DEFAULT true,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`clientId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -291,8 +327,10 @@ CREATE TABLE IF NOT EXISTS `oauth_grant` (
     `scope` varchar(512) NOT NULL,
     `resource` varchar(1024) NOT NULL,
     `authVersion` int(11) NOT NULL,
-    `createdAt` bigint NOT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
     `revoked` bit(1) NOT NULL DEFAULT false,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX `oauth_grant_user` ON `oauth_grant` (`userId`);
@@ -304,6 +342,9 @@ CREATE TABLE IF NOT EXISTS `oauth_credential` (
     `payload` longtext NOT NULL,
     `expiresAt` bigint NOT NULL,
     `used` bit(1) NOT NULL DEFAULT false,
+    `createdAt` datetime(3) DEFAULT NULL,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX `oauth_credential_grant` ON `oauth_credential` (`grantId`);
@@ -321,9 +362,11 @@ CREATE TABLE IF NOT EXISTS `user_access_token` (
     `scope` varchar(512) NOT NULL,
     `resource` varchar(2048) NOT NULL,
     `authVersion` int(11) NOT NULL,
-    `createdAt` bigint NOT NULL,
+    `createdAt` datetime(3) DEFAULT NULL,
     `expiresAt` bigint NOT NULL,
     `revoked` bit(1) NOT NULL DEFAULT false,
+    `updatedAt` datetime(3) DEFAULT NULL,
+    `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE UNIQUE INDEX `user_access_token_hash` ON `user_access_token` (`tokenHash`);

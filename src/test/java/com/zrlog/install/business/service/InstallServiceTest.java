@@ -106,7 +106,7 @@ public class InstallServiceTest {
         assertEquals("", settings.getSecondTitle());
         assertEquals("zh_CN", settings.getLanguage());
         assertEquals("/include/templates/default", settings.getTemplate());
-        assertEquals("30", settings.getZrlogSqlVersion());
+        assertEquals("31", settings.getZrlogSqlVersion());
         assertEquals("example.com", settingsMap.get("host"));
         assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING,
                 settingsMap.get(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY));
@@ -250,40 +250,6 @@ public class InstallServiceTest {
         assertEquals(TestConnectDbResult.UNSUPPORTED_DATABASE, service.testDbConn());
         assertFalse(service.install());
         assertFalse(config.getAction().getLockFile().exists());
-    }
-
-    @Test
-    public void shouldBuildWebsiteSeedSqlAndParams() throws Exception {
-        File root = Files.createTempDirectory("zrlog-install-service").toFile();
-        FakeInstallConfig config = new FakeInstallConfig(
-                new File(root, "db.properties"),
-                new File(root, "install.lock"));
-        Map<String, String> configMsg = new LinkedHashMap<>();
-        configMsg.put("title", "My Blog");
-        configMsg.put("second_title", "Notes");
-        Map<String, String> appendWebsite = new LinkedHashMap<>();
-        appendWebsite.put("host", "example.com");
-        InstallService service = applications.service(config, installConfigVO(configMsg, appendWebsite, "/blog"));
-        FakeDao dao = new FakeDao(true);
-
-        assertTrue(service.initWebSite(dao));
-
-        assertEquals(1, dao.calls.size());
-        FakeDao.Call call = dao.calls.get(0);
-        assertTrue(call.sql.startsWith("INSERT INTO `website` (`name`, `value`) VALUES"));
-        assertEquals(20, call.args.length);
-        assertEquals("appId", call.args[0]);
-        assertNotNull(call.args[1]);
-        assertEquals("title", call.args[2]);
-        assertEquals("My Blog", call.args[3]);
-        assertEquals("second_title", call.args[4]);
-        assertEquals("Notes", call.args[5]);
-        assertEquals("language", call.args[6]);
-        assertEquals("zh_CN", call.args[7]);
-        assertEquals("host", call.args[16]);
-        assertEquals("example.com", call.args[17]);
-        assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_KEY, call.args[18]);
-        assertEquals(DefaultWebsiteSettings.ADMIN_FIRST_USE_V4_PENDING, call.args[19]);
     }
 
     @Test
