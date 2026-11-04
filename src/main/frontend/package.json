@@ -11,7 +11,7 @@
     "@ant-design/icons": "6.3.2",
     "@zrlog/ui": "0.2.0",
     "@zrlog/utils": "0.2.0",
-    "antd": "6.4.3",
+    "antd": "6.4.5",
     "axios": "1.20.0",
     "dompurify": "3.4.16",
     "marked": "18.0.7",
