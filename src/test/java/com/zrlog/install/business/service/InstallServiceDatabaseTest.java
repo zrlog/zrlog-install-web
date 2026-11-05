@@ -116,6 +116,19 @@ public class InstallServiceDatabaseTest {
                             "website")) {
                 assertNotNull(table, dao.queryFirstObj("select count(1) from `" + table + "`"));
             }
+            String publicIndexes =
+                    database.isSqlite()
+                            ? "select count(*) from sqlite_master where type='index' and name in ('log_public_order','log_public_sticky','log_public_type','logId')"
+                            : "select count(*) from INFORMATION_SCHEMA.INDEXES where lower(INDEX_NAME) in ('log_public_order','log_public_sticky','log_public_type','logid')";
+            assertEquals(4L, ((Number) dao.queryFirstObj(publicIndexes)).longValue());
+            if (database.isSqlite()) {
+                String commentPlan =
+                        dao.queryListWithParams(
+                                        "EXPLAIN QUERY PLAN SELECT count(commentId) FROM comment WHERE logId=?",
+                                        1)
+                                .toString();
+                assertTrue(commentPlan, commentPlan.contains("USING COVERING INDEX logId"));
+            }
             for (String table : List.of("website", "user", "plugin", "type", "tag", "lognav")) {
                 assertEquals(
                         table,

@@ -218,6 +218,13 @@ CREATE TABLE `log`
     UNIQUE KEY `alias` (`alias`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+CREATE INDEX `log_public_order`
+    ON `log` (`rubbish`, `privacy`, `logId`, `typeId`, `userId`);
+CREATE INDEX `log_public_sticky`
+    ON `log` (`rubbish`, `privacy`, `sticky`, `logId`, `typeId`, `userId`);
+CREATE INDEX `log_public_type`
+    ON `log` (`typeId`, `rubbish`, `privacy`, `logId`, `userId`);
+
 #
 # Structure for table "log_extension_index"
 #
@@ -265,10 +272,10 @@ CREATE TABLE `comment`
     `updatedAt` datetime(3) DEFAULT NULL,
     `version` bigint NOT NULL DEFAULT 0,
     PRIMARY KEY (`commentId`),
-    UNIQUE KEY `postId` (`postId`),
-    KEY           `logId` (`logId`)
+    UNIQUE KEY `postId` (`postId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+CREATE INDEX `logId` ON `comment` (`logId`);
 
 #
 # Structure for table "log_version"
